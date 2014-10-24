@@ -18,28 +18,22 @@ module doxml::compounddef
 import listener
 
 class CompoundDefListener
-	super StackableListener
+	super EntityDefListener
 
 	var compound: Compound is writable, noinit
-	private var text: TextListener is noinit
-	private var doc: DocListener is noinit
-	private var noop: NoopListener is noinit
 	private var refid = ""
 	private var prot = ""
 	private var virt = ""
 
 	init do
-	text = new TextListener(reader, self)
-	doc = new DocListener(reader, self)
-	noop = new NoopListener(reader, self)
+		super
 	end
 
-	redef fun start_element(uri: String, local_name: String, qname: String,
-			atts: Attributes) do
-		super
-		if uri != "" then return # None of our business.
+	redef fun entity: Entity do return compound
+
+	redef fun start_dox_element(local_name: String, atts: Attributes) do
 		if ["compoundname", "innerclass", "innernamespace"].has(local_name) then
-			text.listen_until(uri, local_name)
+			text.listen_until(dox_uri, local_name)
 			if ["innerclass", "innernamespace"].has(local_name) then
 				refid = get_required(atts, "refid")
 			end
@@ -47,20 +41,13 @@ class CompoundDefListener
 			refid = get_optional(atts, "refid", "")
 			prot = get_optional(atts, "prot", "")
 			virt = get_optional(atts, "virt", "")
-			text.listen_until(uri, local_name)
-		else if "location" == local_name then
-			compound.location = get_location(atts)
-		else if "detaileddescription" == local_name then
-			doc.doc = compound.doc
-			doc.listen_until(uri, local_name)
-		else if local_name != "sectiondef" then
-			noop.listen_until(uri, local_name)
+			text.listen_until(dox_uri, local_name)
+		else
+			super
 		end
 	end
 
-	redef fun end_element(uri: String, local_name: String, qname: String) do
-		super
-		if uri != "" then return # None of our business.
+	redef fun end_dox_element(local_name: String) do
 		if local_name == "compounddef" then
 			compound.put_in_graph
 		else if local_name == "compoundname" then
@@ -71,6 +58,8 @@ class CompoundDefListener
 			compound.declare_namespace(refid, text.to_s)
 		else if local_name == "basecompoundref" then
 			compound.declare_super(refid, text.to_s, prot, virt)
+		else
+			super
 		end
 	end
 end

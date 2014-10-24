@@ -24,35 +24,33 @@ class CompoundFileReader
 
 	var model: ProjectGraph
 	private var reader: XMLReader = new XophonReader
-	private var compoundDef: CompoundDefListener is noinit
+	private var compounddef: CompoundDefListener is noinit
 	private var noop: NoopListener is noinit
 
 	init do
-		compoundDef = new CompoundDefListener(reader, self)
+		compounddef = new CompoundDefListener(reader, self)
 		noop = new NoopListener(reader, self)
 	end
 
 	fun read(path: String) do
 		reader.content_handler = self
 		reader.parse_file(path)
-		compoundDef.compound = new UnknownCompound(model)
+		compounddef.compound = new UnknownCompound(model)
 	end
 
-	redef fun start_element(uri: String, local_name: String, qname: String,
-			atts: Attributes) do
-		if uri != "" then return # None of our business.
+	redef fun start_dox_element(local_name: String, atts: Attributes) do
 		if local_name == "compounddef" then
 			read_compound(atts)
 		else if "doxygen" != local_name then
-			noop.listen_until(uri, local_name)
+			noop.listen_until(dox_uri, local_name)
 		end
 	end
 
 	private fun read_compound(atts: Attributes) do
-		var kind = atts.value_ns("", "kind").as(not null)
+		var kind = get_required(atts, "kind")
 
 		create_compound(kind)
-		# TODO Fit `kind` and `visibility` into the Nit meta-model.
+		# TODO Make all values of `kind` and `visibility` compatible with the Nit meta-model.
 		if get_bool(atts, "final") then
 			kind = "final {kind}"
 		end
@@ -62,23 +60,23 @@ class CompoundFileReader
 		if get_bool(atts, "abstract") then
 			kind = "abstract {kind}"
 		end
-		compoundDef.compound.kind = kind
-		compoundDef.compound.model_id = atts.value_ns("", "id").as(not null)
-		compoundDef.compound.visibility = atts.value_ns("", "prot") or else ""
+		compounddef.compound.kind = kind
+		compounddef.compound.model_id = get_required(atts, "id")
+		compounddef.compound.visibility = get_optional(atts, "prot", "")
 	end
 
 	private fun create_compound(kind: String) do
 		if kind == "file" then
-			compoundDef.compound = new FileCompound(model)
+			compounddef.compound = new FileCompound(model)
 		else if kind == "namespace" then
-			compoundDef.compound = new Namespace(model)
+			compounddef.compound = new Namespace(model)
 		else if kind == "class" or kind == "interface" then
-			compoundDef.compound = new ClassCompound(model)
+			compounddef.compound = new ClassCompound(model)
 		else
-			compoundDef.compound = new UnknownCompound(model)
-			noop.listen_until("", "compounddef")
+			compounddef.compound = new UnknownCompound(model)
+			noop.listen_until(dox_uri, "compounddef")
 			return
 		end
-		compoundDef.listen_until("", "compounddef")
+		compounddef.listen_until(dox_uri, "compounddef")
 	end
 end

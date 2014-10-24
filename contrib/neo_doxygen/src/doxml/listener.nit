@@ -27,42 +27,42 @@ abstract class DoxmlListener
 		self.locator = locator
 	end
 
+	protected fun dox_uri: String do return ""
+
+	redef fun start_element(uri: String, local_name: String, qname: String,
+			atts: Attributes) do
+		super
+		if uri != dox_uri then return # None of our business.
+		start_dox_element(local_name, atts)
+	end
+
+	protected fun start_dox_element(local_name: String, atts: Attributes) do end
+
+	redef fun end_element(uri: String, local_name: String, qname: String) do
+		super
+		if uri != dox_uri then return # None of our business.
+		end_dox_element(local_name)
+	end
+
+	protected fun end_dox_element(local_name: String) do end
+
 	protected fun get_bool(atts: Attributes, local_name: String): Bool do
 		return get_optional(atts, local_name, "no") == "yes"
 	end
 
 	protected fun get_optional(atts: Attributes, local_name: String,
 			default: String): String do
-		return atts.value_ns("", local_name) or else default
+		return atts.value_ns(dox_uri, local_name) or else default
 	end
 
 	protected fun get_required(atts: Attributes, local_name: String): String do
-		var value = atts.value_ns("", local_name)
+		var value = atts.value_ns(dox_uri, local_name)
 		if value == null then
 			throw_error("The `{local_name}` attribute is required.")
 			return ""
 		else
 			return value
 		end
-	end
-
-	# Parse the attributes of a `location` element.
-	protected fun get_location(atts: Attributes): Location do
-		var location = new Location
-
-		location.path = atts.value_ns("", "bodyfile") or else atts.value_ns("", "file")
-		# Doxygen may indicate `[generated]`.
-		if "[generated]" == location.path then location.path = null
-		var line_start = atts.value_ns("", "bodystart") or else atts.value_ns("", "line") or else null
-		if line_start != null then location.line_start = line_start.to_i
-		var line_end = atts.value_ns("", "bodyend")
-		if line_end != null then location.line_end = line_end.to_i
-		var column_start = atts.value_ns("", "column")
-		if column_start != null then location.column_start = column_start.to_i
-		if location.line_start == location.line_end then
-			location.column_end = location.column_start
-		end
-		return location
 	end
 
 	redef fun end_document do
@@ -100,12 +100,14 @@ abstract class StackableListener
 
 	redef fun start_element(uri: String, local_name: String, qname: String,
 			atts: Attributes) do
+		super
 		if uri == root_uri and local_name == root_local_name then
 			depth += 1
 		end
 	end
 
 	redef fun end_element(uri: String, local_name: String, qname: String) do
+		super
 		if uri == root_uri and local_name == root_local_name then
 			depth -= 1
 			if depth <= 0 then
@@ -160,5 +162,52 @@ class DocListener
 	redef fun end_reading do
 		super
 		doc.add(to_s)
+	end
+end
+
+abstract class EntityDefListener
+	super StackableListener
+
+	protected var text: TextListener is noinit
+	protected var doc: DocListener is noinit
+	protected var noop: NoopListener is noinit
+
+	init do
+		super
+		text = new TextListener(reader, self)
+		doc = new DocListener(reader, self)
+		noop = new NoopListener(reader, self)
+	end
+
+	protected fun entity: Entity is abstract
+
+	redef fun start_dox_element(local_name: String, atts: Attributes) do
+		if ["briefdescription", "detaileddescription", "inbodydescription"].has(local_name) then
+			doc.doc = entity.doc
+			doc.listen_until(dox_uri, local_name)
+		else if "location" == local_name then
+			entity.location = get_location(atts)
+		else
+			noop.listen_until(dox_uri, local_name)
+		end
+	end
+
+	# Parse the attributes of a `location` element.
+	protected fun get_location(atts: Attributes): Location do
+		var location = new Location
+
+		location.path = atts.value_ns("", "bodyfile") or else atts.value_ns("", "file")
+		# Doxygen may indicate `[generated]`.
+		if "[generated]" == location.path then location.path = null
+		var line_start = atts.value_ns("", "bodystart") or else atts.value_ns("", "line") or else null
+		if line_start != null then location.line_start = line_start.to_i
+		var line_end = atts.value_ns("", "bodyend")
+		if line_end != null then location.line_end = line_end.to_i
+		var column_start = atts.value_ns("", "column")
+		if column_start != null then location.column_start = column_start.to_i
+		if location.line_start == location.line_end then
+			location.column_end = location.column_start
+		end
+		return location
 	end
 end
