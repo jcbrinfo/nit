@@ -138,31 +138,23 @@ abstract class Entity
 	end
 
 	# The short (unqualified) name.
+	#
+	# May be also set by `full_name=`.
 	fun name=(name: String) do
 		self["name"] = name
 	end
 
-	# Put the entity in the graph.
-	fun put_in_graph do
-		if doc.length > 0 then
-			set_mdoc
-		end
-		graph.all_nodes.add(self)
-		if model_id != "" then graph.by_id[model_id] = self
+	# The short (unqualified) name.
+	fun name: String do
+		var name = self["name"]
+		assert name isa String
+		return name
 	end
-
-	# Put the related edges in the graph.
-	fun put_edges do end
 
 	# Include the documentation of `self` in the graph.
 	protected fun set_mdoc do
 		self["mdoc"] = doc
 	end
-end
-
-# An entity with a full name.
-abstract class QEntity
-	super Entity
 
 	# The namespace separator of Nit/C++.
 	fun ns_separator: String do return "::"
@@ -184,10 +176,42 @@ abstract class QEntity
 		end
 	end
 
+	# The full (qualified) name.
+	fun full_name: String do
+		var full_name = self["full_name"]
+		assert full_name isa String
+		return full_name
+	end
+
+	# Set the full name using the current name and the specified parent name.
+	fun parent_name=(parent_name: String) do
+		self["full_name"] = parent_name + name_separator + self["name"].as(not null).to_s
+	end
+
 	# Set the location of the entity in the source code.
 	fun location=(location: nullable Location) do
 		self["location"] = location
 	end
+
+	# Put the entity in the graph.
+	#
+	# Called by the loader when it has finished to read the entity.
+	fun put_in_graph do
+		if doc.length > 0 then
+			set_mdoc
+		end
+		graph.all_nodes.add(self)
+		if model_id != "" then graph.by_id[model_id] = self
+	end
+
+	# Put the related edges in the graph.
+	#
+	# This method is called on each node by `ProjectGraph.put_edges`.
+	#
+	# Note: Even at this step, the entity may modify its own attributes and
+	# inner entities’ ones because some values are only known once the entity
+	# know its relationships with the rest of the graph.
+	fun put_edges do end
 end
 
 # An entity whose the location is mandatory.
@@ -198,7 +222,7 @@ abstract class CodeBlock
 		self["location"] = new Location
 	end
 
-	fun location=(location: nullable Location) do
+	redef fun location=(location: nullable Location) do
 		if location == null then
 			super(new Location)
 		else
@@ -212,7 +236,7 @@ end
 # Usually corresponds to a `<compounddef>` element in of the XML output of
 # Doxygen.
 abstract class Compound
-	super QEntity
+	super Entity
 
 	# Set the declared visibility (the proctection) of the compound.
 	fun visibility=(visibility: String) do
