@@ -26,11 +26,14 @@ class NeoGraph
 	# How many operation can be executed in one batch?
 	private var batch_max_size = 1000
 
+	# Add a relationship between two nodes.
+	#
+	# Parameters are the same than for the constructor of `NeoEdge`.
 	fun add_edge(from: NeoNode, rel_type: String, to: NeoNode) do
 		all_edges.add(new NeoEdge(from, rel_type, to))
 	end
 
-	# Save the graph.
+	# Save the graph using the specified client.
 	fun save(client: Neo4jClient) do
 		var nodes = all_nodes
 		print("Saving {nodes.length} nodes...")
@@ -78,11 +81,17 @@ end
 class ProjectGraph
 	super NeoGraph
 
+	# The node reperesenting the project.
+	#
+	# Once the project’s graph is initialized, this node must not be edited.
 	var project: NeoNode = new NeoNode
 
 	# Entities by `model_id`.
 	var by_id: Map[String, Entity] = new HashMap[String, Entity]
 
+	# Initialize a new project graph using the specified project name.
+	#
+	# The specified name will label all nodes of the project’s graph.
 	init(name: String) do
 		project.labels.add(name)
 		project.labels.add("MEntity")
@@ -95,6 +104,7 @@ class ProjectGraph
 		by_id[""] = root
 	end
 
+	# Request to all nodes in the graph to add their related edges.
 	fun put_edges do
 		all_edges.add(new NeoEdge(project, "ROOT", by_id[""]))
 		for n in all_nodes do
@@ -105,6 +115,9 @@ class ProjectGraph
 	end
 end
 
+# A model’s entity.
+#
+# In practice, this is the base class of every node in a `ProjectGraph`.
 abstract class Entity
 	super NeoNode
 
@@ -113,7 +126,7 @@ abstract class Entity
 
 	# ID of the entity in the model.
 	#
-	# Is empty for entities without ID.
+	# Is empty for entities without an ID.
 	var model_id: String = "" is writable
 
 	# Associated documentation.
@@ -124,6 +137,7 @@ abstract class Entity
 		self.labels.add("MEntity")
 	end
 
+	# The short (unqualified) name.
 	fun name=(name: String) do
 		self["name"] = name
 	end
@@ -150,9 +164,15 @@ end
 abstract class QEntity
 	super Entity
 
+	# The namespace separator of Nit/C++.
 	fun ns_separator: String do return "::"
+
+	# The name separator used when calling `full_name=`.
 	fun name_separator: String do return ns_separator
 
+	# The full (qualified) name.
+	#
+	# Also set `name` using `name_separator`.
 	fun full_name=(full_name: String) do
 		var m: nullable Match = full_name.search_last(name_separator)
 
@@ -164,12 +184,13 @@ abstract class QEntity
 		end
 	end
 
+	# Set the location of the entity in the source code.
 	fun location=(location: nullable Location) do
 		self["location"] = location
 	end
 end
 
-# An entity where the location is mandatory.
+# An entity whose the location is mandatory.
 abstract class CodeBlock
 	super Entity
 
@@ -186,28 +207,53 @@ abstract class CodeBlock
 	end
 end
 
+# A compound.
+#
+# Usually corresponds to a `<compounddef>` element in of the XML output of
+# Doxygen.
 abstract class Compound
 	super QEntity
 
+	# Set the declared visibility (the proctection) of the compound.
 	fun visibility=(visibility: String) do
 		self["visibility"] = visibility
 	end
 
+	# Set the specific kind of the compound.
 	fun kind=(kind: String) do
 		self["kind"] = kind
 	end
 
-	# Declare a inner namespace.
+	# Declare an inner namespace.
+	#
+	# Parameters:
+	#
+	# * `id`: `model_id` of the inner namespace. May be empty.
+	# * `name`: string identifying the inner namespace. May be empty.
 	fun declare_namespace(id: String, name: String) do end
 
+	# Declare an inner class.
+	#
+	# Parameters:
+	#
+	# * `id`: `model_id` of the inner class. May be empty.
+	# * `name`: string identifying the inner class. May be empty.
 	fun declare_class(id: String, name: String) do end
 
+	# Declare a base compound (usually, a base class).
+	#
+	# Parameters:
+	#
+	# * `id`: `model_id` of the base compound. May be empty.
+	# * `name`: string identifying the base compound. May be empty.
+	# * `prot`: visibility (proctection) of the relationship.
+	# * `virt`: level of virtuality of the relationship.
 	fun declare_super(id: String, name: String, prot: String, virt: String) do end
 end
 
-# Entité composite de type inconnu.
+# An unrecognised compound.
 #
-# Utilisé pour simplifier le traitement des entités à ignorer.
+# Used to simplify the handling of ignored entities.
 class UnknownCompound
 	super Compound
 
@@ -215,6 +261,7 @@ class UnknownCompound
 	redef fun put_edges do end
 end
 
+# A namespace.
 class Namespace
 	super Compound
 
@@ -249,6 +296,10 @@ class Namespace
 	end
 end
 
+# The root namespace of a `ProjectGraph`.
+#
+# This the only entity in the graph whose `model_id` is really `""`.
+# Added automatically at the initialization of a `ProjectGraph`.
 class RootNamespace
 	super Namespace
 
@@ -261,6 +312,7 @@ class RootNamespace
 	redef fun declare_namespace(id: String, name: String) do end
 end
 
+# Add `search_last` to `String`.
 redef class String
 	# Search the last occurence of the text `t`.
 	#
