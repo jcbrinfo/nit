@@ -17,10 +17,16 @@ module model::class_compound
 
 import graph
 
+# A class.
 class ClassCompound
 	super Compound
 
+	# The corresponding type.
+	#
+	# In the case of a generic class, defines bounds for type parameters.
 	var class_type: ClassType is noinit
+
+	# The definition.
 	var class_def: ClassDef is noinit
 
 	init do
@@ -65,6 +71,7 @@ class ClassCompound
 	end
 end
 
+# The `MClassDef` node of a class.
 class ClassDef
 	super CodeBlock
 
@@ -93,6 +100,7 @@ class ClassDef
 	end
 end
 
+# A type defined by a class.
 class Type
 	super Entity
 
