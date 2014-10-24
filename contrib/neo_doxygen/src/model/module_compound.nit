@@ -18,13 +18,21 @@ module model::module_compound
 import graph
 import class_compound
 
+# A source file.
+#
+# Creates one modules by inner namespace. The full name of the modules begin
+# with the namespace’s full name, and end with the unqualified name of the file,
+# without the extension.
 class FileCompound
 	super Compound
 	super CodeBlock
 
-	# namespace’s name -> module
+	# Mapping between inner namespace’s names and corresponding modules.
 	private var inner_namespaces: Map[String, Module] = new HashMap[String, Module]
 
+	# The last component of the path, without the extension.
+	#
+	# Used as the unqualified name of the modules.
 	private var basename: String = ""
 
 	init do
@@ -42,6 +50,7 @@ class FileCompound
 	end
 
 	redef fun name=(name: String) do
+		# Example: `MyClass.java`
 		super
 		var match = name.search_last(".")
 
@@ -50,6 +59,7 @@ class FileCompound
 		else
 			basename = name.substring(0, match.from)
 		end
+		# Update the modules’ name.
 		for ns, m in inner_namespaces do
 			m.full_name = "{ns}{ns_separator}{basename}"
 		end
@@ -91,18 +101,22 @@ class FileCompound
 
 	redef fun put_in_graph do
 		# Do not add `self` to the Neo4j graph...
+		# ... but add its modules...
 		for m in inner_namespaces.values do m.put_in_graph
-		# ... but add `self` to the index.
+		# ... and add `self` to the index.
 		if model_id != "" then graph.by_id[model_id] = self
 	end
 end
 
+# A module.
 class Module
 	super Compound
 	super CodeBlock
 
+	# The `model_id` of the parent namespace.
 	var parent: String = "" is writable
 
+	# The classes defined in the module.
 	var inner_classes: SimpleCollection[String] = new Array[String]
 
 	init do
