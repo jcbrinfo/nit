@@ -126,7 +126,6 @@ class CompoundDefListener
 		var kind = get_required(atts, "kind")
 
 		create_member(kind)
-		# TODO Make all visibilities compatible with the Nit meta-model.
 		memberdef.member.model_id = get_required(atts, "id")
 		memberdef.member.visibility = get_optional(atts, "prot",
 				member_defaults.visibility)
