@@ -17,10 +17,15 @@ module doxml::listener
 
 import saxophonit
 import model
+import language_specific
 
 abstract class DoxmlListener
 	super ContentHandler
 
+	# The language-specific strategies to use.
+	var source_language: SourceLanguage
+
+	# The locator setted by calling `document_locator=`.
 	protected var locator: nullable SAXLocator = null
 
 	redef fun document_locator=(locator: SAXLocator) do
@@ -130,28 +135,75 @@ end
 class TextListener
 	super StackableListener
 
-	private var buf: Buffer = new FlatBuffer
+	protected var buffer: Buffer = new FlatBuffer
 	private var sp: Bool = false
 
 	redef fun listen_until(uri: String, local_name: String) do
-		buf.clear
+		buffer.clear
 		sp = false
 		super
 	end
 
 	redef fun characters(str: String) do
 		if sp then
-			if buf.length > 0 then buf.append(" ")
+			if buffer.length > 0 then buffer.append(" ")
 			sp = false
 		end
-		buf.append(str)
+		buffer.append(str)
 	end
 
 	redef fun ignorable_whitespace(str: String) do
 		sp = true
 	end
 
-	redef fun to_s do return buf.to_s
+	# Flush the buffer.
+	protected fun flush_buffer: String do
+		var s = buffer.to_s
+
+		buffer.clear
+		sp = false
+		return s
+	end
+
+	redef fun to_s do return buffer.to_s
+end
+
+# Parse a content of type `LinkedTextType`.
+class LinkedTextListener
+	super TextListener
+
+	# The read text.
+	var linked_text: LinkedText = new LinkedText
+
+	private var refid = ""
+
+	redef fun listen_until(uri: String, local_name: String) do
+		linked_text.clear
+		refid = ""
+		super
+	end
+
+	redef fun start_dox_element(local_name: String, atts: Attributes) do
+		super
+		push_part
+		if "ref" == local_name then refid = get_required(atts, "refid")
+	end
+
+	redef fun end_dox_element(local_name: String) do
+		super
+		push_part
+		if "ref" == local_name then refid = ""
+	end
+
+	private fun push_part do
+		var s = flush_buffer
+
+		if not s.is_empty then
+			linked_text.push(new LinkedTextPart(s, refid))
+		end
+	end
+
+	redef fun to_s do return linked_text.to_s
 end
 
 class DocListener
@@ -174,9 +226,9 @@ abstract class EntityDefListener
 
 	init do
 		super
-		text = new TextListener(reader, self)
-		doc = new DocListener(reader, self)
-		noop = new NoopListener(reader, self)
+		text = new TextListener(source_language, reader, self)
+		doc = new DocListener(source_language, reader, self)
+		noop = new NoopListener(source_language, reader, self)
 	end
 
 	protected fun entity: Entity is abstract

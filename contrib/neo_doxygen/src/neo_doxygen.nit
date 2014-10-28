@@ -51,7 +51,8 @@ class NeoDoxygen
 	# * `dir`: Doxygen XML output directory path.
 	fun put_project(name: String, dir: String) do
 		model = new ProjectGraph(name)
-		var reader = new CompoundFileReader(model)
+		# TODO Let the user select the language.
+		var reader = new CompoundFileReader(new JavaSource, model)
 		# Queue for sub-directories.
 		var directories = new Array[String]
 

@@ -33,7 +33,7 @@ class CompoundDefListener
 		super
 		var defaults = new MemberDefaults("public", false, false)
 
-		memberdef = new MemberDefListener(reader, self)
+		memberdef = new MemberDefListener(source_language, reader, self)
 
 		member_defaults = defaults
 		section_kinds = new DefaultMap[String, MemberDefaults](defaults)

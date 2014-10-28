@@ -28,8 +28,8 @@ class CompoundFileReader
 	private var noop: NoopListener is noinit
 
 	init do
-		compounddef = new CompoundDefListener(reader, self)
-		noop = new NoopListener(reader, self)
+		compounddef = new CompoundDefListener(source_language, reader, self)
+		noop = new NoopListener(source_language, reader, self)
 	end
 
 	fun read(path: String) do

@@ -16,16 +16,17 @@
 module doxml::memberdef
 
 import listener
+import linked_text
 
 class MemberDefListener
 	super EntityDefListener
 
 	var member: Member is writable, noinit
-	var abstract_regex: Regex = new Regex("(^|[[:space:]])abstract([[:space:]]|$)")
+	private var type_listener: LinkedTextListener is noinit
 
 	init do
 		super
-		abstract_regex.optimize_is_in = true
+		type_listener = new LinkedTextListener(source_language, reader, self)
 	end
 
 	redef fun entity do return member
@@ -36,8 +37,7 @@ class MemberDefListener
 		else if "reimplements" == local_name then
 			member.reimplement(get_required(atts, "refid"))
 		else if "type" == local_name then
-			text.listen_until(dox_uri, local_name)
-			# TODO links
+			type_listener.listen_until(dox_uri, local_name)
 		else
 			super
 		end
@@ -49,11 +49,7 @@ class MemberDefListener
 		else if "name" == local_name then
 			member.name = text.to_s
 		else if "type" == local_name then
-			var type_info = text.to_s
-			if type_info.has(abstract_regex) then
-				member.is_abstract = true
-			end
-			# TODO
+			source_language.apply_member_type(type_listener.linked_text, member)
 		else
 			super
 		end
