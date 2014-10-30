@@ -15,7 +15,6 @@
 # Handle language-specific parts of the importation.
 module doxml::language_specific
 
-import linked_text
 import model
 
 # Various importation logics that depend on the project’s language.
@@ -24,7 +23,11 @@ abstract class SourceLanguage
 	# Apply the information deduced from `type_text` to `member`.
 	#
 	# `type_text` is the content of the `<type>` element.
-	fun apply_member_type(type_text: LinkedText, member: Member) is abstract
+	fun apply_member_type(member: Member, type_text: RawType) do
+		if type_text["text"] != null then
+			member.static_type = type_text
+		end
+	end
 
 	# Extract the specified keyword at the beginning of the specified text.
 	#
@@ -41,28 +44,32 @@ abstract class SourceLanguage
 	#     	end
 	#     end
 	#     #
-	#     var text = new LinkedText
+	#     var text = new RawType(new ProjectGraph(""))
 	#     var dummy = new DummySource
 	#     var res: Bool
 	#     #
-	#     text.push(new LinkedTextPart("abstract final", ""))
+	#     text.add_part("abstract final", "")
 	#     res = dummy.test(text, "static")
 	#     assert not res
 	#     res = dummy.test(text, "abstract")
 	#     assert res
-	#     assert "final" == text.first.content
+	#     assert "final" == text["text"].as(JsonArray).first
 	#     res = dummy.test(text, "final")
 	#     assert res
-	#     assert text.is_empty
+	#     assert text["text"] == null
 	#     res = dummy.test(text, "abstract")
 	#     assert not res
 	protected fun extract_keyword(text: LinkedText, keyword: String): Bool do
-		if text.is_empty then return false
-		var content = text.first.content.l_trim
-		var refid = text.first.refid
+		var text_array = text["text"]
+		if text_array == null then return false
+		assert text_array isa JsonArray
+		if text_array.is_empty then return false
+
+		var content = text_array.first.as(String).l_trim
+		var link = text.links.first
 		var found = false
 
-		if "" == refid and content.has_prefix(keyword) then
+		if link == null and content.has_prefix(keyword) then
 			if keyword.length == content.length then
 				content = ""
 				found = true
@@ -71,9 +78,9 @@ abstract class SourceLanguage
 				found = true
 			end
 			if "" == content then
-				text.shift
+				text.shift_part
 			else if found then
-				text[0] = new LinkedTextPart(content, refid)
+				text.set_part(0, content, "")
 			end
 		end
 		return found
@@ -84,11 +91,14 @@ end
 class JavaSource
 	super SourceLanguage
 
-	redef fun apply_member_type(type_text, member) do
+	redef fun apply_member_type(member, type_text) do
 		# For abstract members, Doxygen put `abstract` at the beginning of the type.
-		# We assume that Doxygen do not put annotation in the type (it seems to
+		# We assume that Doxygen do not put annotations in the type (it seems to
 		# be the case).
 		member.is_abstract = extract_keyword(type_text, "abstract")
-		# TODO
+		# TODO final
+		# TODO void
+		# TODO Avoid using `RawType` when possible. Only use `RawType` as a fallback.
+		super
 	end
 end

@@ -189,6 +189,11 @@ class Method
 		return new MethodIntroducer(graph)
 	end
 
+	redef fun put_in_graph do
+		super
+		signature.put_in_graph
+	end
+
 	redef fun put_edges do
 		super
 		graph.add_edge(self, "SIGNATURE", signature)
@@ -208,6 +213,13 @@ class Attribute
 
 	redef fun create_introducer: MemberIntroducer do
 		return new AttributeIntroducer(graph)
+	end
+
+	redef fun put_in_graph do
+		super
+		if static_type != null then
+			static_type.as(not null).put_in_graph
+		end
 	end
 
 	redef fun put_edges do

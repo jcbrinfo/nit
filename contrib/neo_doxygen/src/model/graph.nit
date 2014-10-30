@@ -106,7 +106,7 @@ class ProjectGraph
 
 	# Request to all nodes in the graph to add their related edges.
 	fun put_edges do
-		all_edges.add(new NeoEdge(project, "ROOT", by_id[""]))
+		add_edge(project, "ROOT", by_id[""])
 		for n in all_nodes do
 			if n isa Entity then
 				n.put_edges

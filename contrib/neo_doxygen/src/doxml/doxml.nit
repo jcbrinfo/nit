@@ -32,6 +32,8 @@ class CompoundFileReader
 		noop = new NoopListener(source_language, reader, self)
 	end
 
+	redef fun graph do return model
+
 	fun read(path: String) do
 		reader.content_handler = self
 		reader.parse_file(path)

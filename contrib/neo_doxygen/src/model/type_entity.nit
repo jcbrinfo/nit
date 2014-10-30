@@ -16,6 +16,7 @@
 module model::type_entity
 
 import graph
+import linked_text
 
 # Base class of all types and signatures.
 abstract class TypeEntity
@@ -46,6 +47,31 @@ class TypeParameter
 		self["rank"] = rank
 	end
 end
+
+
+# A type described by a text.
+class RawType
+	super TypeEntity
+	super LinkedText
+
+	init do
+		super
+		self.labels.add("MRawType")
+	end
+
+	redef fun create_link(rank, refid) do return new TypeLink(graph, refid)
+end
+
+# A link in a `RawType`.
+class TypeLink
+	super Link
+
+	init do
+		super
+		self.labels.add("MTypePart")
+	end
+end
+
 
 # A method’s signature.
 class Signature

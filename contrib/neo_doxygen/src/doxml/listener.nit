@@ -28,6 +28,9 @@ abstract class DoxmlListener
 	# The locator setted by calling `document_locator=`.
 	protected var locator: nullable SAXLocator = null
 
+	# The project graph.
+	fun graph: ProjectGraph is abstract
+
 	redef fun document_locator=(locator: SAXLocator) do
 		self.locator = locator
 	end
@@ -91,9 +94,19 @@ abstract class StackableListener
 
 	var reader: XMLReader
 	var parent: DoxmlListener
+
 	private var root_uri: String = ""
 	private var root_local_name: String = ""
 	private var depth = 0
+	private var p_graph: ProjectGraph is noinit
+
+
+	init do
+		super
+		p_graph = parent.graph
+	end
+
+	redef fun graph do return p_graph
 
 	fun listen_until(uri: String, local_name: String) do
 		root_uri = uri
@@ -168,17 +181,20 @@ class TextListener
 	redef fun to_s do return buffer.to_s
 end
 
-# Parse a content of type `LinkedTextType`.
-class LinkedTextListener
+# Parse a content of type `linkedTextType`.
+abstract class LinkedTextListener[T: LinkedText]
 	super TextListener
 
 	# The read text.
-	var linked_text: LinkedText = new LinkedText
+	var linked_text: T is noinit
 
 	private var refid = ""
 
+	# Create a new instance of `T`.
+	protected fun create_linked_text: T is abstract
+
 	redef fun listen_until(uri: String, local_name: String) do
-		linked_text.clear
+		linked_text = create_linked_text
 		refid = ""
 		super
 	end
@@ -199,7 +215,7 @@ class LinkedTextListener
 		var s = flush_buffer
 
 		if not s.is_empty then
-			linked_text.push(new LinkedTextPart(s, refid))
+			linked_text.add_part(s, refid)
 		end
 	end
 

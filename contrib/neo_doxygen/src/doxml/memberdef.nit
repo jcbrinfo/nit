@@ -16,17 +16,16 @@
 module doxml::memberdef
 
 import listener
-import linked_text
 
 class MemberDefListener
 	super EntityDefListener
 
 	var member: Member is writable, noinit
-	private var type_listener: LinkedTextListener is noinit
+	private var type_listener: TypeListener is noinit
 
 	init do
 		super
-		type_listener = new LinkedTextListener(source_language, reader, self)
+		type_listener = new TypeListener(source_language, reader, self)
 	end
 
 	redef fun entity do return member
@@ -49,9 +48,18 @@ class MemberDefListener
 		else if "name" == local_name then
 			member.name = text.to_s
 		else if "type" == local_name then
-			source_language.apply_member_type(type_listener.linked_text, member)
+			source_language.apply_member_type(member, type_listener.linked_text)
 		else
 			super
 		end
 	end
+end
+
+# Parse the content of a `<type>` element.
+class TypeListener
+	super LinkedTextListener[RawType]
+
+	private var raw_type: RawType is noinit
+
+	redef fun create_linked_text do return new RawType(graph)
 end
