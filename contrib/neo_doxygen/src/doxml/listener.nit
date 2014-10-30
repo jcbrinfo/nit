@@ -222,6 +222,15 @@ abstract class LinkedTextListener[T: LinkedText]
 	redef fun to_s do return linked_text.to_s
 end
 
+# Parse the content of a `<type>` element.
+class TypeListener
+	super LinkedTextListener[RawType]
+
+	private var raw_type: RawType is noinit
+
+	redef fun create_linked_text do return new RawType(graph)
+end
+
 class DocListener
 	super TextListener
 
@@ -283,4 +292,56 @@ abstract class EntityDefListener
 		end
 		return location
 	end
+end
+
+# Parse the content of a `<param>` element.
+abstract class ParamListener[T: Parameter]
+	super EntityDefListener
+
+	# The current parameter.
+	var parameter: T is noinit
+
+	private var type_listener: TypeListener is noinit
+
+	init do
+		super
+		type_listener = new TypeListener(source_language, reader, self)
+	end
+
+	redef fun entity do return parameter
+
+	redef fun listen_until(uri, local_name) do
+		super
+		parameter = create_parameter
+	end
+
+	# Create a new parameter.
+	protected fun create_parameter: T is abstract
+
+	redef fun start_dox_element(local_name: String, atts: Attributes) do
+		if "declname" == local_name then
+			text.listen_until(dox_uri, local_name)
+		else if "type" == local_name then
+			type_listener.listen_until(dox_uri, local_name)
+		else
+			super
+		end
+	end
+
+	redef fun end_dox_element(local_name: String) do
+		if "declname" == local_name then
+			parameter.name = text.to_s
+		else if "type" == local_name then
+			source_language.apply_parameter_type(parameter, type_listener.linked_text)
+		else
+			super
+		end
+	end
+end
+
+# Parse the content of a `<param>` element in a `<templateparamlist>` element.
+class TypeParamListener
+	super ParamListener[TypeParameter]
+
+	redef fun create_parameter do return new TypeParameter(graph)
 end

@@ -25,12 +25,12 @@ class MemberDefListener
 	var member: Member is writable, noinit
 
 	private var type_listener: TypeListener is noinit
-	private var param_listener: ParamListener is noinit
+	private var param_listener: MemberParamListener is noinit
 
 	init do
 		super
 		type_listener = new TypeListener(source_language, reader, self)
-		param_listener = new ParamListener(source_language, reader, self)
+		param_listener = new MemberParamListener(source_language, reader, self)
 	end
 
 	redef fun entity do return member
@@ -62,53 +62,9 @@ class MemberDefListener
 	end
 end
 
-# Parse the content of a `<type>` element.
-class TypeListener
-	super LinkedTextListener[RawType]
+# Parse the content of a `<param>` element in a `<memberdef>` element.
+class MemberParamListener
+	super ParamListener[MemberParameter]
 
-	private var raw_type: RawType is noinit
-
-	redef fun create_linked_text do return new RawType(graph)
-end
-
-# Parse the content of a `<param>` element.
-class ParamListener
-	super EntityDefListener
-
-	# The current parameter.
-	var parameter: Parameter is noinit
-
-	private var type_listener: TypeListener is noinit
-
-	init do
-		super
-		type_listener = new TypeListener(source_language, reader, self)
-	end
-
-	redef fun entity do return parameter
-
-	redef fun listen_until(uri, local_name) do
-		super
-		parameter = new Parameter(graph)
-	end
-
-	redef fun start_dox_element(local_name: String, atts: Attributes) do
-		if "declname" == local_name then
-			text.listen_until(dox_uri, local_name)
-		else if "type" == local_name then
-			type_listener.listen_until(dox_uri, local_name)
-		else
-			super
-		end
-	end
-
-	redef fun end_dox_element(local_name: String) do
-		if "declname" == local_name then
-			parameter.name = text.to_s
-		else if "type" == local_name then
-			source_language.apply_parameter_type(parameter, type_listener.linked_text)
-		else
-			super
-		end
-	end
+	redef fun create_parameter do return new MemberParameter(graph)
 end

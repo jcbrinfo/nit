@@ -28,23 +28,16 @@ abstract class TypeEntity
 	end
 end
 
-# The bound of a type parameter of a generic class.
+# A type parameter or a type argument.
 #
-# Note : The class relationship and the rank are set by `MClassType.put_edges`.
+# Note : The class relationship and the rank are set by `ClassType.put_edges`.
 class TypeParameter
 	super TypeEntity
+	super Parameter
 
 	init do
 		super
 		self.labels.add("MParameterType")
-		self["rank"] = -1
-	end
-
-	# Specify the rank (index) of the parameter in the signature.
-	#
-	# Called by `ClassType.put_edges`.
-	fun rank=(rank: Int) do
-		self["rank"] = rank
 	end
 end
 
@@ -73,11 +66,11 @@ class TypeLink
 end
 
 
-# A method’s signature.
+# A signature of a method.
 class Signature
 	super TypeEntity
 
-	var parameters = new Array[Parameter]
+	var parameters = new Array[MemberParameter]
 	var return_type: nullable TypeEntity = null is writable
 
 	init do
@@ -99,10 +92,9 @@ class Signature
 		super
 		if parameters.length > 0 then
 			var names = new JsonArray
-			var p: Parameter
 
 			for i in [0..parameters.length[ do
-				p = parameters[i]
+				var p = parameters[i]
 				p.rank = i
 				names.add(p.name)
 				graph.add_edge(self, "PARAMETER", p)
@@ -115,8 +107,8 @@ class Signature
 	end
 end
 
-# A method’s parameter.
-class Parameter
+# A parameter or an argument.
+abstract class Parameter
 	super Entity
 
 	# The static type of the parameter.
@@ -124,7 +116,6 @@ class Parameter
 
 	init do
 		super
-		self.labels.add("MParameter")
 		self["is_vararg"] = false
 		self["rank"] = -1
 	end
@@ -142,7 +133,7 @@ class Parameter
 	# Specify the rank (index) of the parameter in the signature.
 	#
 	# Called by `Signature.put_edges`.
-	private fun rank=(rank: Int) do
+	fun rank=(rank: Int) do
 		self["rank"] = rank
 	end
 
@@ -156,5 +147,15 @@ class Parameter
 	redef fun put_edges do
 		super
 		graph.add_edge(self, "TYPE", static_type.as(not null))
+	end
+end
+
+# A parameter of a member.
+class MemberParameter
+	super Parameter
+
+	init do
+		super
+		self.labels.add("MParameter")
 	end
 end
