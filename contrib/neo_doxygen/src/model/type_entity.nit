@@ -85,14 +85,23 @@ class Signature
 		self.labels.add("MSignature")
 	end
 
+	redef fun put_in_graph do
+		super
+		if return_type isa TypeEntity then
+			return_type.as(TypeEntity).put_in_graph
+		end
+		for p in parameters do
+			p.put_in_graph
+		end
+	end
+
 	redef fun put_edges do
 		super
 		if parameters.length > 0 then
 			var names = new JsonArray
 			var p: Parameter
-			var i: Int = 0
 
-			while i < parameters.length do
+			for i in [0..parameters.length[ do
 				p = parameters[i]
 				p.rank = i
 				names.add(p.name)
@@ -110,20 +119,14 @@ end
 class Parameter
 	super Entity
 
-	var static_type: nullable TypeEntity = null
+	# The static type of the parameter.
+	var static_type: nullable TypeEntity = null is writable
 
 	init do
 		super
 		self.labels.add("MParameter")
 		self["is_vararg"] = false
 		self["rank"] = -1
-	end
-
-	fun satitc_type=(static_type: TypeEntity) do
-		if static_type["name"] == null then
-			static_type.name = self.name
-		end
-		self.static_type = static_type
 	end
 
 	fun is_vararg=(is_vararg: Bool) do
@@ -141,6 +144,13 @@ class Parameter
 	# Called by `Signature.put_edges`.
 	private fun rank=(rank: Int) do
 		self["rank"] = rank
+	end
+
+	redef fun put_in_graph do
+		super
+		if static_type != null then
+			static_type.as(not null).put_in_graph
+		end
 	end
 
 	redef fun put_edges do

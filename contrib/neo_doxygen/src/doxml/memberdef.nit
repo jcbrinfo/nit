@@ -17,15 +17,20 @@ module doxml::memberdef
 
 import listener
 
+# Parse the content of a `<memberdef>` element.
 class MemberDefListener
 	super EntityDefListener
 
+	# The current member.
 	var member: Member is writable, noinit
+
 	private var type_listener: TypeListener is noinit
+	private var param_listener: ParamListener is noinit
 
 	init do
 		super
 		type_listener = new TypeListener(source_language, reader, self)
+		param_listener = new ParamListener(source_language, reader, self)
 	end
 
 	redef fun entity do return member
@@ -37,18 +42,20 @@ class MemberDefListener
 			member.reimplement(get_required(atts, "refid"))
 		else if "type" == local_name then
 			type_listener.listen_until(dox_uri, local_name)
+		else if "param" == local_name then
+			param_listener.listen_until(dox_uri, local_name)
 		else
 			super
 		end
 	end
 
 	redef fun end_dox_element(local_name: String) do
-		if "memberdef" == local_name then
-			member.put_in_graph
-		else if "name" == local_name then
+		if "name" == local_name then
 			member.name = text.to_s
 		else if "type" == local_name then
 			source_language.apply_member_type(member, type_listener.linked_text)
+		else if "param" == local_name then
+			member.add_parameter(param_listener.parameter)
 		else
 			super
 		end
@@ -62,4 +69,46 @@ class TypeListener
 	private var raw_type: RawType is noinit
 
 	redef fun create_linked_text do return new RawType(graph)
+end
+
+# Parse the content of a `<param>` element.
+class ParamListener
+	super EntityDefListener
+
+	# The current parameter.
+	var parameter: Parameter is noinit
+
+	private var type_listener: TypeListener is noinit
+
+	init do
+		super
+		type_listener = new TypeListener(source_language, reader, self)
+	end
+
+	redef fun entity do return parameter
+
+	redef fun listen_until(uri, local_name) do
+		super
+		parameter = new Parameter(graph)
+	end
+
+	redef fun start_dox_element(local_name: String, atts: Attributes) do
+		if "declname" == local_name then
+			text.listen_until(dox_uri, local_name)
+		else if "type" == local_name then
+			type_listener.listen_until(dox_uri, local_name)
+		else
+			super
+		end
+	end
+
+	redef fun end_dox_element(local_name: String) do
+		if "declname" == local_name then
+			parameter.name = text.to_s
+		else if "type" == local_name then
+			source_language.apply_parameter_type(parameter, type_listener.linked_text)
+		else
+			super
+		end
+	end
 end

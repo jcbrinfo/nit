@@ -260,6 +260,11 @@ abstract class EntityDefListener
 		end
 	end
 
+	redef fun end_reading do
+		super
+		entity.put_in_graph
+	end
+
 	# Parse the attributes of a `location` element.
 	protected fun get_location(atts: Attributes): Location do
 		var location = new Location

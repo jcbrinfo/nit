@@ -38,6 +38,9 @@ abstract class Member
 	fun static_type=(static_type: nullable TypeEntity) is abstract
 	fun static_type: nullable TypeEntity is abstract
 
+	# Append the specified parameter to the signature.
+	fun add_parameter(parameter: Parameter) do end
+
 	fun reimplement(parent: String) do
 		reimplemented.add(parent)
 	end
@@ -184,6 +187,10 @@ class Method
 
 	# Get the return type.
 	redef fun static_type: nullable TypeEntity do return signature.return_type
+
+	redef fun add_parameter(parameter: Parameter) do
+		signature.parameters.add(parameter)
+	end
 
 	redef fun create_introducer: MemberIntroducer do
 		return new MethodIntroducer(graph)
