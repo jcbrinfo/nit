@@ -21,8 +21,13 @@ import doc
 abstract class EntityDefListener
 	super StackableListener
 
+	# The inner `TextListener`.
 	protected var text: TextListener is noinit
+	
+	# The inner `DocListener`.
 	protected var doc: DocListener is noinit
+
+	# The inner `NoopListener`.
 	protected var noop: NoopListener is noinit
 
 	init do
@@ -32,6 +37,7 @@ abstract class EntityDefListener
 		noop = new NoopListener(source_language, reader, self)
 	end
 
+	# The current entity.
 	protected fun entity: Entity is abstract
 
 	redef fun start_dox_element(local_name: String, atts: Attributes) do
