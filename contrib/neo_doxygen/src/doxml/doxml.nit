@@ -21,7 +21,9 @@ import compounddef
 class CompoundFileReader
 	super DoxmlListener
 
+	# The project graph.
 	var model: ProjectGraph
+
 	private var reader: XMLReader = new XophonReader
 	private var compounddef: CompoundDefListener is noinit
 	private var noop: NoopListener is noinit
@@ -33,6 +35,7 @@ class CompoundFileReader
 
 	redef fun graph do return model
 
+	# Read the document at the specified path.
 	fun read(path: String) do
 		reader.content_handler = self
 		reader.parse_file(path)
