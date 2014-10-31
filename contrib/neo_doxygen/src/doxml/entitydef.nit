@@ -51,7 +51,7 @@ abstract class EntityDefListener
 		end
 	end
 
-	redef fun end_reading do
+	redef fun end_listening do
 		super
 		entity.put_in_graph
 	end

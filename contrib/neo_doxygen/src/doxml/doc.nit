@@ -23,7 +23,7 @@ class DocListener
 
 	var doc: JsonArray = new JsonArray is writable
 
-	redef fun end_reading do
+	redef fun end_listening do
 		super
 		doc.add(to_s)
 	end
