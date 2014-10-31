@@ -15,7 +15,6 @@
 # `compounddef` element reading.
 module doxml::compounddef
 
-import listener
 import memberdef
 import utils
 

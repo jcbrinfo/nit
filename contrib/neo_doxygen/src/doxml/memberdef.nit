@@ -15,7 +15,7 @@
 # `memberdef` element reading.
 module doxml::memberdef
 
-import listener
+import entitydef
 
 # Processes the content of a `<memberdef>` element.
 class MemberDefListener

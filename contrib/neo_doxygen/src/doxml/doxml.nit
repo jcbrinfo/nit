@@ -15,7 +15,6 @@
 # Doxygen’s XML documents reading.
 module doxml
 
-import listener
 import compounddef
 
 # Reader for XML documents whose the schema is `compound.xsd`.
