@@ -19,17 +19,27 @@ import listener
 import memberdef
 import utils
 
+# Processes the content of a `compounddef` element.
 class CompoundDefListener
 	super EntityDefListener
 
 	var compound: Compound is writable, noinit
 	private var memberdef: MemberDefListener is noinit
 	private var param_listener: TypeParamListener is noinit
+
+	# Default attributes for member in the current section.
 	private var member_defaults: MemberDefaults is noinit
+
+	# For each section type, default attributes for member in that section.
 	private var section_kinds: DefaultMap[String, MemberDefaults] is noinit
+
+
+	# Attributes of the current `<basecompoundref>` element.
+
 	private var refid = ""
 	private var prot = ""
 	private var virt = ""
+
 
 	init do
 		super
@@ -150,6 +160,8 @@ class CompoundDefListener
 	end
 end
 
+
+# Default attributes for member in the current section.
 private class MemberDefaults
 	var visibility: String
 	var is_static: Bool
