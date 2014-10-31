@@ -70,7 +70,10 @@ end
 class Signature
 	super TypeEntity
 
+	# The parameters.
 	var parameters = new Array[MemberParameter]
+
+	# The static type of the returned value.
 	var return_type: nullable TypeEntity = null is writable
 
 	init do
@@ -120,19 +123,19 @@ abstract class Parameter
 		self["rank"] = -1
 	end
 
+	# Is the parameter a “vararg”?
 	fun is_vararg=(is_vararg: Bool) do
 		self["is_vararg"] = is_vararg
 	end
 
+	# Is the parameter a “vararg”?
 	fun is_vararg: Bool do
 		var value = self["is_vararg"]
 		assert value isa Bool
 		return value
 	end
 
-	# Specify the rank (index) of the parameter in the signature.
-	#
-	# Called by `Signature.put_edges`.
+	# Set the rank (index) of the parameter in the signature.
 	fun rank=(rank: Int) do
 		self["rank"] = rank
 	end
@@ -151,6 +154,8 @@ abstract class Parameter
 end
 
 # A parameter of a member.
+#
+# Note : The rank are set by `Signature.put_edges`.
 class MemberParameter
 	super Parameter
 
