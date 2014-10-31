@@ -17,7 +17,7 @@ module doxml::memberdef
 
 import listener
 
-# Parse the content of a `<memberdef>` element.
+# Processes the content of a `<memberdef>` element.
 class MemberDefListener
 	super EntityDefListener
 
