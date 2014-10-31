@@ -17,6 +17,7 @@ module doxml::compounddef
 
 import listener
 import memberdef
+import utils
 
 class CompoundDefListener
 	super EntityDefListener
@@ -153,12 +154,4 @@ private class MemberDefaults
 	var visibility: String
 	var is_static: Bool
 	var is_special: Bool
-end
-
-private class DefaultMap[K: Object, V]
-	super HashMap[K, V]
-
-	var default: V
-
-	redef fun provide_default_value(key) do return default
 end

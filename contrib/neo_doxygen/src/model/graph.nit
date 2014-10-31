@@ -17,6 +17,7 @@ module model::graph
 
 import neo4j
 import location
+import utils
 
 # A Neo4j graph.
 class NeoGraph
@@ -334,27 +335,4 @@ class RootNamespace
 	end
 
 	redef fun declare_namespace(id: String, name: String) do end
-end
-
-# Add `search_last` to `String`.
-redef class String
-	# Search the last occurence of the text `t`.
-	#
-	#     assert "bob".search_last("b").from == 2
-	#     assert "bob".search_last("bo").from == 0
-	#     assert "bob".search_last("ob").from == 1
-	#     assert "bobob".search_last("ob").from == 3
-	#     assert "bob".search_last("z") == null
-	#     assert "".search_last("b") == null
-	fun search_last(t: Text): nullable Match do
-		var i = length - t.length
-
-		while i >= 0 do
-			if substring(i, t.length) == t then
-				return new Match(self, i, t.length)
-			end
-			i -= 1
-		end
-		return null
-	end
 end
