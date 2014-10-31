@@ -18,6 +18,7 @@ module model::member
 import graph
 import type_entity
 
+# A member.
 abstract class Member
 	super CodeBlock
 
@@ -35,16 +36,21 @@ abstract class Member
 		self.labels.add("MPropDef")
 	end
 
+	# Set the static type.
 	fun static_type=(static_type: nullable TypeEntity) is abstract
+
+	# Get the static type.
 	fun static_type: nullable TypeEntity is abstract
 
 	# Append the specified parameter to the signature.
 	fun add_parameter(parameter: MemberParameter) do end
 
+	# Append a member that is reimplemeneted by `self`.
 	fun reimplement(parent: String) do
 		reimplemented.add(parent)
 	end
 
+	# Does this member introduce the property?
 	fun is_intro: Bool do
 		return reimplemented.length <= 0
 	end
@@ -78,6 +84,7 @@ abstract class Member
 		graph.add_edge(self, "DEFINES", intro)
 	end
 
+	# Set the visibility.
 	fun visibility=(visibility: String) do
 		self["visibility"] = visibility
 		if introducer != null then
@@ -106,10 +113,12 @@ abstract class Member
 		end
 	end
 
+	# Is the member abstract?
 	fun is_abstract=(is_abstract: Bool) do
 		self["is_abstract"] = is_abstract
 	end
 
+	# Create an instance of `MemberIntroducer` that will be linked to `self`.
 	protected fun create_introducer: MemberIntroducer is abstract
 
 	# Find the nearest reimplementation root.
@@ -252,6 +261,7 @@ abstract class MemberIntroducer
 	end
 end
 
+# A `MProperty` node for a method.
 class MethodIntroducer
 	super MemberIntroducer
 
@@ -262,6 +272,7 @@ class MethodIntroducer
 	end
 end
 
+# A `MProperty` node for an attribute.
 class AttributeIntroducer
 	super MemberIntroducer
 
@@ -272,5 +283,6 @@ class AttributeIntroducer
 end
 
 redef class Compound
+	# Append the specified member.
 	fun declare_member(member: Member) do end
 end
