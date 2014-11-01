@@ -28,6 +28,14 @@ class NeoDoxygenJob
 	var client: Neo4jClient
 	var model: ProjectGraph is noinit
 
+	# How many operation can be executed in one batch?
+	private var batch_max_size = 1000
+
+	private var save_cursor: String = (new TermSaveCursor).to_s
+
+	# Escape control sequence to reset the current line.
+	private var reset_line: String = "{new TermRestoreCursor}{new TermEraseDisplayDown}"
+
 	# Generate a graph from the specified project model.
 	#
 	# Parameters:
@@ -46,19 +54,21 @@ class NeoDoxygenJob
 		if dir.length > 1 and dir.chars.last == "/" then
 			dir = dir.substring(0, dir.length - 1)
 		end
+		sys.stdout.write save_cursor
 		loop
 			for f in dir.files do
 				var path = dir/f
 				if path.file_stat.is_dir then
 					directories.push(path)
 				else if f.has_suffix(".xml") and f != "index.xml" then
-					print "Processing {path}..."
+					print "{reset_line}Reading {path}..."
 					reader.read(path)
 				end
 			end
 			if directories.length <= 0 then break
 			dir = directories.pop
 		end
+		print "{reset_line}Reading... Done."
 	end
 
 	# Check the project’s name.
@@ -79,8 +89,49 @@ class NeoDoxygenJob
 
 	# Save the graph.
 	fun save do
+		print "Linking nodes...{save_cursor}"
 		model.put_edges
-		model.save(client)
+		print "{reset_line} Done."
+		var nodes = model.all_nodes
+		print "Saving {nodes.length} nodes...{save_cursor}"
+		push_all(nodes)
+		var edges = model.all_edges
+		print "Saving {edges.length} edges...{save_cursor}"
+		push_all(edges)
+	end
+
+	# Save `neo_entities` in the database using batch mode.
+	private fun push_all(neo_entities: Collection[NeoEntity]) do
+		var batch = new NeoBatch(client)
+		var len = neo_entities.length
+		var sum = 0
+		var i = 1
+
+		for nentity in neo_entities do
+			batch.save_entity(nentity)
+			if i == batch_max_size then
+				do_batch(batch)
+				sum += batch_max_size
+				print("{reset_line} {sum * 100 / len}%")
+				batch = new NeoBatch(client)
+				i = 1
+			else
+				i += 1
+			end
+		end
+		do_batch(batch)
+		print("{reset_line} Done.")
+	end
+
+	# Execute `batch` and check for errors.
+	#
+	# Abort if `batch.execute` returns errors.
+	private fun do_batch(batch: NeoBatch) do
+		var errors = batch.execute
+		if not errors.is_empty then
+			for e in errors do sys.stderr.write("{sys.program_name}: {e}\n")
+			exit(1)
+		end
 	end
 end
 
@@ -250,6 +301,25 @@ redef class Option
 			return "{s}\n"
 		end
 	end
+end
+
+
+# ANSI/VT100 code to save the current cursor position (SCP).
+class TermSaveCursor
+	super TermEscape
+	redef fun to_s do return "{esc}[s"
+end
+
+# ANSI/VT100 code to restore the current cursor position (RCP).
+class TermRestoreCursor
+	super TermEscape
+	redef fun to_s do return "{esc}[u"
+end
+
+# ANSI/VT100 code to clear from the cursor to the end of the screen (ED 0).
+class TermEraseDisplayDown
+	super TermEscape
+	redef fun to_s do return "{esc}[J"
 end
 
 exit((new NeoDoxygenCommand).main)

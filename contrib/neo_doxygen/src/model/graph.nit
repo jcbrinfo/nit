@@ -24,57 +24,11 @@ class NeoGraph
 	var all_nodes: SimpleCollection[NeoNode] = new Array[NeoNode]
 	var all_edges: SimpleCollection[NeoEdge] = new Array[NeoEdge]
 
-	# How many operation can be executed in one batch?
-	private var batch_max_size = 1000
-
 	# Add a relationship between two nodes.
 	#
 	# Parameters are the same than for the constructor of `NeoEdge`.
 	fun add_edge(from: NeoNode, rel_type: String, to: NeoNode) do
 		all_edges.add(new NeoEdge(from, rel_type, to))
-	end
-
-	# Save the graph using the specified client.
-	fun save(client: Neo4jClient) do
-		var nodes = all_nodes
-		print("Saving {nodes.length} nodes...")
-		push_all(client, nodes)
-		var edges = all_edges
-		print("Saving {edges.length} edges...")
-		push_all(client, edges)
-	end
-
-	# Save `neo_entities` in the database using batch mode.
-	private fun push_all(client: Neo4jClient, neo_entities: Collection[NeoEntity]) do
-		var batch = new NeoBatch(client)
-		var len = neo_entities.length
-		var sum = 0
-		var i = 1
-
-		for nentity in neo_entities do
-			batch.save_entity(nentity)
-			if i == batch_max_size then
-				do_batch(batch)
-				sum += batch_max_size
-				print("\t{sum * 100 / len}% done.")
-				batch = new NeoBatch(client)
-				i = 1
-			else
-				i += 1
-			end
-		end
-		do_batch(batch)
-	end
-
-	# Execute `batch` and check for errors.
-	#
-	# Abort if `batch.execute` returns errors.
-	private fun do_batch(batch: NeoBatch) do
-		var errors = batch.execute
-		if not errors.is_empty then
-			sys.stderr.write(errors.to_s)
-			exit(1)
-		end
 	end
 end
 
