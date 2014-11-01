@@ -16,10 +16,14 @@ NITG=../../bin/nitg
 NITG_FLAGS=--dir bin
 NEO4J_DIR=/var/lib/neo4j
 
-.PHONY: bin reset-neo test test-all
+.PHONY: bin reset-neo
+
+# Compile the tool.
 bin:
 	mkdir -p bin
 	../../bin/nitg --dir bin src/neo_doxygen.nit
+
+# Reset the local graph.
 reset-neo:
 	sudo -u neo4j "${NEO4J_DIR}/bin/neo4j" stop \
 	&& sudo -u neo4j rm -rf "${NEO4J_DIR}/data/graph.db" \
