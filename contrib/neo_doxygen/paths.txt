@@ -1,0 +1,2 @@
+TEST_PATH="${HOME}/Documents/nitdoc-2014/test-projects"
+match (n:MGroup)-[:DECLARES]->a match n-[:DECLARES]->b where a <> b and a.name = b.name return a,b limit 25
