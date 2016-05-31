@@ -29,12 +29,17 @@ end
 extern class ExC2
 end
 
+class SSet2
+	subset
+end
+
 redef class SubI
 	super IC2
 	#alt1# super AC2
 	#alt2# super CC2
 	#alt3# super EnC2
 	#alt4# super ExC2
+	#alt16# super SSet2
 end
 
 redef class SubA
@@ -43,6 +48,7 @@ redef class SubA
 	super CC2
 	#alt5# super EnC2
 	#alt6# super ExC2
+	#alt17# super SSet2
 end
 
 redef class SubC
@@ -51,6 +57,7 @@ redef class SubC
 	super CC2
 	#alt7# super EnC2
 	#alt8# super ExC2
+	#alt18# super SSet2
 end
 
 redef class SubEn
@@ -59,6 +66,7 @@ redef class SubEn
 	#alt10# super CC2
 	#alt11# super EnC2
 	#alt12# super ExC2
+	#alt19# super SSet2
 end
 
 redef class SubEx
@@ -67,4 +75,35 @@ redef class SubEx
 	#alt14# super CC2
 	#alt15# super EnC2
 	super ExC2
+	#alt20# super SSet2
+end
+
+# A subset can inherit anything except a subset, and has only one direct parent.
+# Futhermore, a subset can be specialized using the `redef` keyword.
+
+redef class SSetI
+	#alt21# super SubI
+	#alt22# super IC2
+	#alt23# super AC2
+	#alt24# super CC2
+	#alt25# super EnC2
+	#alt26# super ExC2
+	#alt27# super SSet2
+	#alt28# super Object
+end
+
+redef class SSetA
+	#alt29# super SubA
+end
+
+redef class SSetC
+	#alt30# super SubC
+end
+
+redef class SSetEn
+	#alt31# super SubEn
+end
+
+redef class SSetEx
+	#alt32# super SubEx
 end
