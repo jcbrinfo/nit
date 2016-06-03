@@ -14,33 +14,16 @@
 
 import kernel
 
-# TODO Proposed syntax:
-#subset Natural of Int
-#	isa do return self >= 0
-#	…
-#end
-
-class Natural
-	super Int
-	#alt1# super Numeric
-	subset do return self >= 0
-
-	fun fib: Natural do
-		if self < 2 then return self
-		return (self - 1).as(Natural).fib + (self - 2).as(Natural).fib
-	end
+class NonZero
+	super Numeric
+	subset do return not self.is_zero #alt1# subset
 end
 
-class Bool2
-	super Int
-	subset do return self == 0 or self == 1
-	new (x: Int) do return x
-
-	fun is_true do return self == 1
+redef class NonZero
+	super Float
+	subset do return self == self and super #alt2# subset
 end
 
-var x: Natural = 4 #alt2# var x: Natural = -1 #alt3# var x: Natural = 1.0
-assert x.fib == 5
-
-var y = new Bool2(1) #alt4# var y = new Bool2(-1)
-assert y.is_true
+assert 42 isa NonZero
+assert not 0 isa NonZero
+assert not 0.0 / 0.0 isa NonZero #alt2# assert 0.0 / 0.0 isa NonZero

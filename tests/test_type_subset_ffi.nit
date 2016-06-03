@@ -15,11 +15,17 @@
 import core
 
 class Natural #alt1# class Natural `{ long `}
-	super Int
+	super Numeric
 	subset do return self >= 0
 
 	fun foo: String do return "bar"
 	fun baz: String import Natural::foo `{ return Natural_foo(self); `}
+end
+
+redef class Natural #alt1# class Natural `{ long `}
+	super Float
+
+	redef fun foo: String do return "fu" + super
 end
 
 print(1.as(Natural).baz) #alt2# print(1.baz)
