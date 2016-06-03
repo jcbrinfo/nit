@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import core::collection::array
-import core::collection::range
+import core
 
 class Natural
 	super Int
@@ -27,7 +26,7 @@ end
 
 class Summable[E: Numeric]
 	super Array[E]
-	subset
+	subset do return true
 
 	fun sum: E do
 		total = zero
