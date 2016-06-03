@@ -46,10 +46,11 @@ end
 var x: StrictlyPositive
 
 x = 0.5 #alt3# 0.0 #alt4# 0.0 / 0.0 #alt5# -1.0
-print(x.int_inverse)
+assert x.foo = 42
+assert x.int_inverse == 2
 
 x = 2
-print(x.int_inverse)
+assert x.int_inverse == 0
 
 x = 1.0 / 0.0
-print(x.int_inverse)
+assert x.int_inverse == 0

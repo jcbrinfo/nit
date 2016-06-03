@@ -18,8 +18,8 @@ import kernel
 
 class Natural
 	super Int
-	#alt4# super Numeric
-	subset do return self >= 0 #alt2# subset #alt3# subset do return 42
+	#alt2# super Numeric
+	subset do return self >= 0 #alt3# subset #alt4# subset do return 42
 
 	#alt5# init (x: Int) do end
 	#alt6# var foo: Int
@@ -33,4 +33,4 @@ class Natural
 end
 
 var x: Natural = 0
-print(x.fib)
+assert x.fib == 1
