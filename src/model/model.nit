@@ -2486,7 +2486,7 @@ class MClassKind
 			return self == other
 		else
 			# assert self == abstract_kind or self == concrete_kind
-			return other == astract_kind or other == concrete_kind
+			return other == abstract_kind or other == concrete_kind
 		end
 	end
 end
