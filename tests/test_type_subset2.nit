@@ -23,7 +23,7 @@ class Natural
 
 	#alt5# init (x: Int) do end
 	#alt6# var foo: Int
-	#alt7# redef fun rand do return 0
+	#alt7# redef fun abs do return super
 	#alt8# subset # The annotation can not be specified twice.
 
 	fun fib: Natural do

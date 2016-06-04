@@ -36,7 +36,7 @@ class Bool2
 	subset do return self == 0 or self == 1
 	new (x: Int) do return x
 
-	fun is_true do return self == 1
+	fun is_true: Bool do return self == 1
 end
 
 var x: Natural = 4 #alt2# var x: Natural = -1 #alt3# var x: Natural = 1.0

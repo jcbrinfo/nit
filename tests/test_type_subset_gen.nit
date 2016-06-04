@@ -25,7 +25,7 @@ class Natural
 end
 
 class Summable[E: Numeric]
-	super Array[E]
+	super Sequence[E]
 	subset do return true
 
 	fun sum: E do
@@ -37,8 +37,8 @@ class Summable[E: Numeric]
 	fun zero is abstract
 end
 
-redef class Summable
-	super Array[Natural] #alt1# Range[Natural]
+redef class Summable[E: Natural]
+	super Sequence[E] #alt1# super Bytes #alt2# super Range[E]
 
 	fun zero do return 0
 end
