@@ -2478,7 +2478,7 @@ class MClassKind
 		else if self == interface_kind or self == enum_kind then
 			# no other case for interfaces
 			return false
-		else if self == subset_kind then
+		else if self == subset_kind or self == subset_redef_kind then
 			# a type subset may apply to anything
 			return true
 		else if self == extern_kind then
@@ -2503,3 +2503,5 @@ fun enum_kind: MClassKind do return once new MClassKind("enum", false)
 fun extern_kind: MClassKind do return once new MClassKind("extern class", false)
 # The class kind `subset`
 fun subset_kind: MClassKind do return once new MClassKind("subset", false)
+# The class kind `redef subset` (type subset specialization)
+fun subset_redef_kind: MClassKind do return once new MClassKind("redef subset", false)
