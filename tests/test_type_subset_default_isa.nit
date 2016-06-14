@@ -25,5 +25,5 @@ redef class NonZero
 end
 
 assert 42 isa NonZero
-assert not 0 isa NonZero
+assert not 0 isa NonZero #alt1# assert 0 isa NonZero
 assert not 0.0 / 0.0 isa NonZero #alt2# assert 0.0 / 0.0 isa NonZero
