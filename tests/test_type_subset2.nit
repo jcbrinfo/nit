@@ -25,6 +25,8 @@ class Natural
 	#alt6# var foo: Int
 	#alt7# redef fun abs do return super
 	#alt8# subset # The annotation can not be specified twice.
+	#alt9# type BOOM: Int
+	#alt10# redef type OTHER: Int
 
 	fun fib: Natural do
 		if self < 2 then return self

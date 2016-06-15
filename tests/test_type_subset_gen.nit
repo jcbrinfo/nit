@@ -14,7 +14,7 @@
 
 import core
 
-class Natural
+class Natural #alt1# class Natural[BOOM]
 	super Int
 	subset do return self >= 0
 
@@ -38,7 +38,7 @@ class Summable[E: Numeric]
 end
 
 redef class Summable[E: Natural]
-	super Sequence[E] #alt1# super Bytes #alt2# super Range[E]
+	super Sequence[E] #alt2# super Bytes #alt3# super Range[E]
 
 	fun zero do return 0
 end
