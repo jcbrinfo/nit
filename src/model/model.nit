@@ -2471,6 +2471,18 @@ class MClassKind
 	# Is a constructor required?
 	var need_init: Bool
 
+	# Is multiple inheritance forbidden?
+	#
+	# TODO: Use `is optional` once available.
+	var single_inheritance: Bool is noautoinit
+	fun single_inheritance=(single_inheritance: nullable Bool) is autoinit do
+		if single_inheritance != null then
+			self.single_inheritance = single_inheritance
+		else
+			self.single_inheritance = false
+		end
+	end
+
 	# TODO: private init because enumeration.
 
 	# Can a class of kind `self` specializes a class of kind `other`?
@@ -2506,6 +2518,6 @@ fun enum_kind: MClassKind do return once new MClassKind("enum", false)
 # The class kind `extern`
 fun extern_kind: MClassKind do return once new MClassKind("extern class", false)
 # The class kind `subset`
-fun subset_kind: MClassKind do return once new MClassKind("subset", false)
+fun subset_kind: MClassKind do return once new MClassKind("subset", false, true)
 # The class kind `redef subset` (type subset specialization)
-fun subset_redef_kind: MClassKind do return once new MClassKind("redef subset", false)
+fun subset_redef_kind: MClassKind do return once new MClassKind("redef subset", false, true)

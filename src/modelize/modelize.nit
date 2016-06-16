@@ -16,6 +16,7 @@
 module modelize
 
 import modelize_property
+import single_inheritance
 
 redef class ModelBuilder
 	# Retrieve the associated AST node of a mentity.
