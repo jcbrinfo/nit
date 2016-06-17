@@ -52,9 +52,17 @@ redef class NonZero
 	#alt4# redef fun abs do return super
 end
 
+# Only the root specialization can have a subset as its supertype.
+
+class Positive
+	super Numeric
+	subset do return self >= self.zero
+end
+#alt5# redef class NonZero of Positive end
+
 var x: NonZero
 
-x = 0.5 #alt5# x = 0 #alt6# x = 0.0 #alt7# x = 0.0 / 0.0
+x = 0.5 #alt6# x = 0 #alt7# x = 0.0 #alt8# x = 0.0 / 0.0
 assert x.int_inverse == 2
 
 x = 2
