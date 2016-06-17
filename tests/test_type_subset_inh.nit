@@ -34,18 +34,18 @@ end
 class StrictlyPositive
 	super NonZero
 	#alt1# super Positive
-	subset do return self > 0
+	subset do return self > 0 #alt2# subset do return self > 0 and super
 
 	fun int_inverse: Int do
 		return (1 / self).to_i
 	end
 
-	#alt2# redef fun foo do return 0
+	#alt3# redef fun foo do return 0
 end
 
 var x: StrictlyPositive
 
-x = 0.5 #alt3# x = 0.0 #alt4# x = 0.0 / 0.0 #alt5# x = -1.0
+x = 0.5 #alt4# x = 0.0 #alt5# x = 0.0 / 0.0 #alt6# x = -1.0
 assert x.foo == 42
 assert x.int_inverse == 2
 
