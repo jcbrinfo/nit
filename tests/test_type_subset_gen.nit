@@ -40,7 +40,7 @@ end
 redef class Summable[E: Natural]
 	super Sequence[E] #alt2# super Bytes #alt3# super Range[E]
 
-	fun zero do return 0
+	redef fun zero do return 0
 end
 
 var arr: Array[Natural] = [0, 1, 2, 3]
