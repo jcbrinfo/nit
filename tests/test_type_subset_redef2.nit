@@ -14,15 +14,6 @@
 
 import test_type_subset_redef
 
-class NonZero
-	subset
-	super Numeric
-
-	fun int_inverse: Int do
-		return (1 / self).to_i
-	end
-end
-
 # If the supertype is not specified in a "redef" (or it is the original base
 # class of the subset), a regular refinement is done on the main definition.
 
