@@ -34,7 +34,7 @@ class Summable[E: Numeric]
 		return total
 	end
 
-	fun zero is abstract
+	fun zero: E is abstract
 end
 
 redef class Summable[E: Natural]
