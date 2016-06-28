@@ -45,4 +45,7 @@ end
 
 var arr: Array[Natural] = [0, 1, 2, 3]
 for x in arr do print(x.fib)
-print(arr.as(Summable).sum)
+var s = arr.as(
+	Summable[Numeric] #alt4# Summable[Natural] #alt5# Summable[Int]
+)
+print(s.sum)
