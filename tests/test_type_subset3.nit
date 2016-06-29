@@ -21,6 +21,8 @@ class Foo
 	subset do return true
 
 	#alt2# var bar: Int
+	#alt3# init do end
+	#alt4# fun set_x(x: Int) is autoinit do end
 end
 
 assert sys isa Foo
