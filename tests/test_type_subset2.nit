@@ -14,19 +14,16 @@
 
 import kernel
 
-# TODO: alt1: An ordinary class that redefines the membership test.
-
 class Natural
 	super Int
-	#alt2# super Numeric
-	subset do return self >= 0 #alt3# subset #alt4# subset do return 42
+	#alt1# super Numeric
+	subset do return self >= 0 #alt2# subset #alt3# subset do return 42
 
-	#alt5# init (x: Int) do end
-	#alt6# var foo: Int
-	#alt7# redef fun abs do return super
-	#alt8# subset # The annotation can not be specified twice.
-	#alt9# type BOOM: Int
-	#alt10# redef type OTHER: Int
+	#alt4# init (x: Int) do end
+	#alt5# redef fun abs do return super
+	#alt6# subset # The annotation can not be specified twice.
+	#alt7# type BOOM: Int
+	#alt8# redef type OTHER: Int
 
 	fun fib: Natural do
 		if self < 2 then return self

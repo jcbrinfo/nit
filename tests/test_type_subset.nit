@@ -22,7 +22,6 @@ import kernel
 
 class Natural
 	super Int
-	#alt1# super Numeric
 	subset do return self >= 0
 
 	fun fib: Natural do
@@ -39,8 +38,8 @@ class Bool2
 	fun is_true: Bool do return self == 1
 end
 
-var x: Natural = 4 #alt2# var x: Natural = -1 #alt3# var x: Natural = 1.0
+var x: Natural = 4 #alt1# var x: Natural = -1 #alt2# var x: Natural = 1.0
 assert x.fib == 5
 
-var y = new Bool2(1) #alt4# var y = new Bool2(-1)
+var y = new Bool2(1) #alt3# var y = new Bool2(-1)
 assert y.is_true
