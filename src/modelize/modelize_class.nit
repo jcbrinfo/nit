@@ -21,6 +21,9 @@ module modelize_class
 
 import modelbuilder
 
+# TODO: Remove once `subset` is a keyword.
+import annotation
+
 redef class ToolContext
 	# Run `AModule::build_classes` on each module
 	var modelize_class_phase: Phase = new ModelizeClassPhase(self, null)
@@ -58,6 +61,12 @@ redef class ModelBuilder
 			nvisibility = nclassdef.n_visibility
 			mvisibility = nvisibility.mvisibility
 			arity = nclassdef.n_formaldefs.length
+
+			# TODO: Remove once `subset` is a keyword.
+			if nclassdef.get_single_annotation("subset", self) != null then
+				mkind = subset_kind
+			end
+
 			if mvisibility == protected_visibility then
 				error(nvisibility, "Error: only properties can be protected.")
 				return
