@@ -1,6 +1,7 @@
 # This file is part of NIT ( http://www.nitlanguage.org ).
 #
 # Copyright 2012-2016 Jean Privat <jean@pryen.org>
+# Copyright 2013-2014 Alexis Laferrière <alexis.laf@xymus.net>
 # Copyright 2015      Alexandre Terrasa <alexandre@moz-code.org>
 # Copyright 2016      Jean-Christophe Beaupré <jcbrinfo@users.noreply.qithub.com>
 #
