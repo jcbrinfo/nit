@@ -14,11 +14,7 @@
 
 import kernel
 
-# TODO Proposed syntax:
-#subset Natural of Int
-#	isa do return self >= 0
-#	…
-#end
+# TODO `subset` as a class kind keyword
 
 class Natural
 	super Int
