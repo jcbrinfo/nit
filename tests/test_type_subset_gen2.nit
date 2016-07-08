@@ -15,7 +15,7 @@
 import core
 
 class Summable
-	super Sequence[Numeric]
+	super SequenceRead[Numeric]
 	subset do return true
 
 	fun sum: E do
@@ -28,7 +28,7 @@ class Summable
 end
 
 redef class Summable
-	super Sequence[Int]
+	super SequenceRead[Int]
 
 	redef fun zero do return 0
 end
