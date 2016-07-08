@@ -82,7 +82,7 @@ end
 # Futhermore, a subset can be specialized using the `redef` keyword.
 
 redef class SSetI
-	super SubI
+	super SubI #alt21-27#
 	#alt21# super IC2
 	#alt22# super AC2
 	#alt23# super CC2
