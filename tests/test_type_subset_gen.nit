@@ -25,7 +25,7 @@ class Natural #alt1# class Natural[BOOM]
 end
 
 class Summable[E: Numeric]
-	super Sequence[E]
+	super SequenceRead[E]
 	subset do return true
 
 	fun sum: E do
@@ -38,7 +38,7 @@ class Summable[E: Numeric]
 end
 
 redef class Summable[E: Natural]
-	super Sequence[E] #alt2# super Bytes #alt3# super Range[E]
+	super SequenceRead[E] #alt2# super Bytes #alt3# super Range[E]
 
 	redef fun zero do return 0
 end
