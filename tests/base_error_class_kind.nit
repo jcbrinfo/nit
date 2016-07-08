@@ -88,7 +88,7 @@ extern class SubEx
 	#alt20# super SSet
 end
 
-# A subset can inherit anything, but has only one direct parent.
+# A subset can inherit anything except a subset, and has only one direct parent.
 
 class SSetI
 	subset
@@ -120,7 +120,7 @@ class SSetEx
 	super ExC
 end
 
-class SubSSet
-	subset
-	super SSet
-end
+#alt26# class SubSSet
+#alt26# 	subset
+#alt26# 	super SSet
+#alt26# end

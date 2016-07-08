@@ -78,8 +78,8 @@ redef class SubEx
 	#alt20# super SSet2
 end
 
-# A subset can inherit anything, but has only one direct parent.
-# However, a subset can be specialized using the `redef` keyword.
+# A subset can inherit anything except a subset, and has only one direct parent.
+# Futhermore, a subset can be specialized using the `redef` keyword.
 
 redef class SSetI
 	super SubI
@@ -106,26 +106,4 @@ end
 
 redef class SSetEx
 	super SubEx
-end
-
-redef class SubSSet
-	super IC2
-end
-redef class SubSSet
-	super AC2
-end
-redef class SubSSet
-	super CC2
-end
-redef class SubSSet
-	super EnC2
-end
-redef class SubSSet
-	super ExC2
-end
-redef class SubSSet
-	super SSet2
-end
-redef class SubSSet
-	super Object
 end
