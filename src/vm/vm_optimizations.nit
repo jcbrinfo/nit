@@ -1,6 +1,7 @@
 # This file is part of NIT ( http://www.nitlanguage.org ).
 #
 # Copyright 2015 Julien Pagès <julien.pages@lirmm.fr>
+# Copyright 2016 Jean-Christophe Beaupré <jcbrinfo@users.noreply.qithub.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
