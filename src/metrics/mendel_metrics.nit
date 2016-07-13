@@ -40,10 +40,10 @@
 # * pure replacers that never call to super in its redefinitions
 # * replacers that have less redefinitions that call super than not calling it
 #
-# For more details see
-#  Mendel: A Model, Metrics and Rules to Understan Class Hierarchies
-#  S. Denier and Y. Gueheneuc
-#  in Proceedings of the 16th IEEE International Conference on Program Comprehension (OCPC'08)
+# For more details see S. Denier and Y. Gueheneuc, “Mendel: A Model, Metrics and
+# Rules to Understan Class Hierarchies,” in *Proceedings of the 16th IEEE
+# International Conference on Program Comprehension* (OCPC'08), Amsterdam, 2008,
+# pp. 143-152. doi: 10.1109/ICPC.2008.37
 module mendel_metrics
 
 import metrics_base
