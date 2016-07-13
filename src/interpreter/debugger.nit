@@ -1,6 +1,11 @@
 # This file is part of NIT ( http://www.nitlanguage.org ).
 #
-# Copyright 2013 Lucas Bajolet <lucas.bajolet@gmail.com>
+# Copyright 2013-2014 Lucas Bajolet <lucas.bajolet@gmail.com>
+# Copyright 2014-2016 Jean Privat <jean@pryen.org>
+# Copyright 2014      Johan Kayser <johan.kayser@viacesi.fr>
+# Copyright 2015      Julien Pagès <julien.projet@gmail.com>
+# Copyright 2015      Alexandre Terrasa <alexandre@moz-code.org>
+# Copyright 2016      Jean-Christophe Beaupré <jcbrinfo@users.noreply.qithub.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
