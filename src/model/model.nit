@@ -515,7 +515,10 @@ abstract class MNominal
 	# The main `MClass` associated to this nominal.
 	#
 	# For `MClass`es, returns `self`.
-	fun mclass: MClass is abstract
+	#
+	# Warning: such a definition may not exist in the early life of the object.
+	# In this case, the method will abort.
+	fun data_class: MClass is abstract
 
 	# All class definitions (introduction and refinements)
 	var mclassdefs = new Array[MClassDef]
@@ -619,7 +622,7 @@ class MClass
 		intro_mmodule.intro_mclasses.add(self)
 	end
 
-	redef fun mclass do return self
+	redef fun data_class do return self
 
 	redef var is_class is lazy do return kind == concrete_kind or kind == abstract_kind
 	redef var is_interface is lazy do return kind == interface_kind
@@ -642,6 +645,50 @@ class MClass
 		end
 		return sup
 	end
+end
+
+# A named type subset.
+#
+# Instances of a type subset are instances of its base class that are accepted
+# by the subset’s membership test.
+#
+# Note: `arity`, `mparameters` and `mclass_type` are set twice: once by the
+# constructor, then again when `data_class` is set. This allows to have the
+# declared type parameters while reading the `super` declarations. For example,
+# we have to correctly deduce that in `subset S[T: B] super A[T] end`, the `T`
+# type of `A` is the same than the `T` type of `S`.
+class MSubset
+	super MNominal
+
+	# The main `MClass` associated to this subset (the base class)
+	#
+	# Warning: such a definition may not exist in the early life of the object.
+	# In this case, the method will abort.
+	redef fun data_class do return p_data_class
+
+	fun data_class=(data_class: MClass)
+	do
+		p_data_class = data_class
+		arity = data_class.arity
+		mparameters = data_class.mparameters
+
+		if arity > 0 then
+			var mclass_type = new MGenericType(self, mparameters)
+			self.mclass_type = mclass_type
+			self.get_mtype_cache[mparameters] = mclass_type
+		else
+			self.mclass_type = new MClassType(self)
+		end
+	end
+
+	private var p_data_class: MClass is noinit
+
+	redef fun kind do return subset_kind
+
+	redef fun is_class do return false
+	redef fun is_interface do return false
+	redef fun is_enum do return false
+	redef fun is_abstract do return false
 end
 
 
@@ -800,6 +847,9 @@ class MClassDef
 
 	# Is the definition the one that introduced `mnominal`?
 	fun is_nominal_intro: Bool do return isset mnominal._intro and mnominal.intro == self
+
+	# Is this definition part of a type subset?
+	fun is_subset_def: Bool do return mnominal isa MSubset
 
 	# All properties introduced by the classdef
 	var intro_mproperties = new Array[MProperty]
