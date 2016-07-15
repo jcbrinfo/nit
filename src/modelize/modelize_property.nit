@@ -507,6 +507,8 @@ redef class MClass
 	redef var root_init = null
 end
 
+redef class MSubset
+	redef fun root_init do return null
 end
 
 redef class MClassDef
