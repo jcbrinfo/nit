@@ -651,6 +651,28 @@ class MClass
 		return sup
 	end
 end
+
+# A named type subset.
+#
+# Instances of a type subset are instances of its base class that are accepted
+# by the subset’s membership test.
+class MSubset
+	super MNominal
+
+	# The main `MClass` associated to this subset (the base class)
+	redef var mclass: MClass
+
+	redef fun mparameters do return mclass.mparameters
+
+	redef fun kind do return subset_kind
+
+	# TODO -> mclassdefs
+	redef var defs = new Array[MClassDef]
+
+	redef fun is_class do return false
+	redef fun is_interface do return false
+	redef fun is_enum do return false
+	redef fun is_abstract do return false
 end
 
 
@@ -755,6 +777,10 @@ class MClassDef
 	redef fun model do return mmodule.model
 
 	# All declared super-types
+	#
+	# Must be empty if this `MClassDef` is part of a type subset
+	# (`is_subset_def`).
+	#
 	# FIXME: quite ugly but not better idea yet
 	var supertypes = new Array[MClassType]
 
@@ -810,6 +836,9 @@ class MClassDef
 
 	# Is the definition the one that introduced `mnominal`?
 	fun is_nominal_intro: Bool do return isset mnominal._intro and mnominal.intro == self
+
+	# Is this definition part of a type subset?
+	fun is_subset_def: Bool do return mnominal isa MSubset
 
 	# All properties introduced by the classdef
 	var intro_mproperties = new Array[MProperty]

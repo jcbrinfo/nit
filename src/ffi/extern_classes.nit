@@ -141,3 +141,7 @@ redef class MClass
 		return ftype
 	end
 end
+
+redef class MSubset
+	redef fun ftype do return mclass.ftype
+end
