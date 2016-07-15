@@ -525,7 +525,7 @@ end
 
 # model redef
 
-redef class MClass
+redef class MNominal
 		
 	# Class Depth in Inheritance Tree
 	#

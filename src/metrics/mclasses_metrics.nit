@@ -91,7 +91,7 @@ end
 # A metric about MClass
 interface MClassMetric
 	super Metric
-	redef type ELM: MClass
+	redef type ELM: MNominal
 end
 
 # Class Metric: Number of Ancestors

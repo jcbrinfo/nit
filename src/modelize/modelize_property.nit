@@ -144,7 +144,7 @@ redef class ModelBuilder
 		var mclassdef = nclassdef.mclassdef.as(not null)
 
 		# Are we a refinement
-		if not mclassdef.is_intro then return
+		if not mclassdef.is_class_intro then return
 
 		# Look for the init in Object, or create it
 		if mclassdef.mclass.name == "Object" and the_root_init_mmethod == null then
@@ -377,8 +377,8 @@ redef class ModelBuilder
 		var mmodule_type: nullable MModule = null # The original module of the type
 		mtype = mtype.undecorate
 		if mtype isa MClassType then
-			vis_type = mtype.mclass.visibility
-			mmodule_type = mtype.mclass.intro_mmodule
+			vis_type = mtype.mnominal.visibility
+			mmodule_type = mtype.mnominal.intro_mmodule
 		else if mtype isa MVirtualType then
 			vis_type = mtype.mproperty.visibility
 			mmodule_type = mtype.mproperty.intro_mclassdef.mmodule
@@ -494,13 +494,19 @@ redef class AClassdef
 	private var build_properties_is_done = false
 end
 
-redef class MClass
+redef class MNominal
 	# The base init of the class.
 	# Used to get the common new_msignature and initializers
 	#
 	# TODO: Where to put this information is not clear because unlike other
 	# informations, the initialisers are stable in a same class.
-	var root_init: nullable MMethodDef = null
+	fun root_init: nullable MMethodDef is abstract
+end
+
+redef class MClass
+	redef var root_init = null
+end
+
 end
 
 redef class MClassDef
@@ -511,7 +517,7 @@ redef class MClassDef
 	# Build the virtual type `SELF` only for introduction `MClassDef`
 	fun build_self_type(modelbuilder: ModelBuilder, nclassdef: AClassdef)
 	do
-		if not is_intro then return
+		if not is_class_intro then return
 
 		var name = "SELF"
 		var mprop = modelbuilder.try_get_mproperty_by_name(nclassdef, self, name)
@@ -881,7 +887,7 @@ redef class AMethPropdef
 		var mmodule = mclassdef.mmodule
 		var nsig = self.n_signature
 
-		if mpropdef.mproperty.is_root_init and not mclassdef.is_intro then
+		if mpropdef.mproperty.is_root_init and not mclassdef.is_class_intro then
 			var root_init = mclassdef.mclass.root_init
 			if root_init != null then
 				# Inherit the initializers by refinement
@@ -989,7 +995,7 @@ redef class AMethPropdef
 		if atautoinit != null then
 			if not mpropdef.is_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be set on redefinitions.")
-			else if not mclassdef.is_intro then
+			else if not mclassdef.is_class_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be used in class refinements.")
 			else
 				self.is_autoinit = true
@@ -1278,7 +1284,7 @@ redef class AAttrPropdef
 			return
 		end
 
-		if not mclassdef.is_intro and not has_value and not noinit then
+		if not mclassdef.is_class_intro and not has_value and not noinit then
 			modelbuilder.advice(self, "attr-in-refinement", "Warning: attributes in refinement need a value or `noautoinit`.")
 		end
 
@@ -1328,7 +1334,7 @@ redef class AAttrPropdef
 				modelbuilder.error(atautoinit, "Error: `autoinit` attributes cannot have an initial value.")
 			else if not mwritepropdef.is_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` attributes cannot be set on redefinitions.")
-			else if not mclassdef.is_intro then
+			else if not mclassdef.is_class_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` attributes cannot be used in class refinements.")
 			else if atabstract == null then
 				modelbuilder.warning(atautoinit, "useless-autoinit", "Warning: superfluous `autoinit` on attribute.")
@@ -1376,53 +1382,53 @@ redef class AAttrPropdef
 				else if nexpr isa AAsCastExpr then
 					mtype = modelbuilder.resolve_mtype_unchecked(mmodule, mclassdef, nexpr.n_type, true)
 				else if nexpr isa AIntegerExpr then
-					var cla: nullable MClass = null
+					var cla: nullable MNominal = null
 					if nexpr.value isa Int then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int")
 					else if nexpr.value isa Byte then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Byte")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Byte")
 					else if nexpr.value isa Int8 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int8")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int8")
 					else if nexpr.value isa Int16 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int16")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int16")
 					else if nexpr.value isa UInt16 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "UInt16")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "UInt16")
 					else if nexpr.value isa Int32 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int32")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int32")
 					else if nexpr.value isa UInt32 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "UInt32")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "UInt32")
 					else
 						# Should not happen, and should be updated as new types are added
 						abort
 					end
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa AFloatExpr then
-					var cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Float")
+					var cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Float")
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa ACharExpr then
-					var cla: nullable MClass
+					var cla: nullable MNominal
 					if nexpr.is_ascii then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Byte")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Byte")
 					else if nexpr.is_code_point then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int")
 					else
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Char")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Char")
 					end
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa ABoolExpr then
-					var cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Bool")
+					var cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Bool")
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa ASuperstringExpr then
-					var cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "String")
+					var cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "String")
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa AStringFormExpr then
-					var cla: nullable MClass
+					var cla: nullable MNominal
 					if nexpr.is_bytestring then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Bytes")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Bytes")
 					else if nexpr.is_re then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Regex")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Regex")
 					else if nexpr.is_string then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "String")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "String")
 					else
 						abort
 					end

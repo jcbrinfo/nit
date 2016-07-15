@@ -395,7 +395,7 @@ end
 redef class MClassType
 	redef fun call_arg_field
 	do
-		if is_cprimitive and mclass.kind != extern_kind then
+		if is_cprimitive and mnominal.is_enum then
 			return "value_{name}"
 		else return super
 	end

@@ -126,7 +126,7 @@ redef class MModule
 	fun collect_intro_mclassdefs(view: ModelView): Set[MClassDef] do
 		var res = new HashSet[MClassDef]
 		for mclassdef in mclassdefs do
-			if not mclassdef.is_intro then continue
+			if not mclassdef.is_nominal_intro then continue
 			if not view.accept_mentity(mclassdef) then continue
 			res.add mclassdef
 		end
@@ -137,50 +137,50 @@ redef class MModule
 	fun collect_redef_mclassdefs(view: ModelView): Set[MClassDef] do
 		var res = new HashSet[MClassDef]
 		for mclassdef in mclassdefs do
-			if mclassdef.is_intro then continue
+			if mclassdef.is_nominal_intro then continue
 			if not view.accept_mentity(mclassdef) then continue
 			res.add mclassdef
 		end
 		return res
 	end
 
-	# Collect mclasses introduced in `self` with `visibility >= to min_visibility`.
-	fun collect_intro_mclasses(view: ModelView): Set[MClass] do
-		var res = new HashSet[MClass]
-		for mclass in intro_mclasses do
+	# Collect `MNominal`s introduced in `self` with `visibility >= to min_visibility`.
+	fun collect_intro_mnominals(view: ModelView): Set[MNominal] do
+		var res = new HashSet[MNominal]
+		for mclass in intro_mnominals do
 			if not view.accept_mentity(mclass) then continue
 			res.add mclass
 		end
 		return res
 	end
 
-	# Collect mclasses redefined in `self` with `visibility >= to min_visibility`.
-	fun collect_redef_mclasses(view: ModelView): Set[MClass] do
-		var mclasses = new HashSet[MClass]
+	# Collect `MNominal`s redefined in `self` with `visibility >= to min_visibility`.
+	fun collect_redef_mnominals(view: ModelView): Set[MNominal] do
+		var mclasses = new HashSet[MNominal]
 		for mclassdef in mclassdefs do
 			if not view.accept_mentity(mclassdef) then continue
-			if not mclassdef.is_intro then mclasses.add(mclassdef.mclass)
+			if not mclassdef.is_nominal_intro then mclasses.add(mclassdef.mnominal)
 		end
 		return mclasses
 	end
 end
 
-redef class MClass
+redef class MNominal
 
 	redef fun collect_modifiers do return intro.collect_modifiers
 
 	redef fun collect_linearization(mainmodule) do
-		var mclassdefs = self.mclassdefs.to_a
+		var mclassdefs = defs.to_a
 		mainmodule.linearize_mclassdefs(mclassdefs)
 		return mclassdefs
 	end
 
 	# Collect direct parents of `self` with `visibility >= to min_visibility`.
-	fun collect_parents(view: ModelView): Set[MClass] do
-		var res = new HashSet[MClass]
-		for mclassdef in mclassdefs do
+	fun collect_parents(view: ModelView): Set[MNominal] do
+		var res = new HashSet[MNominal]
+		for mclassdef in defs do
 			for mclasstype in mclassdef.supertypes do
-				var mclass = mclasstype.mclass
+				var mclass = mclasstype.mnominal
 				if not view.accept_mentity(mclass) then continue
 				res.add(mclass)
 			end
@@ -191,7 +191,7 @@ redef class MClass
 	# Collect all ancestors of `self` with `visibility >= to min_visibility`.
 	fun collect_ancestors(view: ModelView): Set[MClass] do
 		var res = new HashSet[MClass]
-		for mclassdef in self.mclassdefs do
+		for mclassdef in defs do
 			for super_mclassdef in mclassdef.in_hierarchy.greaters do
 				if super_mclassdef == mclassdef then continue  # skip self
 				var mclass = super_mclassdef.mclass
@@ -205,7 +205,7 @@ redef class MClass
 	# Collect direct children of `self` with `visibility >= to min_visibility`.
 	fun collect_children(view: ModelView): Set[MClass] do
 		var res = new HashSet[MClass]
-		for mclassdef in self.mclassdefs do
+		for mclassdef in defs do
 			for sub_mclassdef in mclassdef.in_hierarchy.direct_smallers do
 				if sub_mclassdef == mclassdef then continue  # skip self
 				var mclass = sub_mclassdef.mclass
@@ -219,7 +219,7 @@ redef class MClass
 	# Collect all descendants of `self` with `visibility >= to min_visibility`.
 	fun collect_descendants(view: ModelView): Set[MClass] do
 		var res = new HashSet[MClass]
-		for mclassdef in self.mclassdefs do
+		for mclassdef in defs do
 			for sub_mclassdef in mclassdef.in_hierarchy.smallers do
 				if sub_mclassdef == mclassdef then continue  # skip self
 				var mclass = sub_mclassdef.mclass
@@ -231,18 +231,18 @@ redef class MClass
 	end
 
 	# Build a class hierarchy poset for `self` based on its ancestors and descendants.
-	fun hierarchy_poset(mainmodule: MModule, view: ModelView): POSet[MClass] do
-		var mclasses = new HashSet[MClass]
+	fun hierarchy_poset(mainmodule: MModule, view: ModelView): POSet[MNominal] do
+		var mclasses = new HashSet[MNominal]
 		mclasses.add self
 		mclasses.add_all collect_ancestors(view)
 		mclasses.add_all collect_descendants(view)
-		return view.mclasses_poset(mainmodule, mclasses)
+		return view.mnominals_poset(mainmodule, mclasses)
 	end
 
 	# Collect all mproperties introduced in 'self' with `visibility >= min_visibility`.
 	fun collect_intro_mproperties(view: ModelView): Set[MProperty] do
 		var set = new HashSet[MProperty]
-		for mclassdef in mclassdefs do
+		for mclassdef in defs do
 			for mprop in mclassdef.intro_mproperties do
 				if not view.accept_mentity(mprop) then continue
 				set.add(mprop)
@@ -254,7 +254,7 @@ redef class MClass
 	# Collect all mproperties redefined in 'self' with `visibility >= min_visibility`.
 	fun collect_redef_mproperties(view: ModelView): Set[MProperty] do
 		var set = new HashSet[MProperty]
-		for mclassdef in mclassdefs do
+		for mclassdef in defs do
 			for mpropdef in mclassdef.mpropdefs do
 				if mpropdef.mproperty.intro_mclassdef.mclass == self then continue
 				if not view.accept_mentity(mpropdef) then continue
@@ -466,12 +466,12 @@ redef class MClassDef
 
 	redef fun collect_modifiers do
 		var res = super
-		if not is_intro then
+		if not is_nominal_intro then
 			res.add "redef"
 		else
-			res.add mclass.visibility.to_s
+			res.add mnominal.visibility.to_s
 		end
-		res.add mclass.kind.to_s
+		res.add mnominal.kind.to_s
 		return res
 	end
 end

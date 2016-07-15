@@ -60,20 +60,21 @@ class ModelView
 		return mmodules
 	end
 
-	# MClasses visible through `self`.
-	var mclasses: Set[MClass] is lazy do
-		var mclasses = new HashSet[MClass]
-		for mclass in model.mclasses do
-			if not accept_mentity(mclass) then continue
-			mclasses.add mclass
+	# MNominals visible through `self`.
+	var mnominals: Set[MNominal] is lazy do
+		var mnominals = new HashSet[MNominal]
+		for mnominal in model.mnominals do
+			if not accept_mentity(mnominal) then continue
+			mnominals.add mnominal
 		end
-		return mclasses
+		return mnominals
 	end
 
 	# MClassDefs visible through `self`.
 	var mclassdefs: Set[MClassDef] is lazy do
 		var mclassdefs = new HashSet[MClassDef]
-		for mclass in mclasses do
+		for mclass in mnominals do
+			if not mclass isa MClass then continue
 			for mclassdef in mclass.mclassdefs do
 				if not accept_mentity(mclassdef) then continue
 				mclassdefs.add mclassdef
@@ -110,7 +111,7 @@ class ModelView
 		res.add_all mpackages
 		res.add_all mgroups
 		res.add_all mmodules
-		res.add_all mclasses
+		res.add_all mnominals
 		res.add_all mclassdefs
 		res.add_all mproperties
 		res.add_all mpropdefs
@@ -170,8 +171,8 @@ class ModelView
 	end
 
 	# Build the POSet of `mmodules` hierarchy.
-	fun mclasses_poset(mainmodule: MModule, mclasses: Set[MClass]): POSet[MClass] do
-		return mainmodule.flatten_mclass_hierarchy.sub(mclasses)
+	fun mnominals_poset(mainmodule: MModule, mnominals: Set[MNominal]): POSet[MNominal] do
+		return mainmodule.flatten_mnominal_hierarchy.sub(mnominals)
 	end
 end
 

@@ -333,12 +333,12 @@ class Debugger
 				end
 				var mobj = new MutableInstance(sys_type)
 				init_instance(mobj)
-				var initprop = mmod.try_get_primitive_method("init", sys_type.mclass)
+				var initprop = mmod.try_get_primitive_method("init", sys_type.mnominal)
 				if initprop != null then
 					self.send(initprop, [mobj])
 				end
-				var mainprop = mmod.try_get_primitive_method("run", sys_type.mclass) or else
-					mmod.try_get_primitive_method("main", sys_type.mclass)
+				var mainprop = mmod.try_get_primitive_method("run", sys_type.mnominal) or else
+					mmod.try_get_primitive_method("main", sys_type.mnominal)
 				if mainprop != null then
 					self.rt_send(mainprop, [mobj])
 				end

@@ -267,7 +267,7 @@ redef class MClassDef
 	# * If redef contains the `redef` keyword and kind.
 	redef fun cs_modifiers do
 		var res = new Array[String]
-		if not is_intro then
+		if not is_nominal_intro then
 			res.add "redef"
 		else
 			if mclass.visibility != public_visibility then
@@ -287,7 +287,7 @@ redef class MClassDef
 		tpl.append cs_modifiers.join(" ")
 		tpl.append " "
 		tpl.append cs_name
-		if is_intro then
+		if is_nominal_intro then
 			tpl.append cs_signature
 		else
 			tpl.append cs_short_signature
@@ -573,7 +573,7 @@ redef class MGenericType
 
 	redef fun cs_signature do
 		var tpl = new FlatBuffer
-		tpl.append mclass.name
+		tpl.append mnominal.name
 		tpl.append "["
 		for i in [0..arguments.length[ do
 			tpl.append arguments[i].cs_signature

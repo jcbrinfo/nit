@@ -40,7 +40,7 @@ class APIList
 		else if k == "module" then
 			for mentity in view.mmodules do mentities.add mentity
 		else if k == "class" then
-			for mentity in view.mclasses do mentities.add mentity
+			for mentity in view.mnominals do mentities.add mentity
 		else if k == "classdef" then
 			for mentity in view.mclassdefs do mentities.add mentity
 		else if k == "property" then

@@ -143,6 +143,7 @@ redef class MModule
 		var obj = super
 		obj["mpackage"] = to_mentity_ref(mpackage)
 		obj["mgroup"] = to_mentity_ref(mgroup)
+		obj["intro_mnominals"] = to_mentity_refs(intro_mnominals)
 		obj["intro_mclasses"] = to_mentity_refs(intro_mclasses)
 		obj["mclassdefs"] = to_mentity_refs(mclassdefs)
 		return obj
@@ -166,7 +167,8 @@ end
 redef class MClassDef
 	redef fun json do
 		var obj = super
-		obj["is_intro"] = is_intro
+		obj["is_nominal_intro"] = is_nominal_intro
+		obj["is_class_intro"] = is_class_intro
 		var arr = new JsonArray
 		for mparameter in mclass.mparameters do arr.add mparameter
 		obj["mparameters"] = arr

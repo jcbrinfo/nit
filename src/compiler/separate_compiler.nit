@@ -240,7 +240,7 @@ class SeparateCompiler
 				var t = c.mclass_type
 
 				# `Pointer` reuse the `val` field
-				if t.mclass.name == "Pointer" then continue
+				if t.mnominal.mclass.name == "Pointer" then continue
 
 				self.header.add_decl("{t.ctype_extern} {t.ctypename};")
 			end
@@ -254,10 +254,10 @@ class SeparateCompiler
 		# FIXME: this is not completely fine with a separate compilation scheme
 		for classname in ["Int", "Bool", "Byte", "Char", "Float", "NativeString",
 		                 "Pointer", "Int8", "Int16", "UInt16", "Int32", "UInt32"] do
-			var classes = self.mainmodule.model.get_mclasses_by_name(classname)
+			var classes = self.mainmodule.model.get_mnominals_by_name(classname)
 			if classes == null then continue
 			assert classes.length == 1 else print classes.join(", ")
-			self.box_kinds[classes.first] = self.box_kinds.length + 1
+			self.box_kinds[classes.first.mclass] = self.box_kinds.length + 1
 		end
 	end
 
@@ -270,7 +270,7 @@ class SeparateCompiler
 		if mclass.mclass_type.ctype_extern == "val*" then
 			return 0
 		else if mclass.kind == extern_kind and mclass.name != "NativeString" then
-			return self.box_kinds[self.mainmodule.pointer_type.mclass]
+			return self.box_kinds[self.mainmodule.pointer_type.mnominal]
 		else
 			return self.box_kinds[mclass]
 		end
@@ -308,7 +308,7 @@ class SeparateCompiler
 	private var color_consts_done = new HashSet[Object]
 
 	# The conflict graph of classes used for coloration
-	var class_conflict_graph: POSetConflictGraph[MClass] is noinit
+	var class_conflict_graph: POSetConflictGraph[MNominal] is noinit
 
 	# colorize classe properties
 	fun do_property_coloring do
@@ -316,7 +316,7 @@ class SeparateCompiler
 		var rta = runtime_type_analysis
 
 		# Class graph
-		var mclasses = mainmodule.flatten_mclass_hierarchy
+		var mclasses = mainmodule.flatten_mnominal_hierarchy
 		class_conflict_graph = mclasses.to_conflict_graph
 
 		# Prepare to collect elements to color and build layout with
@@ -327,6 +327,7 @@ class SeparateCompiler
 		var dead_methods = new Array[PropertyLayoutElement]
 
 		for mclass in mclasses do
+			if not mclass isa MClass then continue
 			mmethods[mclass] = new HashSet[PropertyLayoutElement]
 			mattributes[mclass] = new HashSet[MAttribute]
 		end
@@ -371,7 +372,7 @@ class SeparateCompiler
 		end
 
 		# methods coloration
-		var meth_colorer = new POSetGroupColorer[MClass, PropertyLayoutElement](class_conflict_graph, mmethods)
+		var meth_colorer = new POSetGroupColorer[MNominal, PropertyLayoutElement](class_conflict_graph, mmethods)
 		var method_colors = meth_colorer.colors
 		compile_color_consts(method_colors)
 
@@ -379,7 +380,7 @@ class SeparateCompiler
 		for mproperty in dead_methods do compile_color_const(new_visitor, mproperty, -1)
 
 		# attribute coloration
-		var attr_colorer = new POSetGroupColorer[MClass, MAttribute](class_conflict_graph, mattributes)
+		var attr_colorer = new POSetGroupColorer[MNominal, MAttribute](class_conflict_graph, mattributes)
 		var attr_colors = attr_colorer.colors#ize(poset, mattributes)
 		compile_color_consts(attr_colors)
 
@@ -387,6 +388,7 @@ class SeparateCompiler
 		method_tables = new HashMap[MClass, Array[nullable MPropDef]]
 		attr_tables = new HashMap[MClass, Array[nullable MProperty]]
 		for mclass in mclasses do
+			if not mclass isa MClass then continue
 			if not mclass.has_new_factory and (mclass.kind == abstract_kind or mclass.kind == interface_kind) then continue
 			if rta != null and not rta.live_classes.has(mclass) then continue
 
@@ -459,14 +461,14 @@ class SeparateCompiler
 
 		var mtypes_by_class = new MultiHashMap[MClass, MType]
 		for e in mtypes do
-			var c = e.undecorate.as(MClassType).mclass
+			var c = e.undecorate.as(MClassType).mnominal.mclass
 			mtypes_by_class[c].add(e)
 			poset.add_node(e)
 		end
 
 		var casttypes_by_class = new MultiHashMap[MClass, MType]
 		for e in cast_types do
-			var c = e.undecorate.as(MClassType).mclass
+			var c = e.undecorate.as(MClassType).mnominal.mclass
 			casttypes_by_class[c].add(e)
 			poset.add_node(e)
 		end
@@ -511,7 +513,7 @@ class SeparateCompiler
 		# Group cast_type by their classes
 		var bucklets = new HashMap[MClass, Set[MType]]
 		for e in cast_types do
-			var c = e.undecorate.as(MClassType).mclass
+			var c = e.undecorate.as(MClassType).mnominal.mclass
 			if not bucklets.has_key(c) then
 				bucklets[c] = new HashSet[MType]
 			end
@@ -519,18 +521,19 @@ class SeparateCompiler
 		end
 
 		# Colorize cast_types from the class hierarchy
-		var colorer = new POSetGroupColorer[MClass, MType](class_conflict_graph, bucklets)
+		var colorer = new POSetGroupColorer[MNominal, MType](class_conflict_graph, bucklets)
 		type_colors = colorer.colors
 
 		var layouts = new HashMap[MClass, Array[nullable MType]]
 		for c in runtime_type_analysis.live_classes do
+			if not c isa MClass then continue
 			layouts[c] = colorer.build_layout(c)
 		end
 
 		# Build the table for each live type
 		for t in mtypes do
 			# A live type use the layout of its class
-			var c = t.mclass
+			var c = t.mnominal.mclass
 			var layout = layouts[c]
 			var table = new Array[nullable MType].with_capacity(layout.length)
 			type_tables[t] = table
@@ -557,7 +560,7 @@ class SeparateCompiler
 		# Determinate fo each livetype what are its possible requested anchored types
 		var mtype2unresolved = new HashMap[MClass, Set[MType]]
 		for mtype in self.runtime_type_analysis.live_types do
-			var mclass = mtype.mclass
+			var mclass = mtype.mnominal.mclass
 			var set = mtype2unresolved.get_or_null(mclass)
 			if set == null then
 				set = new HashSet[MType]
@@ -602,7 +605,7 @@ class SeparateCompiler
 	fun build_resolution_tables(elements: Set[MClassType], map: Map[MClass, Set[MType]]): Map[MClassType, Array[nullable MType]] do
 		var tables = new HashMap[MClassType, Array[nullable MType]]
 		for mclasstype in elements do
-			var mtypes = map[mclasstype.mclass]
+			var mtypes = map[mclasstype.mnominal.mclass]
 			var table = new Array[nullable MType]
 			for mtype in mtypes do
 				var color = opentype_colors[mtype]
@@ -858,7 +861,7 @@ class SeparateCompiler
 			v.add_decl("\};")
 		end
 
-		if mtype.is_c_primitive or mtype.mclass.name == "Pointer" then
+		if mtype.is_c_primitive or mtype.mnominal.mclass.name == "Pointer" then
 			# Is a primitive type or the Pointer class, not any other extern class
 
 			if mtype.is_tagged then return
@@ -871,7 +874,7 @@ class SeparateCompiler
 			self.header.add_decl("\};")
 
 			# Pointer is needed by extern types, live or not
-			if is_dead and mtype.mclass.name != "Pointer" then return
+			if is_dead and mtype.mnominal.mclass.name != "Pointer" then return
 
 			#Build BOX
 			self.provide_declaration("BOX_{c_name}", "val* BOX_{c_name}({mtype.ctype_extern});")
@@ -888,7 +891,7 @@ class SeparateCompiler
 			v.add("\}")
 
 			# A Pointer class also need its constructor
-			if mtype.mclass.name != "Pointer" then return
+			if mtype.mnominal.mclass.name != "Pointer" then return
 
 			v = new_visitor
 			self.provide_declaration("NEW_{c_name}", "{mtype.ctype} NEW_{c_name}(const struct type* type);")
@@ -935,7 +938,7 @@ class SeparateCompiler
 			v.add("return (val*){res};")
 			v.add("\}")
 			return
-		else if mtype.mclass.kind == extern_kind and mtype.mclass.name != "NativeString" then
+		else if mtype.mnominal.mclass.kind == extern_kind and mtype.mnominal.mclass.name != "NativeString" then
 			# Is an extern class (other than Pointer and NativeString)
 			# Pointer is caught in a previous `if`, and NativeString is internal
 
@@ -1236,7 +1239,7 @@ class SeparateCompilerVisitor
 				return res
 			end
 			var valtype = value.mtype.as(MClassType)
-			if mtype isa MClassType and mtype.mclass.kind == extern_kind and mtype.mclass.name != "NativeString" then
+			if mtype isa MClassType and mtype.mnominal.mclass.kind == extern_kind and mtype.mnominal.mclass.name != "NativeString" then
 				valtype = compiler.mainmodule.pointer_type
 			end
 			var res = self.new_var(mtype)
@@ -1260,8 +1263,8 @@ class SeparateCompilerVisitor
 
 	redef fun unbox_extern(value, mtype)
 	do
-		if mtype isa MClassType and mtype.mclass.kind == extern_kind and
-		   mtype.mclass.name != "NativeString" then
+		if mtype isa MClassType and mtype.mnominal.mclass.kind == extern_kind and
+		   mtype.mnominal.mclass.name != "NativeString" then
 			var pointer_type = compiler.mainmodule.pointer_type
 			var res = self.new_var_extern(mtype)
 			self.add "{res} = ((struct instance_{pointer_type.c_name}*){value})->value; /* unboxing {value.mtype} */"
@@ -1273,8 +1276,8 @@ class SeparateCompilerVisitor
 
 	redef fun box_extern(value, mtype)
 	do
-		if mtype isa MClassType and mtype.mclass.kind == extern_kind and
-		   mtype.mclass.name != "NativeString" then
+		if mtype isa MClassType and mtype.mnominal.mclass.kind == extern_kind and
+		   mtype.mnominal.mclass.name != "NativeString" then
 			var valtype = compiler.mainmodule.pointer_type
 			var res = self.new_var(mtype)
 			compiler.undead_types.add(mtype)
@@ -1748,7 +1751,7 @@ class SeparateCompilerVisitor
 
 	redef fun init_instance(mtype)
 	do
-		self.require_declaration("NEW_{mtype.mclass.c_name}")
+		self.require_declaration("NEW_{mtype.mnominal.mclass.c_name}")
 		var compiler = self.compiler
 		if mtype isa MGenericType and mtype.need_anchor then
 			hardening_live_open_type(mtype)
@@ -1756,11 +1759,11 @@ class SeparateCompilerVisitor
 			var recv = self.frame.arguments.first
 			var recv_type_info = self.type_info(recv)
 			self.require_declaration(mtype.const_color)
-			return self.new_expr("NEW_{mtype.mclass.c_name}({recv_type_info}->resolution_table->types[{mtype.const_color}])", mtype)
+			return self.new_expr("NEW_{mtype.mnominal.mclass.c_name}({recv_type_info}->resolution_table->types[{mtype.const_color}])", mtype)
 		end
 		compiler.undead_types.add(mtype)
-		self.require_declaration("type_{mtype.c_name}")
-		return self.new_expr("NEW_{mtype.mclass.c_name}(&type_{mtype.c_name})", mtype)
+		self.require_declaration("type_{mtype.mnominal.c_name}")
+		return self.new_expr("NEW_{mtype.mnominal.mclass.c_name}(&type_{mtype.mnominal.c_name})", mtype)
 	end
 
 	redef fun type_test(value, mtype, tag)
@@ -1881,9 +1884,9 @@ class SeparateCompilerVisitor
 		self.add_decl("const char* {res};")
 		if not value.mtype.is_c_primitive then
 			self.add "{res} = {value} == NULL ? \"null\" : {type_info(value)}->name;"
-		else if value.mtype isa MClassType and value.mtype.as(MClassType).mclass.kind == extern_kind and
+		else if value.mtype isa MClassType and value.mtype.as(MClassType).mnominal.mclass.kind == extern_kind and
 			value.mtype.as(MClassType).name != "NativeString" then
-			self.add "{res} = \"{value.mtype.as(MClassType).mclass}\";"
+			self.add "{res} = \"{value.mtype.as(MClassType).mnominal.mclass.name.escape_to_c}\";"
 		else
 			self.require_declaration("type_{value.mtype.c_name}")
 			self.add "{res} = type_{value.mtype.c_name}.name;"
@@ -2051,7 +2054,7 @@ class SeparateCompilerVisitor
 	do
 		var t = value.mcasttype.undecorate
 		if not t isa MClassType then return false
-		var k = t.mclass.kind
+		var k = t.mnominal.mclass.kind
 		return k == interface_kind or t.is_c_primitive
 	end
 
@@ -2082,7 +2085,7 @@ class SeparateCompilerVisitor
 	redef fun native_array_instance(elttype: MType, length: RuntimeVariable): RuntimeVariable
 	do
 		var mtype = mmodule.native_array_type(elttype)
-		self.require_declaration("NEW_{mtype.mclass.c_name}")
+		self.require_declaration("NEW_{mtype.mnominal.mclass.c_name}")
 		assert mtype isa MGenericType
 		var compiler = self.compiler
 		length = autobox(length, compiler.mainmodule.int_type)
@@ -2092,11 +2095,11 @@ class SeparateCompilerVisitor
 			var recv = self.frame.arguments.first
 			var recv_type_info = self.type_info(recv)
 			self.require_declaration(mtype.const_color)
-			return self.new_expr("NEW_{mtype.mclass.c_name}({length}, {recv_type_info}->resolution_table->types[{mtype.const_color}])", mtype)
+			return self.new_expr("NEW_{mtype.mnominal.mclass.c_name}({length}, {recv_type_info}->resolution_table->types[{mtype.const_color}])", mtype)
 		end
 		compiler.undead_types.add(mtype)
 		self.require_declaration("type_{mtype.c_name}")
-		return self.new_expr("NEW_{mtype.mclass.c_name}({length}, &type_{mtype.c_name})", mtype)
+		return self.new_expr("NEW_{mtype.mnominal.mclass.c_name}({length}, &type_{mtype.c_name})", mtype)
 	end
 
 	redef fun native_array_def(pname, ret_type, arguments)

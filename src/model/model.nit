@@ -44,8 +44,8 @@ redef class MEntity
 end
 
 redef class Model
-	# All known classes
-	var mclasses = new Array[MClass]
+	# All known nominals
+	var mnominals = new Array[MNominal]
 
 	# All known properties
 	var mproperties = new Array[MProperty]
@@ -77,17 +77,17 @@ redef class Model
 	private var full_mtype_specialization_hierarchy = new POSet[MClassType]
 
 	# Collections of classes grouped by their short name
-	private var mclasses_by_name = new MultiHashMap[String, MClass]
+	private var mnominals_by_name = new MultiHashMap[String, MNominal]
 
-	# Return all class named `name`.
+	# Return all nominals named `name`.
 	#
 	# If such a class does not exist, null is returned
 	# (instead of an empty array)
 	#
 	# Visibility or modules are not considered
-	fun get_mclasses_by_name(name: String): nullable Array[MClass]
+	fun get_mnominals_by_name(name: String): nullable Array[MNominal]
 	do
-		return mclasses_by_name.get_or_null(name)
+		return mnominals_by_name.get_or_null(name)
 	end
 
 	# Collections of properties grouped by their short name
@@ -148,6 +148,9 @@ class ConcernsTree
 end
 
 redef class MModule
+	# All nominals introduced in this module
+	var intro_mnominals = new Array[MNominal]
+
 	# All the classes introduced in the module
 	var intro_mclasses = new Array[MClass]
 
@@ -163,38 +166,38 @@ redef class MModule
 		return self.in_importation <= mclass.intro_mmodule
 	end
 
-	# Full hierarchy of introduced ans imported classes.
+	# Full hierarchy of introduced ans imported nominals.
 	#
-	# Create a new hierarchy got by flattening the classes for the module
+	# Create a new hierarchy got by flattening the nominals for the module
 	# and its imported modules.
 	# Visibility is not considered.
 	#
 	# Note: this function is expensive and is usually used for the main
 	# module of a program only. Do not use it to do you own subtype
 	# functions.
-	fun flatten_mclass_hierarchy: POSet[MClass]
+	fun flatten_mnominal_hierarchy: POSet[MNominal]
 	do
-		var res = self.flatten_mclass_hierarchy_cache
+		var res = self.flatten_mnominal_hierarchy_cache
 		if res != null then return res
-		res = new POSet[MClass]
+		res = new POSet[MNominal]
 		for m in self.in_importation.greaters do
 			for cd in m.mclassdefs do
-				var c = cd.mclass
+				var c = cd.mnominal
 				res.add_node(c)
 				for s in cd.supertypes do
-					res.add_edge(c, s.mclass)
+					res.add_edge(c, s.mnominal)
 				end
 			end
 		end
-		self.flatten_mclass_hierarchy_cache = res
+		self.flatten_mnominal_hierarchy_cache = res
 		return res
 	end
 
 	# Sort a given array of classes using the linearization order of the module
 	# The most general is first, the most specific is last
-	fun linearize_mclasses(mclasses: Array[MClass])
+	fun linearize_mclasses(mclasses: Array[MNominal])
 	do
-		self.flatten_mclass_hierarchy.sort(mclasses)
+		self.flatten_mnominal_hierarchy.sort(mclasses)
 	end
 
 	# Sort a given array of class definitions using the linearization order of the module
@@ -215,7 +218,7 @@ redef class MModule
 		sorter.sort(mpropdefs)
 	end
 
-	private var flatten_mclass_hierarchy_cache: nullable POSet[MClass] = null
+	private var flatten_mnominal_hierarchy_cache: nullable POSet[MNominal] = null
 
 	# The primitive type `Object`, the root of the class hierarchy
 	var object_type: MClassType = self.get_primitive_class("Object").mclass_type is lazy
@@ -274,7 +277,7 @@ redef class MModule
 	# The primitive type `Sys`, the main type of the program, if any
 	fun sys_type: nullable MClassType
 	do
-		var clas = self.model.get_mclasses_by_name("Sys")
+		var clas = self.model.get_mnominals_by_name("Sys")
 		if clas == null then return null
 		return get_primitive_class("Sys").mclass_type
 	end
@@ -283,7 +286,7 @@ redef class MModule
 	# Used to tag classes that need to be finalized.
 	fun finalizable_type: nullable MClassType
 	do
-		var clas = self.model.get_mclasses_by_name("Finalizable")
+		var clas = self.model.get_mnominals_by_name("Finalizable")
 		if clas == null then return null
 		return get_primitive_class("Finalizable").mclass_type
 	end
@@ -291,11 +294,11 @@ redef class MModule
 	# Force to get the primitive class named `name` or abort
 	fun get_primitive_class(name: String): MClass
 	do
-		var cla = self.model.get_mclasses_by_name(name)
+		var cla = self.model.get_mnominals_by_name(name)
 		# Filter classes by introducing module
 		if cla != null then cla = [for c in cla do if self.in_importation <= c.intro_mmodule then c]
 		if cla == null or cla.is_empty then
-			if name == "Bool" and self.model.get_mclasses_by_name("Object") != null then
+			if name == "Bool" and self.model.get_mnominals_by_name("Object") != null then
 				# Bool is injected because it is needed by engine to code the result
 				# of the implicit casts.
 				var loc = model.no_location
@@ -315,11 +318,17 @@ redef class MModule
 			print msg
 			#exit(1)
 		end
-		return cla.first
+		var result = cla.first
+		if not result isa MClass then
+			print_error("Fatal Error: class {name} in {self} is not primitive")
+			exit(1)
+			abort
+		end
+		return result
 	end
 
 	# Try to get the primitive method named `name` on the type `recv`
-	fun try_get_primitive_method(name: String, recv: MClass): nullable MMethod
+	fun try_get_primitive_method(name: String, recv: MNominal): nullable MMethod
 	do
 		var props = self.model.get_mproperties_by_name(name)
 		if props == null then return null
@@ -347,7 +356,7 @@ private class MClassDefSorter
 	do
 		var ca = a.mclass
 		var cb = b.mclass
-		if ca != cb then return mmodule.flatten_mclass_hierarchy.compare(ca, cb)
+		if ca != cb then return mmodule.flatten_mnominal_hierarchy.compare(ca, cb)
 		return mmodule.model.mclassdef_hierarchy.compare(a, b)
 	end
 end
@@ -362,38 +371,45 @@ private class MPropDefSorter
 		var b = pb.mclassdef
 		var ca = a.mclass
 		var cb = b.mclass
-		if ca != cb then return mmodule.flatten_mclass_hierarchy.compare(ca, cb)
+		if ca != cb then return mmodule.flatten_mnominal_hierarchy.compare(ca, cb)
 		return mmodule.model.mclassdef_hierarchy.compare(a, b)
 	end
 end
 
-# A named class
+# A named set of properties (a nominal)
 #
-# `MClass` are global to the model; it means that a `MClass` is not bound to a
-# specific `MModule`.
+# This is the common interface for `MClass`es and type subsets (`MSubset`s).
+# The term “nominal” was chosen because this kind of entity is usually named
+# using nouns and adjectives (what linguists call “nominals”).
+#
+# `MNominal`s are global to the model; it means that a `MNominal` is not bound
+# to a specific `MModule`.
 #
 # This characteristic helps the reasoning about classes in a program since a
-# single `MClass` object always denote the same class.
+# single `MNominal` object always denote the same class.
 #
-# The drawback is that classes (`MClass`) contain almost nothing by themselves.
-# These do not really have properties nor belong to a hierarchy since the property and the
-# hierarchy of a class depends of the refinement in the modules.
+# The drawback is that nominals (`MNominal`) contain almost nothing by
+# themselves. Those do not really have properties nor belong to a hierarchy
+# since the property and the hierarchy of a class depends of the refinement in
+# the modules.
 #
-# Most services on classes require the precision of a module, and no one can asks what are
-# the super-classes of a class nor what are properties of a class without precising what is
-# the module considered.
+# Most services on nominals require the precision of a module, and no one can
+# asks what are the super-classes of a class nor what are properties of a class
+# without precising what is the module considered.
 #
-# For instance, during the typing of a source-file, the module considered is the module of the file.
-# eg. the question *is the method `foo` exists in the class `Bar`?* must be reformulated into
-# *is the method `foo` exists in the class `Bar` in the current module?*
+# For instance, during the typing of a source-file, the module considered is the
+# module of the file. eg. the question *is the method `foo` exists in the class
+# `Bar`?* must be reformulated into *is the method `foo` exists in the class
+# `Bar` in the current module?*
 #
-# During some global analysis, the module considered may be the main module of the program.
-class MClass
+# During some global analysis, the module considered may be the main module of
+# the program.
+abstract class MNominal
 	super MEntity
 
 	# The module that introduce the class
 	# While classes are not bound to a specific module,
-	# the introducing module is used for naming an visibility
+	# the introducing module is used for naming and visibility
 	var intro_mmodule: MModule
 
 	# The short name of the class
@@ -420,7 +436,7 @@ class MClass
 
 	# Each generic formal parameters in order.
 	# is empty if the class is not generic
-	var mparameters = new Array[MParameterType]
+	fun mparameters: SequenceRead[MParameterType] is abstract
 
 	# A string version of the signature a generic class.
 	#
@@ -444,6 +460,122 @@ class MClass
 		res.append "]"
 		return res.to_s
 	end
+
+	# The kind of the class (interface, abstract class, etc.)
+	#
+	# In Nit, the kind of a class cannot evolve in refinements.
+	fun kind: MClassKind is abstract
+
+	# The visibility of the class
+	#
+	# In Nit, the visibility of a class cannot evolve in refinements.
+	redef var visibility
+
+	init
+	do
+		intro_mmodule.intro_mnominals.add(self)
+		var model = intro_mmodule.model
+		model.mnominals_by_name.add_one(name, self)
+		model.mnominals.add(self)
+	end
+
+	redef fun model do return intro_mmodule.model
+
+	# The main `MClass` associated to this nominal.
+	#
+	# For `MClass`es, returns `self`.
+	fun mclass: MClass is abstract
+
+	# Alias for `name`
+	redef fun to_s do return self.name
+
+	# The definition that introduces this nominal.
+	#
+	# Warning: such a definition may not exist in the early life of the object.
+	# In this case, the method will abort.
+	#
+	# Use `try_intro` instead.
+	var intro: MClassDef is noinit
+
+	# The definition that introduces this nominal or `null` if not yet known.
+	#
+	# SEE: `intro`
+	fun try_intro: nullable MClassDef do
+		if isset _intro then return _intro else return null
+	end
+
+	# Return the class `self` in the class hierarchy of the module `mmodule`.
+	#
+	# SEE: `MModule::flatten_mnominal_hierarchy`
+	# REQUIRE: `mmodule.has_mclass(self)`
+	fun in_hierarchy(mmodule: MModule): POSetElement[MNominal]
+	do
+		return mmodule.flatten_mnominal_hierarchy[self]
+	end
+
+	# The principal static type of the class.
+	#
+	# For non-generic class, `mclass_type` is the only `MClassType` based
+	# on self.
+	#
+	# For a generic class, the arguments are the formal parameters.
+	# i.e.: for the class `Array[E:Object]`, the `mclass_type` is `Array[E]`.
+	# If you want `Array[Object]`, see `MClassDef::bound_mtype`.
+	#
+	# For generic classes, the mclass_type is also the way to get a formal
+	# generic parameter type.
+	#
+	# To get other types based on a generic class, see `get_mtype`.
+	#
+	# ENSURE: `mclass_type.mclass == self`
+	var mclass_type: MClassType is noinit
+
+	# Return a generic type based on the class
+	# Is the class is not generic, then the result is `mclass_type`
+	#
+	# REQUIRE: `mtype_arguments.length == self.arity`
+	fun get_mtype(mtype_arguments: Array[MType]): MClassType
+	do
+		assert mtype_arguments.length == self.arity
+		if self.arity == 0 then return self.mclass_type
+		var res = get_mtype_cache.get_or_null(mtype_arguments)
+		if res != null then return res
+		res = new MGenericType(self, mtype_arguments)
+		self.get_mtype_cache[mtype_arguments.to_a] = res
+		return res
+	end
+
+	private var get_mtype_cache = new HashMap[Array[MType], MGenericType]
+
+	# TODO -> mclassdefs
+	fun defs: Array[MClassDef] is abstract
+
+	# Is there a `new` factory to allow the pseudo instantiation?
+	var has_new_factory = false is writable
+
+	# Is `self` a standard or abstract class kind?
+	fun is_class: Bool is abstract
+
+	# Is `self` an interface kind?
+	fun is_interface: Bool is abstract
+
+	# Is `self` an enum kind?
+	fun is_enum: Bool is abstract
+
+	# Is `self` and abstract class?
+	fun is_abstract: Bool is abstract
+
+	redef fun mdoc_or_fallback do return intro.mdoc_or_fallback
+end
+
+# A named class
+#
+# A `MNominal` that is strongly linked to its instances (contrary to a `MSubset`).
+class MClass
+	super MNominal
+	autoinit(intro_mmodule, name, location, setup_parameter_names, kind, visibility)
+
+	redef var mparameters = new Array[MParameterType]
 
 	# Initialize `mparameters` from their names.
 	protected fun setup_parameter_names(parameter_names: nullable Array[String]) is
@@ -472,104 +604,44 @@ class MClass
 		end
 	end
 
-	# The kind of the class (interface, abstract class, etc.)
-	# In Nit, the kind of a class cannot evolve in refinements
-	var kind: MClassKind
+	redef var kind: MClassKind
 
-	# The visibility of the class
-	# In Nit, the visibility of a class cannot evolve in refinements
-	redef var visibility
-
-	init
+	redef init
 	do
+		super
 		intro_mmodule.intro_mclasses.add(self)
-		var model = intro_mmodule.model
-		model.mclasses_by_name.add_one(name, self)
-		model.mclasses.add(self)
 	end
 
-	redef fun model do return intro_mmodule.model
+	redef fun mclass do return self
 
-	# All class definitions (introduction and refinements)
+	# All definitions of this class (introduction, refinements and subsets’ definitions)
 	var mclassdefs = new Array[MClassDef]
 
-	# Alias for `name`
-	redef fun to_s do return self.name
+	# TODO -> mclassdefs
+	redef fun defs do return mclassdefs
 
-	# The definition that introduces the class.
-	#
-	# Warning: such a definition may not exist in the early life of the object.
-	# In this case, the method will abort.
-	#
-	# Use `try_intro` instead
-	var intro: MClassDef is noinit
-
-	# The definition that introduces the class or null if not yet known.
-	#
-	# See `intro`
-	fun try_intro: nullable MClassDef do
-		if isset _intro then return _intro else return null
-	end
-
-	# Return the class `self` in the class hierarchy of the module `mmodule`.
-	#
-	# SEE: `MModule::flatten_mclass_hierarchy`
-	# REQUIRE: `mmodule.has_mclass(self)`
-	fun in_hierarchy(mmodule: MModule): POSetElement[MClass]
-	do
-		return mmodule.flatten_mclass_hierarchy[self]
-	end
-
-	# The principal static type of the class.
-	#
-	# For non-generic class, mclass_type is the only `MClassType` based
-	# on self.
-	#
-	# For a generic class, the arguments are the formal parameters.
-	# i.e.: for the class Array[E:Object], the `mclass_type` is Array[E].
-	# If you want Array[Object] the see `MClassDef::bound_mtype`
-	#
-	# For generic classes, the mclass_type is also the way to get a formal
-	# generic parameter type.
-	#
-	# To get other types based on a generic class, see `get_mtype`.
-	#
-	# ENSURE: `mclass_type.mclass == self`
-	var mclass_type: MClassType is noinit
-
-	# Return a generic type based on the class
-	# Is the class is not generic, then the result is `mclass_type`
-	#
-	# REQUIRE: `mtype_arguments.length == self.arity`
-	fun get_mtype(mtype_arguments: Array[MType]): MClassType
-	do
-		assert mtype_arguments.length == self.arity
-		if self.arity == 0 then return self.mclass_type
-		var res = get_mtype_cache.get_or_null(mtype_arguments)
-		if res != null then return res
-		res = new MGenericType(self, mtype_arguments)
-		self.get_mtype_cache[mtype_arguments.to_a] = res
-		return res
-	end
-
-	private var get_mtype_cache = new HashMap[Array[MType], MGenericType]
-
-	# Is there a `new` factory to allow the pseudo instantiation?
-	var has_new_factory = false is writable
-
-	# Is `self` a standard or abstract class kind?
-	var is_class: Bool is lazy do return kind == concrete_kind or kind == abstract_kind
-
-	# Is `self` an interface kind?
-	var is_interface: Bool is lazy do return kind == interface_kind
-
-	# Is `self` an enum kind?
-	var is_enum: Bool is lazy do return kind == enum_kind
-
-	# Is `self` and abstract class?
-	var is_abstract: Bool is lazy do return kind == abstract_kind
+	redef var is_class is lazy do return kind == concrete_kind or kind == abstract_kind
+	redef var is_interface is lazy do return kind == interface_kind
+	redef var is_enum is lazy do return kind == enum_kind
+	redef var is_abstract is lazy do return kind == abstract_kind
 
 	redef fun mdoc_or_fallback do return intro.mdoc_or_fallback
+
+	# Ensure that the specified superclass is a `MClass`
+	#
+	# In case of error, write a meaningful message. In case of success, return
+	# `sup`.
+	fun check_super_mclass(sup: MNominal): MClass
+	do
+		assert sup isa MClass else
+			print_error(
+				"Fatal Error: unexpected `{sup.kind} {sup}` as " +
+				"superclass of `{kind} {to_s}`."
+			)
+		end
+		return sup
+	end
+end
 end
 
 
@@ -594,6 +666,12 @@ class MClassDef
 	# The associated `MClass`
 	var mclass: MClass is noinit
 
+	# The associated `MNominal`
+	#
+	# Differs from `mclass` if this definition is part of a type subset
+	# (`MSubset`).
+	var mnominal: MNominal is noinit
+
 	# The bounded type associated to the mclassdef
 	#
 	# For a non-generic class, `bound_mtype` and `mclass.mclass_type`
@@ -603,7 +681,7 @@ class MClassDef
 	# For the classdef Array[E: Object], the bound_mtype is Array[Object].
 	# If you want Array[E], then see `mclass.mclass_type`
 	#
-	# ENSURE: `bound_mtype.mclass == self.mclass`
+	# ENSURE: `bound_mtype.mnominal == self.mnominal`
 	var bound_mtype: MClassType
 
 	redef var location: Location
@@ -616,7 +694,8 @@ class MClassDef
 
 	init
 	do
-		self.mclass = bound_mtype.mclass
+		self.mnominal = bound_mtype.mnominal
+		self.mclass = self.mnominal.mclass
 		mmodule.mclassdefs.add(self)
 		mclass.mclassdefs.add(self)
 		if mclass.intro_mmodule == mmodule then
@@ -629,38 +708,38 @@ class MClassDef
 	# Actually the name of the `mclass`
 	redef fun name do return mclass.name
 
-	# The module and class name separated by a '$'.
+	# The module and nominal name separated by a '$'.
 	#
-	# The short-name of the class is used for introduction.
+	# The short-name of the nominal is used for introduction.
 	# Example: "my_module$MyClass"
 	#
-	# The full-name of the class is used for refinement.
+	# The full-name of the nominal is used for refinement.
 	# Example: "my_module$intro_module::MyClass"
 	redef var full_name is lazy do
-		if is_intro then
+		if is_nominal_intro then
 			# public gives 'p$A'
 			# private gives 'p::m$A'
-			return "{mmodule.namespace_for(mclass.visibility)}${mclass.name}"
+			return "{mmodule.namespace_for(mnominal.visibility)}${mnominal.name}"
 		else if mclass.intro_mmodule.mpackage != mmodule.mpackage then
 			# public gives 'q::n$p::A'
 			# private gives 'q::n$p::m::A'
-			return "{mmodule.full_name}${mclass.full_name}"
+			return "{mnominal.full_name}${mnominal.full_name}"
 		else if mclass.visibility > private_visibility then
 			# public gives 'p::n$A'
-			return "{mmodule.full_name}${mclass.name}"
+			return "{mnominal.full_name}${mnominal.name}"
 		else
 			# private gives 'p::n$::m::A' (redundant p is omitted)
-			return "{mmodule.full_name}$::{mclass.intro_mmodule.name}::{mclass.name}"
+			return "{mnominal.full_name}$::{mclass.intro_mmodule.name}::{mclass.name}"
 		end
 	end
 
 	redef var c_name is lazy do
-		if is_intro then
-			return "{mmodule.c_namespace_for(mclass.visibility)}___{mclass.c_name}"
+		if is_nominal_intro then
+			return "{mmodule.c_namespace_for(mclass.visibility)}___{mnominal.c_name}"
 		else if mclass.intro_mmodule.mpackage == mmodule.mpackage and mclass.visibility > private_visibility then
-			return "{mmodule.c_name}___{mclass.name.to_cmangle}"
+			return "{mmodule.c_name}___{mnominal.name.to_cmangle}"
 		else
-			return "{mmodule.c_name}___{mclass.c_name}"
+			return "{mmodule.c_name}___{mnominal.c_name}"
 		end
 	end
 
@@ -687,7 +766,7 @@ class MClassDef
 			# Register in full_type_specialization_hierarchy
 			model.full_mtype_specialization_hierarchy.add_edge(mtype, supertype)
 			# Register in intro_type_specialization_hierarchy
-			if mclass.intro_mmodule == mmodule and supertype.mclass.intro_mmodule == mmodule then
+			if mclass.intro_mmodule == mmodule and supertype.mnominal.intro_mmodule == mmodule then
 				model.intro_mtype_specialization_hierarchy.add_edge(mtype, supertype)
 			end
 		end
@@ -718,7 +797,10 @@ class MClassDef
 	var in_hierarchy: nullable POSetElement[MClassDef] = null
 
 	# Is the definition the one that introduced `mclass`?
-	fun is_intro: Bool do return isset mclass._intro and mclass.intro == self
+	fun is_class_intro: Bool do return isset mclass._intro and mclass.intro == self
+
+	# Is the definition the one that introduced `mnominal`?
+	fun is_nominal_intro: Bool do return isset mnominal._intro and mnominal.intro == self
 
 	# All properties introduced by the classdef
 	var intro_mproperties = new Array[MProperty]
@@ -855,12 +937,12 @@ abstract class MType
 
 		if anchor == null then anchor = sub # UGLY: any anchor will work
 		var resolved_sub = sub.anchor_to(mmodule, anchor)
-		var res = resolved_sub.collect_mclasses(mmodule).has(sup.mclass)
+		var res = resolved_sub.collect_mnominals(mmodule).has(sup.mnominal)
 		if res == false then return false
 		if not sup isa MGenericType then return true
-		var sub2 = sub.supertype_to(mmodule, anchor, sup.mclass)
-		assert sub2.mclass == sup.mclass
-		for i in [0..sup.mclass.arity[ do
+		var sub2 = sub.supertype_to(mmodule, anchor, sup.mnominal)
+		assert sub2.mnominal == sup.mnominal
+		for i in [0..sup.mnominal.arity[ do
 			var sub_arg = sub2.arguments[i]
 			var sup_arg = sup.arguments[i]
 			res = sub_arg.is_subtype(mmodule, anchor, sup_arg)
@@ -930,13 +1012,13 @@ abstract class MType
 	# H[Int]  supertype_to  G  #->  G[Int, Bool]
 	# ~~~
 	#
-	# REQUIRE: `super_mclass` is a super-class of `self`
+	# REQUIRE: `super_mnominal` is a super-class of `self`
 	# REQUIRE: `self.need_anchor implies anchor != null and self.can_resolve_for(anchor, null, mmodule)`
-	# ENSURE: `result.mclass = super_mclass`
-	fun supertype_to(mmodule: MModule, anchor: nullable MClassType, super_mclass: MClass): MClassType
+	# ENSURE: `result.mnominal = super_mnominal`
+	fun supertype_to(mmodule: MModule, anchor: nullable MClassType, super_mnominal: MNominal): MClassType
 	do
-		if super_mclass.arity == 0 then return super_mclass.mclass_type
-		if self isa MClassType and self.mclass == super_mclass then return self
+		if super_mnominal.arity == 0 then return super_mnominal.mclass_type
+		if self isa MClassType and self.mnominal == super_mnominal then return self
 		var resolved_self
 		if self.need_anchor then
 			assert anchor != null
@@ -946,7 +1028,7 @@ abstract class MType
 		end
 		var supertypes = resolved_self.collect_mtypes(mmodule)
 		for supertype in supertypes do
-			if supertype.mclass == super_mclass then
+			if supertype.mnominal == super_mnominal then
 				# FIXME: Here, we stop on the first goal. Should we check others and detect inconsistencies?
 				return supertype.resolve_for(self, anchor, mmodule, false)
 			end
@@ -1153,7 +1235,7 @@ abstract class MType
 	# This function is used mainly internally.
 	#
 	# REQUIRE: `not self.need_anchor`
-	fun collect_mclasses(mmodule: MModule): Set[MClass] is abstract
+	fun collect_mnominals(mmodule: MModule): Set[MNominal] is abstract
 
 	# Compute all the declared super-types.
 	# Super-types are returned as declared in the classdefs (verbatim).
@@ -1180,23 +1262,23 @@ class MClassType
 	super MType
 
 	# The associated class
-	var mclass: MClass
+	var mnominal: MNominal
 
-	redef fun model do return self.mclass.intro_mmodule.model
+	redef fun model do return self.mnominal.intro_mmodule.model
 
-	redef fun location do return mclass.location
+	redef fun location do return mnominal.location
 
-	# TODO: private init because strongly bounded to its mclass. see `mclass.mclass_type`
+	# TODO: private init because strongly bounded to its mnominal. see `MNominal.mclass_type`
 
 	# The formal arguments of the type
 	# ENSURE: `result.length == self.mclass.arity`
 	var arguments = new Array[MType]
 
-	redef fun to_s do return mclass.to_s
+	redef fun to_s do return mnominal.to_s
 
-	redef fun full_name do return mclass.full_name
+	redef fun full_name do return mnominal.full_name
 
-	redef fun c_name do return mclass.c_name
+	redef fun c_name do return mnominal.c_name
 
 	redef fun need_anchor do return false
 
@@ -1219,22 +1301,22 @@ class MClassType
 		return cache[mmodule]
 	end
 
-	redef fun collect_mclasses(mmodule)
+	redef fun collect_mnominals(mmodule)
 	do
-		if collect_mclasses_last_module == mmodule then return collect_mclasses_last_module_cache
+		if collect_mnominals_last_module == mmodule then return collect_mnominals_last_module_cache
 		assert not self.need_anchor
-		var cache = self.collect_mclasses_cache
+		var cache = self.collect_mnominals_cache
 		if not cache.has_key(mmodule) then
 			self.collect_things(mmodule)
 		end
 		var res = cache[mmodule]
-		collect_mclasses_last_module = mmodule
-		collect_mclasses_last_module_cache = res
+		collect_mnominals_last_module = mmodule
+		collect_mnominals_last_module_cache = res
 		return res
 	end
 
-	private var collect_mclasses_last_module: nullable MModule = null
-	private var collect_mclasses_last_module_cache: Set[MClass] is noinit
+	private var collect_mnominals_last_module: nullable MModule = null
+	private var collect_mnominals_last_module_cache: Set[MNominal] is noinit
 
 	redef fun collect_mtypes(mmodule)
 	do
@@ -1250,20 +1332,21 @@ class MClassType
 	private fun collect_things(mmodule: MModule)
 	do
 		var res = new HashSet[MClassDef]
-		var seen = new HashSet[MClass]
+		var seen = new HashSet[MNominal]
 		var types = new HashSet[MClassType]
-		seen.add(self.mclass)
-		var todo = [self.mclass]
+		seen.add(self.mnominal)
+		var todo = [self.mnominal]
 		while not todo.is_empty do
 			var mclass = todo.pop
 			#print "process {mclass}"
-			for mclassdef in mclass.mclassdefs do
+			for mclassdef in mclass.defs do
+				if mclassdef.mnominal != mclass then continue
 				if not mmodule.in_importation <= mclassdef.mmodule then continue
 				#print "  process {mclassdef}"
 				res.add(mclassdef)
 				for supertype in mclassdef.supertypes do
 					types.add(supertype)
-					var superclass = supertype.mclass
+					var superclass = supertype.mnominal
 					if seen.has(superclass) then continue
 					#print "    add {superclass}"
 					seen.add(superclass)
@@ -1272,12 +1355,12 @@ class MClassType
 			end
 		end
 		collect_mclassdefs_cache[mmodule] = res
-		collect_mclasses_cache[mmodule] = seen
+		collect_mnominals_cache[mmodule] = seen
 		collect_mtypes_cache[mmodule] = types
 	end
 
 	private var collect_mclassdefs_cache = new HashMap[MModule, Set[MClassDef]]
-	private var collect_mclasses_cache = new HashMap[MModule, Set[MClass]]
+	private var collect_mnominals_cache = new HashMap[MModule, Set[MNominal]]
 	private var collect_mtypes_cache = new HashMap[MModule, Set[MClassType]]
 
 end
@@ -1293,7 +1376,7 @@ class MGenericType
 
 	init
 	do
-		assert self.mclass.arity == arguments.length
+		assert self.mnominal.arity == arguments.length
 
 		self.need_anchor = false
 		for t in arguments do
@@ -1303,7 +1386,7 @@ class MGenericType
 			end
 		end
 
-		self.to_s = "{mclass}[{arguments.join(", ")}]"
+		self.to_s = "{mnominal}[{arguments.join(", ")}]"
 	end
 
 	# The short-name of the class, then the full-name of each type arguments within brackets.
@@ -1317,11 +1400,11 @@ class MGenericType
 		for t in arguments do
 			args.add t.full_name
 		end
-		return "{mclass.full_name}[{args.join(", ")}]"
+		return "{mnominal.full_name}[{args.join(", ")}]"
 	end
 
 	redef var c_name is lazy do
-		var res = mclass.c_name
+		var res = mnominal.c_name
 		# Note: because the arity is known, a prefix notation is enough
 		for t in arguments do
 			res += "__"
@@ -1340,7 +1423,7 @@ class MGenericType
 		for t in arguments do
 			types.add(t.resolve_for(mtype, anchor, mmodule, cleanup_virtual))
 		end
-		return mclass.get_mtype(types)
+		return mnominal.get_mtype(types)
 	end
 
 	redef fun can_resolve_for(mtype, anchor, mmodule)
@@ -1442,10 +1525,10 @@ class MVirtualType
 		if prop.is_fixed then return res
 
 		# 2. For a enum boud, return the bound
-		if res isa MClassType and res.mclass.kind == enum_kind then return res
+		if res isa MClassType and res.mnominal.kind == enum_kind then return res
 
 		# 3. for a enum receiver return the bound
-		if resolved_receiver.mclass.kind == enum_kind then return res
+		if resolved_receiver.mnominal.kind == enum_kind then return res
 
 		return self
 	end
@@ -1543,12 +1626,12 @@ class MParameterType
 		resolved_receiver = resolved_receiver.undecorate
 		assert resolved_receiver isa MClassType # It is the only remaining type
 		var goalclass = self.mclass
-		if resolved_receiver.mclass == goalclass then
+		if resolved_receiver.mnominal == goalclass then
 			return resolved_receiver.arguments[self.rank]
 		end
 		var supertypes = resolved_receiver.collect_mtypes(mmodule)
 		for t in supertypes do
-			if t.mclass == goalclass then
+			if t.mnominal == goalclass then
 				# Yeah! c specialize goalclass with a "super `t'". So the question is what is the argument of f
 				# FIXME: Here, we stop on the first goal. Should we check others and detect inconsistencies?
 				var res = t.arguments[self.rank]
@@ -1570,7 +1653,7 @@ class MParameterType
 		assert not resolved_receiver.need_anchor
 		resolved_receiver = resolved_receiver.undecorate
 		assert resolved_receiver isa MClassType # It is the only remaining type
-		var res = self.resolve_for(resolved_receiver.mclass.mclass_type, resolved_receiver, mmodule, false)
+		var res = self.resolve_for(resolved_receiver.mnominal.mclass_type, resolved_receiver, mmodule, false)
 		return res
 	end
 
@@ -1579,12 +1662,12 @@ class MParameterType
 		assert can_resolve_for(mtype, anchor, mmodule)
 		#print "{class_name}: {self}/{mtype}/{anchor}?"
 
-		if mtype isa MGenericType and mtype.mclass == self.mclass then
+		if mtype isa MGenericType and mtype.mnominal == self.mclass then
 			var res = mtype.arguments[self.rank]
 			if anchor != null and res.need_anchor then
 				# Maybe the result can be resolved more if are bound to a final class
 				var r2 = res.anchor_to(mmodule, anchor)
-				if r2 isa MClassType and r2.mclass.kind == enum_kind then return r2
+				if r2 isa MClassType and r2.mnominal.kind == enum_kind then return r2
 			end
 			return res
 		end
@@ -1596,14 +1679,14 @@ class MParameterType
 		var resolved_receiver
 		if mtype.need_anchor then
 			assert anchor != null
-			resolved_receiver = mtype.resolve_for(anchor.mclass.mclass_type, anchor, mmodule, true)
+			resolved_receiver = mtype.resolve_for(anchor.mnominal.mclass_type, anchor, mmodule, true)
 		else
 			resolved_receiver = mtype
 		end
 		if resolved_receiver isa MNullableType then resolved_receiver = resolved_receiver.mtype
 		if resolved_receiver isa MParameterType then
 			assert anchor != null
-			assert resolved_receiver.mclass == anchor.mclass
+			assert resolved_receiver.mclass == anchor.mnominal
 			resolved_receiver = anchor.arguments[resolved_receiver.rank]
 			if resolved_receiver isa MNullableType then resolved_receiver = resolved_receiver.mtype
 		end
@@ -1611,7 +1694,7 @@ class MParameterType
 
 		# Eh! The parameter is in the current class.
 		# So we return the corresponding argument, no mater what!
-		if resolved_receiver.mclass == self.mclass then
+		if resolved_receiver.mnominal == self.mclass then
 			var res = resolved_receiver.arguments[self.rank]
 			#print "{class_name}: {self}/{mtype}/{anchor} -> direct {res}"
 			return res
@@ -1684,10 +1767,10 @@ abstract class MProxyType
 		return self.mtype.collect_mclassdefs(mmodule)
 	end
 
-	redef fun collect_mclasses(mmodule)
+	redef fun collect_mnominals(mmodule)
 	do
 		assert not self.need_anchor
-		return self.mtype.collect_mclasses(mmodule)
+		return self.mtype.collect_mnominals(mmodule)
 	end
 
 	redef fun collect_mtypes(mmodule)
@@ -1773,7 +1856,7 @@ class MNullType
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
 
-	redef fun collect_mclasses(mmodule) do return new HashSet[MClass]
+	redef fun collect_mnominals(mmodule) do return new HashSet[MNominal]
 
 	redef fun collect_mtypes(mmodule) do return new HashSet[MClassType]
 end
@@ -1798,7 +1881,7 @@ class MBottomType
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
 
-	redef fun collect_mclasses(mmodule) do return new HashSet[MClass]
+	redef fun collect_mnominals(mmodule) do return new HashSet[MNominal]
 
 	redef fun collect_mtypes(mmodule) do return new HashSet[MClassType]
 end
@@ -1994,16 +2077,16 @@ abstract class MProperty
 	#
 	# Example: `my_package::MyClass::My_method`
 	redef var full_name is lazy do
-		if intro_mclassdef.is_intro then
-			return "{intro_mclassdef.mmodule.namespace_for(visibility)}::{intro_mclassdef.mclass.name}::{name}"
+		if intro_mclassdef.is_nominal_intro then
+			return "{intro_mclassdef.mmodule.namespace_for(visibility)}::{intro_mclassdef.mnominal.name}::{name}"
 		else
-			return "{intro_mclassdef.mmodule.full_name}::{intro_mclassdef.mclass.name}::{name}"
+			return "{intro_mclassdef.mmodule.full_name}::{intro_mclassdef.mnominal.name}::{name}"
 		end
 	end
 
 	redef var c_name is lazy do
 		# FIXME use `namespace_for`
-		return "{intro_mclassdef.mmodule.c_name}__{intro_mclassdef.mclass.name.to_cmangle}__{name.to_cmangle}"
+		return "{intro_mclassdef.mmodule.c_name}__{intro_mclassdef.mnominal.name.to_cmangle}__{name.to_cmangle}"
 	end
 
 	# The visibility of the property
@@ -2224,7 +2307,7 @@ class MMethod
 	# Is the property a legal constructor for a given class?
 	# As usual, visibility is not considered.
 	# FIXME not implemented
-	fun is_init_for(mclass: MClass): Bool
+	fun is_init_for(mclass: MNominal): Bool
 	do
 		return self.is_init
 	end

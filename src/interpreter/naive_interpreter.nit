@@ -78,7 +78,7 @@ class NaiveInterpreter
 
 	init
 	do
-		if mainmodule.model.get_mclasses_by_name("Bool") != null then
+		if mainmodule.model.get_mnominals_by_name("Bool") != null then
 			self.true_instance = new PrimitiveInstance[Bool](mainmodule.bool_type, true)
 			init_instance_primitive(self.true_instance)
 			self.false_instance = new PrimitiveInstance[Bool](mainmodule.bool_type, false)
@@ -95,12 +95,12 @@ class NaiveInterpreter
 		var mainobj = new MutableInstance(sys_type)
 		interpreter.mainobj = mainobj
 		interpreter.init_instance(mainobj)
-		var initprop = mainmodule.try_get_primitive_method("init", sys_type.mclass)
+		var initprop = mainmodule.try_get_primitive_method("init", sys_type.mnominal)
 		if initprop != null then
 			interpreter.send(initprop, [mainobj])
 		end
-		var mainprop = mainmodule.try_get_primitive_method("run", sys_type.mclass) or else
-			mainmodule.try_get_primitive_method("main", sys_type.mclass)
+		var mainprop = mainmodule.try_get_primitive_method("run", sys_type.mnominal) or else
+			mainmodule.try_get_primitive_method("main", sys_type.mnominal)
 		if mainprop != null then
 			interpreter.send(mainprop, [mainobj])
 		end
@@ -116,7 +116,7 @@ class NaiveInterpreter
 	fun force_get_primitive_method(name: String, recv: MType): MMethod
 	do
 		assert recv isa MClassType
-		return self.modelbuilder.force_get_primitive_method(current_node, name, recv.mclass, self.mainmodule)
+		return self.modelbuilder.force_get_primitive_method(current_node, name, recv.mnominal, self.mainmodule)
 	end
 
 	# Is a return, a break or a continue executed?

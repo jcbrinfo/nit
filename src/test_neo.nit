@@ -76,11 +76,11 @@ sorter.sort neo_mmodules
 print neo_mmodules.join(" ")
 
 print "\n# mclasses:"
-var org_mclasses = org_model.mclasses.to_a
+var org_mclasses = org_model.mnominals.to_a
 sorter.sort org_mclasses
 print org_mclasses.join(" ")
 print "------------------------------------"
-var neo_mclasses = neo_model.mclasses.to_a
+var neo_mclasses = neo_model.mnominals.to_a
 sorter.sort neo_mclasses
 print neo_mclasses.join(" ")
 
