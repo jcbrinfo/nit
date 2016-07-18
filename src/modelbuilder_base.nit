@@ -148,7 +148,7 @@ class ModelBuilder
 			if not mmodule.is_visible(mprop.intro_mclassdef.mmodule, mprop.visibility) then continue
 
 			# new-factories are invisible outside of the class
-			if mprop isa MMethod and mprop.is_new and (not mtype isa MClassType or mprop.intro_mclassdef.mclass != mtype.mnominal) then
+			if mprop isa MMethod and mprop.is_new and (not mtype isa MClassType or mprop.intro_mclassdef.mnominal != mtype.mnominal) then
 				continue
 			end
 

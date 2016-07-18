@@ -719,7 +719,7 @@ class MClassDef
 
 	redef fun visibility do return mclass.visibility
 
-	# Internal name combining the module and the class
+	# Internal name combining the module and the nominal
 	# Example: "mymodule$MyClass"
 	redef var to_s is noinit
 
@@ -729,15 +729,15 @@ class MClassDef
 		self.mclass = self.mnominal.mclass
 		mmodule.mclassdefs.add(self)
 		mclass.mclassdefs.add(self)
-		if mclass.intro_mmodule == mmodule then
-			assert not isset mclass._intro
-			mclass.intro = self
+		if mnominal.intro_mmodule == mmodule then
+			assert not isset mnominal._intro
+			mnominal.intro = self
 		end
-		self.to_s = "{mmodule}${mclass}"
+		self.to_s = "{mmodule}${mnominal}"
 	end
 
-	# Actually the name of the `mclass`
-	redef fun name do return mclass.name
+	# Actually the name of the `mnominal`
+	redef fun name do return mnominal.name
 
 	# The module and nominal name separated by a '$'.
 	#
@@ -754,19 +754,19 @@ class MClassDef
 		else if mclass.intro_mmodule.mpackage != mmodule.mpackage then
 			# public gives 'q::n$p::A'
 			# private gives 'q::n$p::m::A'
-			return "{mnominal.full_name}${mnominal.full_name}"
+			return "{mmodule.full_name}${mnominal.full_name}"
 		else if mclass.visibility > private_visibility then
 			# public gives 'p::n$A'
-			return "{mnominal.full_name}${mnominal.name}"
+			return "{mmodule.full_name}${mnominal.name}"
 		else
 			# private gives 'p::n$::m::A' (redundant p is omitted)
-			return "{mnominal.full_name}$::{mclass.intro_mmodule.name}::{mclass.name}"
+			return "{mmodule.full_name}$::{mnominal.intro_mmodule.name}::{mnominal.name}"
 		end
 	end
 
 	redef var c_name is lazy do
 		if is_nominal_intro then
-			return "{mmodule.c_namespace_for(mclass.visibility)}___{mnominal.c_name}"
+			return "{mmodule.c_namespace_for(mnominal.visibility)}___{mnominal.c_name}"
 		else if mclass.intro_mmodule.mpackage == mmodule.mpackage and mclass.visibility > private_visibility then
 			return "{mmodule.c_name}___{mnominal.name.to_cmangle}"
 		else
@@ -1339,7 +1339,7 @@ class MClassType
 
 	redef fun full_name do return mnominal.full_name
 
-	redef fun c_name do return mnominal.c_name
+	redef fun c_name do return mnominal.mclass.c_name
 
 	redef fun need_anchor do return false
 
@@ -1466,7 +1466,7 @@ class MGenericType
 	end
 
 	redef var c_name is lazy do
-		var res = mnominal.c_name
+		var res = mnominal.mclass.c_name
 		# Note: because the arity is known, a prefix notation is enough
 		for t in arguments do
 			res += "__"
