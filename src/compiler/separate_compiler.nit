@@ -1751,7 +1751,8 @@ class SeparateCompilerVisitor
 
 	redef fun init_instance(mtype)
 	do
-		self.require_declaration("NEW_{mtype.mnominal.mclass.c_name}")
+		var mclass = mtype.mnominal.mclass
+		self.require_declaration("NEW_{mclass.c_name}")
 		var compiler = self.compiler
 		if mtype isa MGenericType and mtype.need_anchor then
 			hardening_live_open_type(mtype)
@@ -1759,11 +1760,11 @@ class SeparateCompilerVisitor
 			var recv = self.frame.arguments.first
 			var recv_type_info = self.type_info(recv)
 			self.require_declaration(mtype.const_color)
-			return self.new_expr("NEW_{mtype.mnominal.mclass.c_name}({recv_type_info}->resolution_table->types[{mtype.const_color}])", mtype)
+			return self.new_expr("NEW_{mclass.c_name}({recv_type_info}->resolution_table->types[{mtype.const_color}])", mtype)
 		end
 		compiler.undead_types.add(mtype)
-		self.require_declaration("type_{mtype.mnominal.c_name}")
-		return self.new_expr("NEW_{mtype.mnominal.mclass.c_name}(&type_{mtype.mnominal.c_name})", mtype)
+		self.require_declaration("type_{mtype.c_name}")
+		return self.new_expr("NEW_{mclass.c_name}(&type_{mtype.c_name})", mtype)
 	end
 
 	redef fun type_test(value, mtype, tag)
@@ -1885,7 +1886,7 @@ class SeparateCompilerVisitor
 		if not value.mtype.is_c_primitive then
 			self.add "{res} = {value} == NULL ? \"null\" : {type_info(value)}->name;"
 		else if value.mtype isa MClassType and value.mtype.as(MClassType).mnominal.mclass.kind == extern_kind and
-			value.mtype.as(MClassType).name != "NativeString" then
+			value.mtype.as(MClassType).mnominal.mclass.name != "NativeString" then
 			self.add "{res} = \"{value.mtype.as(MClassType).mnominal.mclass.name.escape_to_c}\";"
 		else
 			self.require_declaration("type_{value.mtype.c_name}")
@@ -2085,7 +2086,8 @@ class SeparateCompilerVisitor
 	redef fun native_array_instance(elttype: MType, length: RuntimeVariable): RuntimeVariable
 	do
 		var mtype = mmodule.native_array_type(elttype)
-		self.require_declaration("NEW_{mtype.mnominal.mclass.c_name}")
+		var mclass = mtype.mnominal.mclass
+		self.require_declaration("NEW_{mclass.c_name}")
 		assert mtype isa MGenericType
 		var compiler = self.compiler
 		length = autobox(length, compiler.mainmodule.int_type)
@@ -2095,11 +2097,11 @@ class SeparateCompilerVisitor
 			var recv = self.frame.arguments.first
 			var recv_type_info = self.type_info(recv)
 			self.require_declaration(mtype.const_color)
-			return self.new_expr("NEW_{mtype.mnominal.mclass.c_name}({length}, {recv_type_info}->resolution_table->types[{mtype.const_color}])", mtype)
+			return self.new_expr("NEW_{mclass.c_name}({length}, {recv_type_info}->resolution_table->types[{mtype.const_color}])", mtype)
 		end
 		compiler.undead_types.add(mtype)
 		self.require_declaration("type_{mtype.c_name}")
-		return self.new_expr("NEW_{mtype.mnominal.mclass.c_name}({length}, &type_{mtype.c_name})", mtype)
+		return self.new_expr("NEW_{mclass.c_name}({length}, &type_{mtype.c_name})", mtype)
 	end
 
 	redef fun native_array_def(pname, ret_type, arguments)
