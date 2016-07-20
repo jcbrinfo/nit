@@ -514,7 +514,7 @@ end
 redef class MClassType
 	redef fun java_type
 	do
-		var mclass = mnominal.mclass
+		var mclass = mnominal.data_class
 		var ftype = mclass.ftype
 		if ftype isa ForeignJavaType then return ftype.java_type.
 			replace('/', ".").replace('$', ".").replace(' ', "").replace('\n',"")
@@ -533,7 +533,7 @@ redef class MClassType
 
 	redef fun jni_type
 	do
-		var mclass = mnominal.mclass
+		var mclass = mnominal.data_class
 		var ftype = mclass.ftype
 		if ftype isa ForeignJavaType then return "jobject"
 		if mclass.name == "Bool" then return "jboolean"
@@ -551,7 +551,7 @@ redef class MClassType
 
 	redef fun jni_format
 	do
-		var mclass = mnominal.mclass
+		var mclass = mnominal.data_class
 		var ftype = mclass.ftype
 		if ftype isa ForeignJavaType then
 			var jni_type = ftype.java_type.
@@ -617,7 +617,7 @@ redef class MClassType
 
 	redef fun jni_signature_alt
 	do
-		var mclass = mnominal.mclass
+		var mclass = mnominal.data_class
 		var ftype = mclass.ftype
 
 		if ftype isa ForeignJavaType then return "Object"

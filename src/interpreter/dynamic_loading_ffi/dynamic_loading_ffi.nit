@@ -171,7 +171,8 @@ private extern class CallArg `{ nit_call_arg* `}
 		else if static_type.name == "NativeString" then
 			assert value isa PrimitiveInstance[NativeString]
 			self.pointer = value.val
-		else if static_type isa MClassType and static_type.mnominal.mclass.kind == extern_kind then
+		else if static_type isa MClassType and
+				static_type.mnominal.data_class.kind == extern_kind then
 			assert value isa PrimitiveInstance[Pointer] else print value.class_name
 			self.pointer = value.val
 		else
@@ -211,7 +212,8 @@ private extern class CallArg `{ nit_call_arg* `}
 			var instance = new PrimitiveInstance[NativeString](static_type, self.native_string)
 			v.init_instance_primitive instance
 			return instance
-		else if static_type isa MClassType and static_type.mnominal.mclass.kind == extern_kind then
+		else if static_type isa MClassType and
+				static_type.mnominal.data_class.kind == extern_kind then
 			# We tag it with the most precise known type
 			var instance = new PrimitiveInstance[Pointer](static_type, self.pointer)
 			v.init_instance_primitive instance

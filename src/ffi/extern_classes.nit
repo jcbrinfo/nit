@@ -143,5 +143,5 @@ redef class MClass
 end
 
 redef class MSubset
-	redef fun ftype do return mclass.ftype
+	redef fun ftype do return data_class.ftype
 end

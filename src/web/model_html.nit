@@ -560,7 +560,7 @@ redef class MGenericType
 	redef fun html_signature do
 		var lnk = html_link
 		var tpl = new Template
-		tpl.add new Link.with_title(lnk.href, mnominal.mclass.name.html_escape,
+		tpl.add new Link.with_title(lnk.href, mnominal.data_class.name.html_escape,
 				lnk.title)
 		tpl.add "["
 		for i in [0..arguments.length[ do

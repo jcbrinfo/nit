@@ -484,7 +484,7 @@ abstract class MNominal
 	# The main `MClass` associated to this nominal.
 	#
 	# For `MClass`es, returns `self`.
-	fun mclass: MClass is abstract
+	fun data_class: MClass is abstract
 
 	# Alias for `name`
 	redef fun to_s do return self.name
@@ -612,7 +612,7 @@ class MClass
 		intro_mmodule.intro_mclasses.add(self)
 	end
 
-	redef fun mclass do return self
+	redef fun data_class do return self
 
 	# All definitions of this class (introduction, refinements and subsets’ definitions)
 	var mclassdefs = new Array[MClassDef]
@@ -651,9 +651,9 @@ class MSubset
 	super MNominal
 
 	# The main `MClass` associated to this subset (the base class)
-	redef var mclass: MClass
+	redef var data_class: MClass
 
-	redef fun mparameters do return mclass.mparameters
+	redef fun mparameters do return data_class.mparameters
 
 	redef fun kind do return subset_kind
 
@@ -717,7 +717,7 @@ class MClassDef
 	init
 	do
 		self.mnominal = bound_mtype.mnominal
-		self.mclass = self.mnominal.mclass
+		self.mclass = self.mnominal.data_class
 		mmodule.mclassdefs.add(self)
 		mclass.mclassdefs.add(self)
 		if mnominal.intro_mmodule == mmodule then
@@ -1307,7 +1307,7 @@ class MClassType
 
 	redef fun full_name do return mnominal.full_name
 
-	redef fun c_name do return mnominal.mclass.c_name
+	redef fun c_name do return mnominal.data_class.c_name
 
 	redef fun need_anchor do return false
 
@@ -1433,7 +1433,7 @@ class MGenericType
 	end
 
 	redef var c_name is lazy do
-		var res = mnominal.mclass.c_name
+		var res = mnominal.data_class.c_name
 		# Note: because the arity is known, a prefix notation is enough
 		for t in arguments do
 			res += "__"
