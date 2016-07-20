@@ -64,6 +64,11 @@ abstract class MEntity
 	# The C-name can be seen as a mangled version of the `full_name`.
 	# Therefore, it is expected to be unique and unambiguous in lawful Nit models for the same kind of entity.
 	#
+	# For `MType`s, type subsets are ignored (that is, their name is replaced by
+	# the name of their superclass) as subsets do not really exist in the
+	# generated C code (except to name properties defined by the subset and the
+	# membership test).
+	#
 	# The C-name is used by tools that need some identifiers in generated files to designate the
 	# entity.
 	#
