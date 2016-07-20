@@ -109,16 +109,16 @@ class VirtualMachine super NaiveInterpreter
 		assert sup isa MClassType
 
 		# and `sup` can be discovered inside a Generic type during the subtyping test
-		if not sub.mnominal.mclass.loaded then load_class(sub.mnominal.mclass)
+		if not sub.mnominal.data_class.loaded then load_class(sub.mnominal.data_class)
 
 		# If the target of the test is not-loaded yet, the subtyping-test will be false
-		if not sup.mnominal.mclass.abstract_loaded then return false
+		if not sup.mnominal.data_class.abstract_loaded then return false
 
 		# For now, always use perfect hashing for subtyping test
-		var super_id = sup.mnominal.mclass.vtable.id
-		var mask = sub.mnominal.mclass.vtable.mask
+		var super_id = sup.mnominal.data_class.vtable.id
+		var mask = sub.mnominal.data_class.vtable.mask
 
-		var res = inter_is_subtype_ph(super_id, mask, sub.mnominal.mclass.vtable.internal_vtable)
+		var res = inter_is_subtype_ph(super_id, mask, sub.mnominal.data_class.vtable.internal_vtable)
 		if res == false then return false
 		# sub and sup can be generic types, each argument of generics has to be tested
 
@@ -164,7 +164,7 @@ class VirtualMachine super NaiveInterpreter
 	# Redef init_instance to simulate the loading of a class
 	redef fun init_instance(recv: Instance)
 	do
-		var mclass = recv.mtype.as(MClassType).mnominal.mclass
+		var mclass = recv.mtype.as(MClassType).mnominal.data_class
 		if not mclass.loaded then load_class(mclass)
 
 		recv.vtable = mclass.vtable
@@ -178,7 +178,7 @@ class VirtualMachine super NaiveInterpreter
 	# Associate a `PrimitiveInstance` to its `VTable`
 	redef fun init_instance_primitive(recv: Instance)
 	do
-		var mclass = recv.mtype.as(MClassType).mnominal.mclass
+		var mclass = recv.mtype.as(MClassType).mnominal.data_class
 		if not mclass.loaded then load_class(mclass)
 
 		recv.vtable = mclass.vtable
@@ -253,7 +253,7 @@ class VirtualMachine super NaiveInterpreter
 	# returns the most specific local method in the class corresponding to `vtable`
 	private fun method_dispatch(mproperty: MMethod, vtable: VTable, recv: Instance): MMethodDef
 	do
-		var position = recv.mtype.as(MClassType).mnominal.mclass.get_position_methods(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_methods(mproperty.intro_mclassdef.mclass)
 		if position > 0 then
 			return method_dispatch_sst(vtable.internal_vtable, mproperty.offset + position)
 		else
@@ -296,7 +296,7 @@ class VirtualMachine super NaiveInterpreter
 		assert recv isa MutableInstance
 
 		var i: Instance
-		var position = recv.mtype.as(MClassType).mnominal.mclass.get_position_attributes(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_attributes(mproperty.intro_mclassdef.mclass)
 		if position > 0 then
 			# if this attribute class has an unique position for this receiver, then use direct access
 			i = read_attribute_sst(recv.internal_attributes, position + mproperty.offset)
@@ -354,7 +354,7 @@ class VirtualMachine super NaiveInterpreter
 		assert recv isa MutableInstance
 
 		# Replace the old value of mproperty in recv
-		var position = recv.mtype.as(MClassType).mnominal.mclass.get_position_attributes(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_attributes(mproperty.intro_mclassdef.mclass)
 		if position > -1 then
 			# if this attribute class has an unique position for this receiver, then use direct access
 			write_attribute_sst(recv.internal_attributes, position + mproperty.offset, value)

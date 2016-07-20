@@ -130,7 +130,7 @@ redef class MExplicitCall
 
 		var return_mtype = msignature.return_mtype
 		if mproperty.is_init then
-			if recv_mtype.mnominal.mclass.kind != extern_kind then ret_var = recv_var
+			if recv_mtype.mnominal.data_class.kind != extern_kind then ret_var = recv_var
 			return_mtype = recv_mtype
 		end
 		if return_mtype != null then
