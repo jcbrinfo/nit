@@ -231,7 +231,7 @@ class APIEntityUML
 		var mentity = mentity_from_uri(req, res)
 		if mentity == null then return
 		var dot
-		if mentity isa MClassDef then mentity = mentity.mclass
+		if mentity isa MClassDef then mentity = mentity.mnominal
 		if mentity isa MClass then
 			var uml = new UMLModel(config.view, config.mainmodule)
 			dot = uml.generate_class_uml.write_to_string

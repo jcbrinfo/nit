@@ -149,7 +149,7 @@ redef class AMethPropdef
 		for cb in foreign_callbacks.callbacks do v.add_send(cb.recv_mtype, cb.mproperty.as(MMethod))
 		for cast in foreign_callbacks.casts do v.add_cast_type(cast.to)
 		for sup in foreign_callbacks.supers do
-			v.analysis.add_super_send(sup.from.mclassdef.mclass.mclass_type, sup.from.as(MMethodDef))
+			v.analysis.add_super_send(sup.from.mclassdef.mnominal.mclass_type, sup.from.as(MMethodDef))
 		end
 		for t in foreign_callbacks.types do if t isa MClassType then v.add_type t
 	end
@@ -372,7 +372,7 @@ redef class ASuperExternCall
 	redef fun verify_and_collect(npropdef, callback_set, toolcontext)
 	do
 		callback_set.supers.add( new MExplicitSuper( npropdef.mpropdef.as(not null) ) )
-		callback_set.types.add( npropdef.mpropdef.mclassdef.mclass.mclass_type )
+		callback_set.types.add( npropdef.mpropdef.mclassdef.mnominal.mclass_type )
 		npropdef.mpropdef.has_supercall = true
 	end
 end

@@ -208,7 +208,7 @@ var phase = toolcontext.restful_phase
 assert phase isa RestfulPhase
 
 for mclassdef in phase.restful_classes do
-	var mclass = mclassdef.mclass
+	var mclass = mclassdef.mnominal
 
 	var t = new Template
 	nit_module.content.add t

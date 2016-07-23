@@ -327,7 +327,7 @@ redef class MModule
 end
 
 redef class MClassDef
-	redef fun nitdoc_name do return mclass.nitdoc_name
+	redef fun nitdoc_name do return mnominal.nitdoc_name
 end
 
 redef class MPropDef

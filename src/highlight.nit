@@ -457,13 +457,13 @@ end
 redef class MClassDef
 	redef fun infobox(v)
 	do
-		var res = new HInfoBox(v, "class {mclass.name}")
+		var res = new HInfoBox(v, "class {mnominal.name}")
 		res.href = v.hrefto(self)
 		if is_nominal_intro then
-			res.new_field("class").text(mclass.name)
+			res.new_field("class").text(mnominal.name)
 		else
-			res.new_field("redef class").text(mclass.name)
-			res.new_field("intro").add mclass.intro.linkto_text(v, "in {mclass.intro_mmodule.to_s}")
+			res.new_field("redef class").text(mnominal.name)
+			res.new_field("intro").add mnominal.intro.linkto_text(v, "in {mnominal.intro_mmodule.to_s}")
 		end
 		add_doc_to_infobox(res)
 
@@ -486,9 +486,10 @@ redef class MClassDef
 				c.open("li").add x.linkto(v)
 			end
 		end
-		if mclass.mclassdefs.length > 1 then
+		if mnominal.defs.length > 1 then
+			# TODO: Hidden defs
 			var c = res.new_dropdown("redefs", "refinements")
-			for x in mclass.mclassdefs do
+			for x in mnominal.defs do
 				if x == self then continue
 				c.open("li").add x.linkto_text(v, "in {x.mmodule}")
 			end

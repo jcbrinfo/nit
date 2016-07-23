@@ -270,20 +270,20 @@ end
 redef class MClassDef
 	redef fun namespace do
 		if is_intro then
-			return new Namespace.from([mmodule.ns_for(mclass.visibility), "$", to_ns_ref: nullable NSEntity])
+			return new Namespace.from([mmodule.ns_for(mnominal.visibility), "$", to_ns_ref: nullable NSEntity])
 		else if mclass.intro_mmodule.mpackage != mmodule.mpackage then
-			return new Namespace.from([mmodule.namespace, "$", mclass.namespace: nullable NSEntity])
+			return new Namespace.from([mmodule.namespace, "$", mnominal.namespace: nullable NSEntity])
 		else if mclass.visibility > private_visibility then
-			return new Namespace.from([mmodule.namespace, "$", mclass.to_ns_ref: nullable NSEntity])
+			return new Namespace.from([mmodule.namespace, "$", mnominal.to_ns_ref: nullable NSEntity])
 		end
-		return new Namespace.from([mmodule.full_name, "$::", mclass.intro_mmodule.to_ns_ref: nullable NSEntity])
+		return new Namespace.from([mmodule.full_name, "$::", mnominal.intro_mmodule.to_ns_ref: nullable NSEntity])
 	end
 end
 
 redef class MProperty
 	redef fun namespace do
 		if intro_mclassdef.is_intro then
-			return new Namespace.from([intro_mclassdef.mmodule.ns_for(visibility), "::", intro_mclassdef.mclass.to_ns_ref, "::", to_ns_ref: nullable NSEntity])
+			return new Namespace.from([intro_mclassdef.mmodule.ns_for(visibility), "::", intro_mclassdef.mnominal.to_ns_ref, "::", to_ns_ref: nullable NSEntity])
 		else
 			return new Namespace.from([intro_mclassdef.mmodule.namespace, "::", intro_mclassdef.mclass.to_ns_ref, "::", to_ns_ref: nullable NSEntity])
 		end

@@ -717,7 +717,7 @@ class MClassDef
 
 	redef var location
 
-	redef fun visibility do return mclass.visibility
+	redef fun visibility do return mnominal.visibility
 
 	# Internal name combining the module and the nominal
 	# Example: "mymodule$MyClass"
@@ -751,11 +751,11 @@ class MClassDef
 			# public gives 'p$A'
 			# private gives 'p::m$A'
 			return "{mmodule.namespace_for(mnominal.visibility)}${mnominal.name}"
-		else if mclass.intro_mmodule.mpackage != mmodule.mpackage then
+		else if mnominal.intro_mmodule.mpackage != mmodule.mpackage then
 			# public gives 'q::n$p::A'
 			# private gives 'q::n$p::m::A'
 			return "{mmodule.full_name}${mnominal.full_name}"
-		else if mclass.visibility > private_visibility then
+		else if mnominal.visibility > private_visibility then
 			# public gives 'p::n$A'
 			return "{mmodule.full_name}${mnominal.name}"
 		else
@@ -767,7 +767,7 @@ class MClassDef
 	redef var c_name is lazy do
 		if is_nominal_intro then
 			return "{mmodule.c_namespace_for(mnominal.visibility)}___{mnominal.c_name}"
-		else if mclass.intro_mmodule.mpackage == mmodule.mpackage and mclass.visibility > private_visibility then
+		else if mnominal.intro_mmodule.mpackage == mmodule.mpackage and mnominal.visibility > private_visibility then
 			return "{mmodule.c_name}___{mnominal.name.to_cmangle}"
 		else
 			return "{mmodule.c_name}___{mnominal.c_name}"
@@ -801,7 +801,7 @@ class MClassDef
 			# Register in full_type_specialization_hierarchy
 			model.full_mtype_specialization_hierarchy.add_edge(mtype, supertype)
 			# Register in intro_type_specialization_hierarchy
-			if mclass.intro_mmodule == mmodule and supertype.mnominal.intro_mmodule == mmodule then
+			if mnominal.intro_mmodule == mmodule and supertype.mnominal.intro_mmodule == mmodule then
 				model.intro_mtype_specialization_hierarchy.add_edge(mtype, supertype)
 			end
 		end
@@ -2533,7 +2533,7 @@ abstract class MPropDef
 
 		res.append "$"
 
-		if mclassdef.mclass == mproperty.intro_mclassdef.mclass then
+		if mclassdef.mnominal == mproperty.intro_mclassdef.mnominal then
 			# intro are unambiguous in a class
 			res.append name
 		else
@@ -2545,7 +2545,7 @@ abstract class MPropDef
 			else if mproperty.visibility <= private_visibility then
 				# Same package ("p"=="q"), but private visibility,
 				# does the module part ("::m") need to be displayed
-				if mclassdef.mmodule.namespace_for(mclassdef.mclass.visibility) != mproperty.intro_mclassdef.mmodule.mpackage then
+				if mclassdef.mmodule.namespace_for(mclassdef.mnominal.visibility) != mproperty.intro_mclassdef.mmodule.mpackage then
 					res.append "::"
 					res.append mproperty.intro_mclassdef.mmodule.name
 					res.append "::"
@@ -2566,7 +2566,7 @@ abstract class MPropDef
 		var res = new FlatBuffer
 		res.append mclassdef.c_name
 		res.append "___"
-		if mclassdef.mclass == mproperty.intro_mclassdef.mclass then
+		if mclassdef.mnominal == mproperty.intro_mclassdef.mnominal then
 			res.append name.to_cmangle
 		else
 			if mclassdef.mmodule != mproperty.intro_mclassdef.mmodule then

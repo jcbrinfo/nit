@@ -408,7 +408,7 @@ redef class ModelBuilder
 						var st1 = superclasses[st.mnominal].resolve_for(mclassdef.mnominal.mclass_type, mclassdef.bound_mtype, mmodule, false)
 						var st2 = st.resolve_for(mclassdef.mnominal.mclass_type, mclassdef.bound_mtype, mmodule, false)
 						if st1 != st2 then
-							error(nclassdef, "Error: incompatible ancestors for `{mclassdef.mclass}`; conflict: `{st1}` and `{st2}`")
+							error(nclassdef, "Error: incompatible ancestors for `{mclassdef.mnominal}`; conflict: `{st1}` and `{st2}`")
 						end
 					end
 				end
@@ -425,9 +425,9 @@ redef class ModelBuilder
 
 			# Get the direct superclasses
 			# Since we are a mclassdef, just look at the mclassdef hierarchy
-			var parents = new Array[MClass]
+			var parents = new Array[MNominal]
 			for sup in mclassdef.in_hierarchy.direct_greaters do
-				parents.add(sup.mclass)
+				parents.add(sup.mnominal)
 			end
 
 			# Used to track duplicates of superclasses
@@ -446,12 +446,12 @@ redef class ModelBuilder
 				if not parents.has(sc) or sc == objectclass then
 					# Skip the warning on generated code
 					if ntype.location.file != null and not ntype.location.file.filename.is_empty then
-						warning(ntype, "useless-superclass", "Warning: superfluous super-class `{mtype}` in class `{mclassdef.mclass}`.")
+						warning(ntype, "useless-superclass", "Warning: superfluous super-class `{mtype}` in class `{mclassdef.mnominal}`.")
 					end
 				else if not seen_parents.has_key(sc) then
 					seen_parents[sc] = ntype
 				else
-					warning(ntype, "useless-superclass", "Warning: duplicated super-class `{mtype}` in class `{mclassdef.mclass}`.")
+					warning(ntype, "useless-superclass", "Warning: duplicated super-class `{mtype}` in class `{mclassdef.mnominal}`.")
 				end
 			end
 		end

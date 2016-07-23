@@ -530,7 +530,7 @@ class NeoModel
 		var node = make_node(mclassdef)
 		node.labels.add "MClassDef"
 		node.out_edges.add(new NeoEdge(node, "BOUNDTYPE", to_node(mclassdef.bound_mtype)))
-		node.out_edges.add(new NeoEdge(node, "MCLASS", to_node(mclassdef.mclass)))
+		node.out_edges.add(new NeoEdge(node, "MCLASS", to_node(mclassdef.mnominal)))
 		for mproperty in mclassdef.intro_mproperties do
 			node.out_edges.add(new NeoEdge(node, "INTRODUCES", to_node(mproperty)))
 		end

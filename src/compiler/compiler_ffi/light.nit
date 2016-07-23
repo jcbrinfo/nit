@@ -133,7 +133,7 @@ redef class AMethPropdef
 			var arg = arguments[a]
 			var param_mtype: MType
 			if a == 0 then
-				param_mtype = mpropdef.mclassdef.mclass.mclass_type
+				param_mtype = mpropdef.mclassdef.mnominal.mclass_type
 			else param_mtype = mpropdef.msignature.mparameters[a-1].mtype
 
 			param_mtype = param_mtype.anchor_to(mmodule, mclass_type)

@@ -389,8 +389,8 @@ class Catalog
 				if m.mdoc != null then doc_score += ms else ms /= 10.0
 				for cd in m.mclassdefs do
 					var cs = ms * 0.2
-					if not cd.is_class_intro then cs /= 100.0
-					if not cd.mclass.visibility <= private_visibility then cs /= 100.0
+					if not cd.is_nominal_intro then cs /= 100.0
+					if not cd.mnominal.visibility <= private_visibility then cs /= 100.0
 					entity_score += cs
 					if cd.mdoc != null then doc_score += cs
 					mclasses += 1

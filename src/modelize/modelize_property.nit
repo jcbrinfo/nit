@@ -142,7 +142,7 @@ redef class ModelBuilder
 	do
 		var mclassdef = nclassdef.mclassdef.as(not null)
 
-		# Are we a refinement
+		# Are we a refinement (or a subset definition)?
 		if not mclassdef.is_class_intro then return
 
 		# Look for the init in Object, or create it
@@ -538,7 +538,7 @@ redef class MClassDef
 			var nintro = modelbuilder.mpropdef2npropdef[intro]
 
 			# SELF must be declared in Object, otherwise this will create conflicts
-			if intro_mclassdef.mclass.name != "Object" then
+			if intro_mclassdef.mnominal.name != "Object" then
 				modelbuilder.error(nintro, "Error: the virtual type `SELF` must be declared in `Object`.")
 			end
 
@@ -558,7 +558,7 @@ redef class MClassDef
 		# This class introduction inherits a SELF
 		# We insert an artificial property to update it
 		var mpropdef = new MVirtualTypeDef(self, mprop, self.location)
-		mpropdef.bound = mclass.mclass_type
+		mpropdef.bound = mnominal.mclass_type
 	end
 end
 
@@ -582,7 +582,7 @@ redef class APropdef
 				mvisibility = public_visibility
 			end
 		end
-		if mclassdef.mclass.visibility == private_visibility then
+		if mclassdef.mnominal.visibility == private_visibility then
 			if mvisibility == protected_visibility then
 				assert nvisibility != null
 				modelbuilder.error(nvisibility, "Error: `private` is the only legal visibility for properties in a private class.")
@@ -631,13 +631,13 @@ redef class APropdef
 	private fun check_redef_keyword(modelbuilder: ModelBuilder, mclassdef: MClassDef, kwredef: nullable Token, need_redef: Bool, mprop: MProperty): Bool
 	do
 		if mclassdef.mprop2npropdef.has_key(mprop) then
-			modelbuilder.error(self, "Error: a property `{mprop}` is already defined in class `{mclassdef.mclass}` at line {mclassdef.mprop2npropdef[mprop].location.line_start}.")
+			modelbuilder.error(self, "Error: a property `{mprop}` is already defined in class `{mclassdef.mnominal}` at line {mclassdef.mprop2npropdef[mprop].location.line_start}.")
 			return false
 		end
 		if mprop isa MMethod and mprop.is_root_init then return true
 		if kwredef == null then
 			if need_redef then
-				modelbuilder.error(self, "Redef Error: `{mclassdef.mclass}::{mprop.name}` is an inherited property. To redefine it, add the `redef` keyword.")
+				modelbuilder.error(self, "Redef Error: `{mclassdef.mnominal}::{mprop.name}` is an inherited property. To redefine it, add the `redef` keyword.")
 				return false
 			end
 
@@ -646,15 +646,19 @@ redef class APropdef
 			if mprop.intro_mclassdef.mmodule.mgroup != null and mprop.visibility >= protected_visibility then
 				var others = modelbuilder.model.get_mproperties_by_name(mprop.name)
 				if others != null then for other in others do
-					if other != mprop and other.intro_mclassdef.mmodule.mgroup != null and other.intro_mclassdef.mmodule.mgroup.mpackage == mprop.intro_mclassdef.mmodule.mgroup.mpackage and other.intro_mclassdef.mclass.name == mprop.intro_mclassdef.mclass.name and other.visibility >= protected_visibility then
-						modelbuilder.advice(self, "full-name-conflict", "Warning: A property named `{other.full_name}` is already defined in module `{other.intro_mclassdef.mmodule}` for the class `{other.intro_mclassdef.mclass.name}`.")
+					if other != mprop and
+							other.intro_mclassdef.mmodule.mgroup != null and
+							other.intro_mclassdef.mmodule.mgroup.mpackage == mprop.intro_mclassdef.mmodule.mgroup.mpackage and
+							other.intro_mclassdef.mnominal.name == mprop.intro_mclassdef.mnominal.name and
+							other.visibility >= protected_visibility then
+						modelbuilder.advice(self, "full-name-conflict", "Warning: A property named `{other.full_name}` is already defined in module `{other.intro_mclassdef.mmodule}` for the class `{other.intro_mclassdef.mnominal.name}`.")
 						break
 					end
 				end
 			end
 		else
 			if not need_redef then
-				modelbuilder.error(self, "Error: no property `{mclassdef.mclass}::{mprop.name}` is inherited. Remove the `redef` keyword to define a new property.")
+				modelbuilder.error(self, "Error: no property `{mclassdef.mnominal}::{mprop.name}` is inherited. Remove the `redef` keyword to define a new property.")
 				return false
 			end
 		end
@@ -842,7 +846,7 @@ redef class AMethPropdef
 			end
 			mprop.is_init = is_init
 			mprop.is_new = n_kwnew != null
-			if mprop.is_new then mclassdef.mclass.has_new_factory = true
+			if mprop.is_new then mclassdef.mnominal.has_new_factory = true
 			if name == "sys" then mprop.is_toplevel = true # special case for sys allowed in `new` factories
 			if not self.check_redef_keyword(modelbuilder, mclassdef, n_kwredef, false, mprop) then
 				mprop.is_broken = true
@@ -890,8 +894,8 @@ redef class AMethPropdef
 		var mmodule = mclassdef.mmodule
 		var nsig = self.n_signature
 
-		if mpropdef.mproperty.is_root_init and not mclassdef.is_class_intro then
-			var root_init = mclassdef.mclass.root_init
+		if mpropdef.mproperty.is_root_init and not mclassdef.is_nominal_intro then
+			var root_init = mclassdef.mnominal.root_init
 			if root_init != null then
 				# Inherit the initializers by refinement
 				mpropdef.new_msignature = root_init.new_msignature
@@ -924,7 +928,7 @@ redef class AMethPropdef
 			if msignature == null then return # Skip error
 
 			# The local signature is adapted to use the local formal types, if any.
-			msignature = msignature.resolve_for(mclassdef.mclass.mclass_type, mclassdef.bound_mtype, mmodule, false)
+			msignature = msignature.resolve_for(mclassdef.mnominal.mclass_type, mclassdef.bound_mtype, mmodule, false)
 
 			# Check inherited signature arity
 			if param_names.length != msignature.arity then
@@ -974,7 +978,7 @@ redef class AMethPropdef
 		end
 
 		# In `new`-factories, the return type is by default the classtype.
-		if ret_type == null and mpropdef.mproperty.is_new then ret_type = mclassdef.mclass.mclass_type
+		if ret_type == null and mpropdef.mproperty.is_new then ret_type = mclassdef.mnominal.mclass_type
 
 		# Special checks for operator methods
 		if not accept_special_last_parameter and mparameters.not_empty and mparameters.last.is_vararg then
@@ -1187,7 +1191,7 @@ redef class AAttrPropdef
 
 	redef fun build_property(modelbuilder, mclassdef)
 	do
-		var mclass = mclassdef.mclass
+		var mclass = mclassdef.mnominal
 		var nid2 = n_id2
 		var name = nid2.text
 
@@ -1372,7 +1376,7 @@ redef class AAttrPropdef
 			inherited_type = msignature.return_mtype
 			if inherited_type != null then
 				# The inherited type is adapted to use the local formal types, if any.
-				inherited_type = inherited_type.resolve_for(mclassdef.mclass.mclass_type, mclassdef.bound_mtype, mmodule, false)
+				inherited_type = inherited_type.resolve_for(mclassdef.mnominal.mclass_type, mclassdef.bound_mtype, mmodule, false)
 				if mtype == null then mtype = inherited_type
 			end
 		end
@@ -1693,7 +1697,7 @@ redef class ATypePropdef
 			var supbound = p.bound
 			if supbound == null or supbound isa MBottomType or p.is_broken then break # broken super bound, skip error
 			if p.is_fixed then
-				modelbuilder.error(self, "Redef Error: virtual type `{mpropdef.mproperty}` is fixed in super-class `{p.mclassdef.mclass}`.")
+				modelbuilder.error(self, "Redef Error: virtual type `{mpropdef.mproperty}` is fixed in super-class `{p.mclassdef.mnominal}`.")
 				break
 			end
 			if p.mclassdef.mclass == mclassdef.mclass then

@@ -501,7 +501,7 @@ class GlobalCompilerVisitor
 		var defaultpropdef: nullable MMethodDef = null
 		for t in types do
 			var propdef = m.lookup_first_definition(self.compiler.mainmodule, t)
-			if propdef.mclassdef.mclass.name == "Object" and not t.is_c_primitive then
+			if propdef.mclassdef.mnominal.name == "Object" and not t.is_c_primitive then
 				defaultpropdef = propdef
 				continue
 			end
@@ -1043,7 +1043,7 @@ private class CustomizedRuntimeFunction
 			v.add("return {frame.returnvar.as(not null)};")
 		end
 		v.add("\}")
-		if not self.c_name.has_substring("VIRTUAL", 0) then compiler.names[self.c_name] = "{mmethoddef.mclassdef.mmodule.name}::{mmethoddef.mclassdef.mclass.name}::{mmethoddef.mproperty.name} ({mmethoddef.location.file.filename}:{mmethoddef.location.line_start})"
+		if not self.c_name.has_substring("VIRTUAL", 0) then compiler.names[self.c_name] = "{mmethoddef.mclassdef.mmodule.name}::{mmethoddef.mclassdef.mnominal.name}::{mmethoddef.mproperty.name} ({mmethoddef.location.file.filename}:{mmethoddef.location.line_start})"
 	end
 
 	redef fun call(v: VISITOR, arguments: Array[RuntimeVariable]): nullable RuntimeVariable

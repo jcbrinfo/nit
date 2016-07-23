@@ -220,12 +220,12 @@ class MNBR
 	end
 end
 
-# Module Metric: Number of Concrete Class in module (intro + redef)
+# Module Metric: Number of Concrete Class in module (intro + redef + subsets)
 class MNBCC
 	super MModuleMetric
 	super IntMetric
 	redef fun name do return "mnbcc"
-	redef fun desc do return "number of concrete class in module (intro + redef)"
+	redef fun desc do return "number of concrete class in module (intro + redef + subsets)"
 
 	redef fun collect(mmodules) do
 		for mmodule in mmodules do
@@ -238,12 +238,12 @@ class MNBCC
 	end
 end
 
-# Module Metric: Number of Abstract Class in module (intro + redef)
+# Module Metric: Number of Abstract Class in module (intro + redef + subsets)
 class MNBAC
 	super MModuleMetric
 	super IntMetric
 	redef fun name do return "mnbac"
-	redef fun desc do return "number of abstract class in module (intro + redef)"
+	redef fun desc do return "number of abstract class in module (intro + redef + subsets)"
 
 	redef fun collect(mmodules) do
 		for mmodule in mmodules do
@@ -256,12 +256,12 @@ class MNBAC
 	end
 end
 
-# Module Metric: Number of Interface in module (intro + redef)
+# Module Metric: Number of Interface in module (intro + redef + subsets)
 class MNBIC
 	super MModuleMetric
 	super IntMetric
 	redef fun name do return "mnbic"
-	redef fun desc do return "number of interface in module (intro + redef)"
+	redef fun desc do return "number of interface in module (intro + redef + subsets)"
 
 	redef fun collect(mmodules) do
 		for mmodule in mmodules do
@@ -274,12 +274,12 @@ class MNBIC
 	end
 end
 
-# Module Metric: Number of Enum in module (intro + redef)
+# Module Metric: Number of Enum in module (intro + redef + subsets)
 class MNBEC
 	super MModuleMetric
 	super IntMetric
 	redef fun name do return "mnbec"
-	redef fun desc do return "number of enum in module (intro + redef)"
+	redef fun desc do return "number of enum in module (intro + redef + subsets)"
 
 	redef fun collect(mmodules) do
 		for mmodule in mmodules do

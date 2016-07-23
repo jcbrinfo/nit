@@ -203,7 +203,7 @@ redef class MExplicitSuper
 	do
 		var mproperty = from.mproperty
 		assert mproperty isa MMethod
-		var mclass_type = from.mclassdef.mclass.mclass_type
+		var mclass_type = from.mclassdef.mnominal.mclass_type
 
 		# In nitni files, declare internal function as extern
 		var internal_csignature = mproperty.build_csignature(mclass_type, v.compiler.mainmodule, "___super", long_signature, internal_call_context)
