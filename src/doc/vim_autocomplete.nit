@@ -136,7 +136,7 @@ redef class MClassDef
 		assert target_constructor != null
 
 		var params
-		var mparameters = mclass.mparameters
+		var mparameters = mnominal.mparameters
 		if not mparameters.is_empty then
 			params = "[{mparameters.join(", ")}]"
 		else

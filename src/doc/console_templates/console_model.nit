@@ -258,7 +258,7 @@ redef class MClass
 end
 
 redef class MClassDef
-	redef fun mdoc_or_fallback do return mdoc or else mclass.mdoc_or_fallback
+	redef fun mdoc_or_fallback do return mdoc or else mnominal.mdoc_or_fallback
 	redef fun cs_icon do return "C"
 
 	# Depends if `self` is an intro or not.
@@ -270,11 +270,11 @@ redef class MClassDef
 		if not is_nominal_intro then
 			res.add "redef"
 		else
-			if mclass.visibility != public_visibility then
-				res.add mclass.visibility.to_s
+			if mnominal.visibility != public_visibility then
+				res.add mnominal.visibility.to_s
 			end
 		end
-		res.add mclass.kind.to_s
+		res.add mnominal.kind.to_s
 		return res
 	end
 
@@ -300,14 +300,14 @@ redef class MClassDef
 		var tpl = new FlatBuffer
 		tpl.append mmodule.cs_namespace
 		tpl.append "::"
-		tpl.append mclass.cs_name
+		tpl.append mnominal.cs_name
 		return tpl.write_to_string.write_to_string
 	end
 
 	# Returns the MClassDef generic signature without static bounds.
 	fun cs_short_signature: String do
 		var tpl = new FlatBuffer
-		var mparameters = mclass.mparameters
+		var mparameters = mnominal.mparameters
 		if not mparameters.is_empty then
 			tpl.append "["
 			for i in [0..mparameters.length[ do
@@ -322,7 +322,7 @@ redef class MClassDef
 	# Returns the MClassDef generic signature with static bounds.
 	fun cs_signature: String do
 		var tpl = new FlatBuffer
-		var mparameters = mclass.mparameters
+		var mparameters = mnominal.mparameters
 		if not mparameters.is_empty then
 			tpl.append "["
 			for i in [0..mparameters.length[ do
@@ -347,7 +347,7 @@ redef class MProperty
 	# Returns `mclass::self`.
 	redef fun cs_namespace do
 		var tpl = new FlatBuffer
-		tpl.append intro_mclassdef.mclass.cs_namespace
+		tpl.append intro_mclassdef.mnominal.cs_namespace
 		tpl.append "::"
 		tpl.append intro.cs_name
 		return tpl.write_to_string

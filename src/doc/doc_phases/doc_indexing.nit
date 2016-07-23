@@ -41,8 +41,8 @@ class IndexingPhase
 		for mproperty in doc.mproperties do
 			for mpropdef in mproperty.mpropdefs do
 				if not doc.mpropdefs.has(mpropdef) then continue
-				var full_name = mpropdef.mclassdef.mclass.full_name
-				var cls_url = mpropdef.mclassdef.mclass.nitdoc_url
+				var full_name = mpropdef.mclassdef.mnominal.full_name
+				var cls_url = mpropdef.mclassdef.mnominal.nitdoc_url
 				var def_url = "{cls_url}#{mpropdef.nitdoc_id}.definition"
 				add_result_for(mproperty.name, full_name, def_url)
 			end

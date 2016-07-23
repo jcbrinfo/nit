@@ -175,7 +175,7 @@ class APIEntityUML
 	redef fun get(req, res) do
 		var mentity = mentity_from_uri(req, res)
 		var dot
-		if mentity isa MClassDef then mentity = mentity.mclass
+		if mentity isa MClassDef then mentity = mentity.mnominal
 		if mentity isa MClass then
 			var uml = new UMLModel(view, mainmodule)
 			dot = uml.generate_class_uml.write_to_string

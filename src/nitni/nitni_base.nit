@@ -63,7 +63,7 @@ end
 redef class MMethodDef
 	# Name of the function to callback this method from C,
 	# also used in other functions names used for this method.
-	fun cname: String do return "{mclassdef.mclass.name}_{mproperty.short_cname}"
+	fun cname: String do return "{mclassdef.mnominal.name}_{mproperty.short_cname}"
 end
 
 redef class MType

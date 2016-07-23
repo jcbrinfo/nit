@@ -72,7 +72,7 @@ private class TypeVisitor
 			self.mclassdef = mclassdef
 			self.anchor = mclassdef.bound_mtype
 
-			var mclass = mclassdef.mclass
+			var mclass = mclassdef.mnominal
 
 			var selfvariable = new Variable("self")
 			self.selfvariable = selfvariable

@@ -107,11 +107,11 @@ end
 
 redef class MClassDef
 	redef var nitdoc_id = "{mmodule.nitdoc_id}__{name.to_cmangle}" is lazy
-	redef fun nitdoc_url do return "{mclass.nitdoc_url}#{nitdoc_id}"
+	redef fun nitdoc_url do return "{mnominal.nitdoc_url}#{nitdoc_id}"
 end
 
 redef class MProperty
-	redef var nitdoc_id = "{intro_mclassdef.mclass.nitdoc_id}__{name.to_cmangle}" is lazy
+	redef var nitdoc_id = "{intro_mclassdef.mnominal.nitdoc_id}__{name.to_cmangle}" is lazy
 	redef fun nitdoc_url do return "property_{nitdoc_id}.html"
 end
 

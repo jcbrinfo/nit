@@ -167,13 +167,12 @@ end
 redef class MClassDef
 	redef fun json do
 		var obj = super
-		obj["is_nominal_intro"] = is_nominal_intro
-		obj["is_class_intro"] = is_class_intro
+		obj["is_intro"] = is_nominal_intro
 		var arr = new JsonArray
-		for mparameter in mclass.mparameters do arr.add mparameter
+		for mparameter in mnominal.mparameters do arr.add mparameter
 		obj["mparameters"] = arr
 		obj["mmodule"] = to_mentity_ref(mmodule)
-		obj["mclass"] = to_mentity_ref(mclass)
+		obj["mclass"] = to_mentity_ref(mnominal)
 		obj["mpropdefs"] = to_mentity_refs(mpropdefs)
 		obj["intro_mproperties"] = to_mentity_refs(intro_mproperties)
 		return obj

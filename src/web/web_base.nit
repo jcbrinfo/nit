@@ -199,7 +199,7 @@ redef class MClassDef
 
 	redef fun json do
 		var obj = super
-		obj["intro"] = to_mentity_ref(mclass.intro)
+		obj["intro"] = to_mentity_ref(mnominal.intro)
 		obj["mpackage"] = to_mentity_ref(mmodule.mpackage)
 		return obj
 	end
@@ -217,7 +217,7 @@ redef class MProperty
 
 	redef fun json do
 		var obj = super
-		obj["intro_mclass"] = to_mentity_ref(intro_mclassdef.mclass)
+		obj["intro_mclass"] = to_mentity_ref(intro_mclassdef.mnominal)
 		obj["mpackage"] = to_mentity_ref(intro_mclassdef.mmodule.mpackage)
 		return obj
 	end

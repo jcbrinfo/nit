@@ -397,7 +397,7 @@ redef class MClassPage
 		var classes = mprop.intro.css_classes
 		if not mprop_is_local(mprop) then
 			classes.add "inherit"
-			var cls_url = mprop.intro.mclassdef.mclass.nitdoc_url
+			var cls_url = mprop.intro.mclassdef.mnominal.nitdoc_url
 			var def_url = "{cls_url}#{mprop.nitdoc_id}.definition"
 			var lnk = new Link(def_url, mprop.html_name)
 			var mdoc = mprop.intro.mdoc_or_fallback
@@ -440,7 +440,7 @@ redef class MClassPage
 		for mprop in mentity.collect_inherited_mproperties(v.doc) do
 			if local.has(mprop) then continue
 			#if mprop isa MMethod and mprop.is_init then continue
-			if mprop.intro.mclassdef.mclass.name == "Object" and
+			if mprop.intro.mclassdef.mnominal.name == "Object" and
 				(mprop.visibility == protected_visibility or
 				mprop.intro.mclassdef.mmodule.name != "kernel") then continue
 			res.add mprop
@@ -466,7 +466,7 @@ redef class MPropertyPage
 		super
 		var mmodule = mentity.intro_mclassdef.mmodule
 		var mpackage = mmodule.mgroup.mpackage
-		var mclass = mentity.intro_mclassdef.mclass
+		var mclass = mentity.intro_mclassdef.mnominal
 		topmenu.add_li new ListItem(new Link(mpackage.nitdoc_url, mpackage.html_name))
 		topmenu.add_li new ListItem(new Link(mclass.nitdoc_url, mclass.html_name))
 		topmenu.add_li new ListItem(new Link(html_url, mentity.html_name))

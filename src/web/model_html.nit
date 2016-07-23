@@ -201,7 +201,7 @@ redef class MClass
 end
 
 redef class MClassDef
-	redef fun mdoc_or_fallback do return mdoc or else mclass.mdoc_or_fallback
+	redef fun mdoc_or_fallback do return mdoc or else mnominal.mdoc_or_fallback
 
 	# Depends if `self` is an intro or not.
 	#
@@ -212,11 +212,11 @@ redef class MClassDef
 		if not is_nominal_intro then
 			res.add "redef"
 		else
-			if mclass.visibility != public_visibility then
-				res.add mclass.visibility.to_s
+			if mnominal.visibility != public_visibility then
+				res.add mnominal.visibility.to_s
 			end
 		end
-		res.add mclass.kind.to_s
+		res.add mnominal.kind.to_s
 		return res
 	end
 
@@ -244,7 +244,7 @@ redef class MClassDef
 		var tpl = new Template
 		tpl.add mmodule.html_namespace
 		tpl.add "::<span>"
-		tpl.add mclass.html_link
+		tpl.add mnominal.html_link
 		tpl.add "</span>"
 		return tpl
 	end
@@ -252,7 +252,7 @@ redef class MClassDef
 	# Returns the MClassDef generic signature without static bounds.
 	fun html_short_signature: Template do
 		var tpl = new Template
-		var mparameters = mclass.mparameters
+		var mparameters = mnominal.mparameters
 		if not mparameters.is_empty then
 			tpl.add "["
 			for i in [0..mparameters.length[ do
@@ -267,7 +267,7 @@ redef class MClassDef
 	# Returns the MClassDef generic signature with static bounds.
 	fun html_signature: Template do
 		var tpl = new Template
-		var mparameters = mclass.mparameters
+		var mparameters = mnominal.mparameters
 		if not mparameters.is_empty then
 			tpl.add "["
 			for i in [0..mparameters.length[ do
@@ -283,7 +283,7 @@ redef class MClassDef
 	redef fun css_classes do
 		var set = new HashSet[String]
 		if is_nominal_intro then set.add "intro"
-		for m in mclass.intro.modifiers do set.add m.to_cmangle
+		for m in mnominal.intro.modifiers do set.add m.to_cmangle
 		for m in modifiers do set.add m.to_cmangle
 		return set.to_a
 	end
@@ -295,9 +295,9 @@ redef class MClassDef
 		if not is_nominal_intro then
 			res.add "redef"
 		else
-			res.add mclass.visibility.to_s
+			res.add mnominal.visibility.to_s
 		end
-		res.add mclass.kind.to_s
+		res.add mnominal.kind.to_s
 		return res
 	end
 end
@@ -310,7 +310,7 @@ redef class MProperty
 	# Returns `mclass::self`.
 	redef fun html_namespace do
 		var tpl = new Template
-		tpl.add intro_mclassdef.mclass.html_namespace
+		tpl.add intro_mclassdef.mnominal.html_namespace
 		tpl.add "::<span>"
 		tpl.add intro.html_link
 		tpl.add "</span>"

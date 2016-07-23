@@ -23,7 +23,7 @@ private class RestfulPhase
 	super Phase
 
 	# Classes with methods marked with the `restful` annotation
-	var restful_classes = new HashSet[MClass]
+	var restful_classes = new HashSet[MNominal]
 
 	redef fun process_annotated_node(node, nat)
 	do
@@ -58,13 +58,13 @@ private class RestfulPhase
 		end
 
 		# Register the property
-		var mclass = mclassdef.mclass
+		var mclass = mclassdef.mnominal
 		mclass.restful_methods.add mproperty
 		restful_classes.add mclass
 	end
 end
 
-redef class MClass
+redef class MNominal
 
 	# Methods with the `restful` annotation in this class
 	private var restful_methods = new Array[MMethod]

@@ -87,7 +87,7 @@ redef class MModulePage
 		end
 		# extract mclasses in mmodule
 		for mclassdef in mclassdefs do
-			var mclass = mclassdef.mclass
+			var mclass = mclassdef.mnominal
 			if doc.mnominals.has(mclass) then mnominals.add mclass
 		end
 		# extract concerns

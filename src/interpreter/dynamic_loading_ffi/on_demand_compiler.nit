@@ -302,7 +302,7 @@ redef class MMethodDef
 
 		# Return type
 		var return_mtype = msignature.return_mtype
-		if mproperty.is_init then return_mtype = mclassdef.mclass.mclass_type
+		if mproperty.is_init then return_mtype = mclassdef.mnominal.mclass_type
 
 		var c_return_type
 		if return_mtype != null then
@@ -313,7 +313,7 @@ redef class MMethodDef
 
 		# Params
 		var params = new Array[String]
-		if not is_init then params.add mclassdef.mclass.mclass_type.cname_blind
+		if not is_init then params.add mclassdef.mnominal.mclass_type.cname_blind
 		for param in msignature.mparameters do params.add param.mtype.cname_blind
 
 		# Declare the implementation function as extern
@@ -343,7 +343,7 @@ redef class MMethodDef
 		var k = 0
 		var args_for_call = new Array[String]
 		if not is_init then
-			var mtype = mclassdef.mclass.mclass_type
+			var mtype = mclassdef.mnominal.mclass_type
 			var arg_name = "arg___self"
 
 			fc.decls.add "	{mtype.cname_blind} {arg_name};\n"

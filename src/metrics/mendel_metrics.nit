@@ -273,11 +273,12 @@ redef class MNominal
 	# the set of redefition that call to super
 	fun extended_mproperties(view: ModelView): Set[MProperty] do
 		var set = new HashSet[MProperty]
+		# TODO: Hidden defs
 		for mclassdef in defs do
 			for mpropdef in mclassdef.mpropdefs do
 				if not view.accept_mentity(mpropdef) then continue
 				if not mpropdef.has_supercall then continue
-				if mpropdef.mproperty.intro_mclassdef.mclass != self then set.add(mpropdef.mproperty)
+				if mpropdef.mproperty.intro_mclassdef.mnominal != self then set.add(mpropdef.mproperty)
 			end
 		end
 		return set
@@ -286,11 +287,12 @@ redef class MNominal
 	# the set of redefition that do not call to super
 	fun overriden_mproperties(view: ModelView): Set[MProperty] do
 		var set = new HashSet[MProperty]
+		# TODO: Hidden defs
 		for mclassdef in defs do
 			for mpropdef in mclassdef.mpropdefs do
 				if not view.accept_mentity(mpropdef) then continue
 				if mpropdef.has_supercall then continue
-				if mpropdef.mproperty.intro_mclassdef.mclass != self then set.add(mpropdef.mproperty)
+				if mpropdef.mproperty.intro_mclassdef.mnominal != self then set.add(mpropdef.mproperty)
 			end
 		end
 		return set
