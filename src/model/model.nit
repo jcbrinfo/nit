@@ -724,11 +724,21 @@ class MClassDef
 		self.mnominal = bound_mtype.mnominal
 		self.data_class = self.mnominal.data_class
 		mmodule.mclassdefs.add(self)
+
 		data_class.mclassdefs.add(self)
-		if mnominal.intro_mmodule == mmodule then
-			assert not isset mnominal._intro
-			mnominal.intro = self
+		if data_class.intro_mmodule == mmodule then
+			assert not isset data_class._intro
+			data_class.intro = self
 		end
+
+		if mnominal != data_class then
+			mnominal.defs.add(self)
+			if mnominal.intro_mmodule == mmodule then
+				assert not isset mnominal._intro
+				mnominal.intro = self
+			end
+		end
+
 		self.to_s = "{mmodule}${mnominal}"
 	end
 
