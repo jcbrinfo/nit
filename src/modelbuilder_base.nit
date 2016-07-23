@@ -289,7 +289,7 @@ class ModelBuilder
 
 		# Check parameter type
 		if mclassdef != null then
-			for p in mclassdef.mclass.mparameters do
+			for p in mclassdef.data_class.mparameters do
 				if p.name != name then continue
 
 				if not ntype.n_types.is_empty then

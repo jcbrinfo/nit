@@ -36,7 +36,7 @@ class NitUnitGenerator
 			tpl.addn "import {mmodule.name}"
 		end
 		for mclassdef in mmodule.mclassdefs do
-			if mclassdef.mclass.kind != concrete_kind then continue
+			if mclassdef.data_class.kind != concrete_kind then continue
 			tpl.addn ""
 			tpl.addn "class Test{mclassdef.name}"
 			tpl.addn "\tsuper TestSuite"

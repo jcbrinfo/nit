@@ -72,7 +72,7 @@ private class ExternClassesTypingPhaseModel
 
 		var mclassdef = nclassdef.mclassdef
 		if mclassdef == null then return
-		var mclass = mclassdef.mclass
+		var mclass = mclassdef.data_class
 
 		# We only need to do this once per class
 		if not mclassdef.is_class_intro then return

@@ -138,7 +138,7 @@ class SeparateErasureCompiler
 						end
 					end
 					for mpropdef in mproperty.mpropdefs do
-						if mpropdef.mclassdef.mclass == parent then
+						if mpropdef.mclassdef.data_class == parent then
 							table[color] = mpropdef
 						end
 					end
@@ -155,7 +155,7 @@ class SeparateErasureCompiler
 					end
 				end
 				for mpropdef in mproperty.mpropdefs do
-					if mpropdef.mclassdef.mclass == mclass then
+					if mpropdef.mclassdef.data_class == mclass then
 						table[color] = mpropdef
 					end
 				end

@@ -37,14 +37,7 @@ redef class Model
 		var mmodule = mmodules[index]
 		mmodules.remove_at(index)
 		for classdef in mmodule.mclassdefs do
-			var mclass = classdef.mclass
-			for i in [0 .. mclass.mclassdefs.length[ do
-				if mclass.mclassdefs[i] == classdef then
-					index = i
-					break
-				end
-			end
-			mclass.mclassdefs.remove_at(index)
+			classdef.data_class.mclassdefs.remove(classdef)
 			var propdefs = classdef.mpropdefs
 			for propdef in propdefs do
 				var prop = propdef.mproperty

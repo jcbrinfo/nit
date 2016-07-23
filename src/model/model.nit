@@ -354,8 +354,8 @@ private class MClassDefSorter
 	var mmodule: MModule
 	redef fun compare(a, b)
 	do
-		var ca = a.mclass
-		var cb = b.mclass
+		var ca = a.data_class
+		var cb = b.data_class
 		if ca != cb then return mmodule.flatten_mnominal_hierarchy.compare(ca, cb)
 		return mmodule.model.mclassdef_hierarchy.compare(a, b)
 	end
@@ -691,7 +691,7 @@ class MClassDef
 	var mmodule: MModule
 
 	# The associated `MClass`
-	var mclass: MClass is noinit
+	var data_class: MClass is noinit
 
 	# The associated `MNominal`
 	#
@@ -722,9 +722,9 @@ class MClassDef
 	init
 	do
 		self.mnominal = bound_mtype.mnominal
-		self.mclass = self.mnominal.data_class
+		self.data_class = self.mnominal.data_class
 		mmodule.mclassdefs.add(self)
-		mclass.mclassdefs.add(self)
+		data_class.mclassdefs.add(self)
 		if mnominal.intro_mmodule == mmodule then
 			assert not isset mnominal._intro
 			mnominal.intro = self
@@ -828,7 +828,7 @@ class MClassDef
 	var in_hierarchy: nullable POSetElement[MClassDef] = null
 
 	# Is the definition the one that introduced `mclass`?
-	fun is_class_intro: Bool do return isset mclass._intro and mclass.intro == self
+	fun is_class_intro: Bool do return isset data_class._intro and data_class.intro == self
 
 	# Is the definition the one that introduced `mnominal`?
 	fun is_nominal_intro: Bool do return isset mnominal._intro and mnominal.intro == self
@@ -2233,12 +2233,12 @@ abstract class MProperty
 		var res = new Array[MPROPDEF]
 		for pd1 in candidates do
 			var cd1 = pd1.mclassdef
-			var c1 = cd1.mclass
+			var c1 = cd1.data_class
 			var keep = true
 			for pd2 in candidates do
 				if pd2 == pd1 then continue # do not compare with self!
 				var cd2 = pd2.mclassdef
-				var c2 = cd2.mclass
+				var c2 = cd2.data_class
 				if c2.mclass_type == c1.mclass_type then
 					if cd2.mmodule.in_importation < cd1.mmodule then
 						# cd2 refines cd1; therefore we skip pd1
