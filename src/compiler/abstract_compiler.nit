@@ -2332,7 +2332,7 @@ redef class AMethPropdef
 	fun compile_intern_to_c(v: AbstractCompilerVisitor, mpropdef: MMethodDef, arguments: Array[RuntimeVariable]): Bool
 	do
 		var pname = mpropdef.mproperty.name
-		var cname = mpropdef.mclassdef.mclass.name
+		var cname = mpropdef.mclassdef.data_class.name
 		var ret = mpropdef.msignature.return_mtype
 		if ret != null then
 			ret = v.resolve_for(ret, arguments.first)

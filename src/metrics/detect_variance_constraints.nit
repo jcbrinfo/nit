@@ -94,8 +94,8 @@ class DetectVarianceConstraints
 		for m in mainmodule.in_importation.greaters do
 			for cd in m.mclassdefs do
 				if cd.is_class_intro then
-					pts.add_all(cd.mclass.mparameters)
-					var a = cd.mclass.arity
+					pts.add_all(cd.data_class.mparameters)
+					var a = cd.data_class.arity
 					if a == 0 then
 						cpt_class.inc("non generic")
 					else if a == 1 then

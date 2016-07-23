@@ -231,7 +231,7 @@ class MNBCC
 		for mmodule in mmodules do
 			var value = 0
 			for mclassdef in mmodule.mclassdefs do
-				if mclassdef.mclass.kind == concrete_kind then value += 1
+				if mclassdef.data_class.kind == concrete_kind then value += 1
 			end
 			values[mmodule] = value
 		end
@@ -249,7 +249,7 @@ class MNBAC
 		for mmodule in mmodules do
 			var value = 0
 			for mclassdef in mmodule.mclassdefs do
-				if mclassdef.mclass.kind == abstract_kind then value += 1
+				if mclassdef.data_class.kind == abstract_kind then value += 1
 			end
 			values[mmodule] = value
 		end
@@ -267,7 +267,7 @@ class MNBIC
 		for mmodule in mmodules do
 			var value = 0
 			for mclassdef in mmodule.mclassdefs do
-				if mclassdef.mclass.kind == interface_kind then value += 1
+				if mclassdef.data_class.kind == interface_kind then value += 1
 			end
 			values[mmodule] = value
 		end
@@ -285,7 +285,7 @@ class MNBEC
 		for mmodule in mmodules do
 			var value = 0
 			for mclassdef in mmodule.mclassdefs do
-				if mclassdef.mclass.kind == enum_kind then value += 1
+				if mclassdef.data_class.kind == enum_kind then value += 1
 			end
 			values[mmodule] = value
 		end

@@ -146,9 +146,9 @@ redef class ModelBuilder
 		if not mclassdef.is_class_intro then return
 
 		# Look for the init in Object, or create it
-		if mclassdef.mclass.name == "Object" and the_root_init_mmethod == null then
+		if mclassdef.data_class.name == "Object" and the_root_init_mmethod == null then
 			# Create the implicit root-init method
-			var mprop = new MMethod(mclassdef, "init", nclassdef.location, mclassdef.mclass.visibility)
+			var mprop = new MMethod(mclassdef, "init", nclassdef.location, mclassdef.data_class.visibility)
 			mprop.is_root_init = true
 			var mpropdef = new MMethodDef(mclassdef, mprop, nclassdef.location)
 			var mparameters = new Array[MParameter]
@@ -281,7 +281,7 @@ redef class ModelBuilder
 				var pd = p.intro
 				if pd isa MMethodDef then
 					# Get the signature resolved for the current receiver
-					var sig = pd.msignature.resolve_for(mclassdef.mclass.mclass_type, mclassdef.bound_mtype, mclassdef.mmodule, false)
+					var sig = pd.msignature.resolve_for(mclassdef.data_class.mclass_type, mclassdef.bound_mtype, mclassdef.mmodule, false)
 					mparameters.add_all(sig.mparameters)
 				else
 					# TODO attributes?
@@ -309,7 +309,7 @@ redef class ModelBuilder
 								proposal.add_all spd2.initializers
 							end
 							proposal.add_all initializers
-							self.error(nclassdef, "Error: cannot generate automatic init for class {mclassdef.mclass}. Conflict in the order in inherited initializers {spd}({spd.initializers.join(", ")}) and {longest}({longest.initializers.join(", ")}). Use `autoinit` to order initializers. eg `autoinit {proposal.join(", ")}`")
+							self.error(nclassdef, "Error: cannot generate automatic init for class {mclassdef.data_class}. Conflict in the order in inherited initializers {spd}({spd.initializers.join(", ")}) and {longest}({longest.initializers.join(", ")}). Use `autoinit` to order initializers. eg `autoinit {proposal.join(", ")}`")
 							# TODO: invalidate the initializer to avoid more errors
 							return
 						end
@@ -330,7 +330,7 @@ redef class ModelBuilder
 				# Can we just inherit?
 				if spropdefs.length == 1 and mparameters.is_empty and defined_init == null then
 					self.toolcontext.info("{mclassdef} inherits the basic constructor {longest}", 3)
-					mclassdef.mclass.root_init = longest
+					mclassdef.data_class.root_init = longest
 					return
 				end
 
@@ -348,7 +348,7 @@ redef class ModelBuilder
 			var msignature = new MSignature(mparameters, null)
 			defined_init.new_msignature = msignature
 			self.toolcontext.info("{mclassdef} extends its basic constructor signature to {defined_init}{msignature}", 3)
-			mclassdef.mclass.root_init = defined_init
+			mclassdef.data_class.root_init = defined_init
 			return
 		end
 
@@ -361,7 +361,7 @@ redef class ModelBuilder
 		mpropdef.new_msignature = msignature
 		mpropdef.msignature = new MSignature(new Array[MParameter], null) # always an empty real signature
 		self.toolcontext.info("{mclassdef} gets a free constructor for attributes {mpropdef}{msignature}", 3)
-		mclassdef.mclass.root_init = mpropdef
+		mclassdef.data_class.root_init = mpropdef
 	end
 
 	# Check the visibility of `mtype` as an element of the signature of `mpropdef`.
@@ -1700,7 +1700,7 @@ redef class ATypePropdef
 				modelbuilder.error(self, "Redef Error: virtual type `{mpropdef.mproperty}` is fixed in super-class `{p.mclassdef.mnominal}`.")
 				break
 			end
-			if p.mclassdef.mclass == mclassdef.mclass then
+			if p.mclassdef.data_class == mclassdef.data_class then
 				modelbuilder.error(n_type, "Redef Error: a virtual type cannot be refined.")
 				break
 			end

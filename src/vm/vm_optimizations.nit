@@ -95,14 +95,14 @@ redef class AAttrFormExpr
 	# * `recv` The receiver (The object) of the access
 	protected fun optimize(mproperty: MAttribute, recv: MutableInstance)
 	do
-		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_attributes(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_attributes(mproperty.intro_mclassdef.data_class)
 		if position > 0 then
 			# if this attribute class has an unique position for this receiver, then use direct access
 			offset = position + mproperty.offset
 			status = 1
 		else
 			# Otherwise, perfect hashing must be used
-			id = mproperty.intro_mclassdef.mclass.vtable.id
+			id = mproperty.intro_mclassdef.data_class.vtable.id
 			offset = mproperty.offset
 			status = 2
 		end
@@ -199,7 +199,7 @@ redef class CallSite
 	# Otherwise we must use perfect hashing
 	fun optimize(recv: Instance)
 	do
-		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_methods(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_methods(mproperty.intro_mclassdef.data_class)
 		if position > 0 then
 			offset = position + mproperty.offset
 			status = 1
@@ -207,7 +207,7 @@ redef class CallSite
 			offset = mproperty.offset
 			status = 2
 		end
-		id = mproperty.intro_mclassdef.mclass.vtable.id
+		id = mproperty.intro_mclassdef.data_class.vtable.id
 	end
 end
 

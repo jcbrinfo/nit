@@ -947,7 +947,7 @@ redef class AMethPropdef
 	private fun intern_call(v: NaiveInterpreter, mpropdef: MMethodDef, args: Array[Instance]): nullable Instance
 	do
 		var pname = mpropdef.mproperty.name
-		var cname = mpropdef.mclassdef.mclass.name
+		var cname = mpropdef.mclassdef.data_class.name
 		if pname == "output" then
 			var recv = args.first
 			recv.val.output
