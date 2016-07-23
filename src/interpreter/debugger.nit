@@ -32,14 +32,8 @@ redef class Model
 	# Cleans the model to remove a module and what it defines when semantic analysis fails on injected code
 	private fun try_remove_module(m: MModule): Bool
 	do
-		var index = -1
-		for i in [0 .. mmodules.length[ do
-			if mmodules[i] == m then
-				index = i
-				break
-			end
-		end
-		if index == -1 then return false
+		var index = mmodules.index_of(m)
+		if index < 0 then return false
 		var mmodule = mmodules[index]
 		mmodules.remove_at(index)
 		for classdef in mmodule.mclassdefs do
