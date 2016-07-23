@@ -365,14 +365,19 @@ private class MPropDefSorter
 	super Comparator
 	redef type COMPARED: MPropDef
 	var mmodule: MModule
+
+	private var mclassdef_sorter: MClassDefSorter is noinit
+
+	init
+	do
+		mclassdef_sorter = new MClassDefSorter(mmodule)
+	end
+
 	redef fun compare(pa, pb)
 	do
 		var a = pa.mclassdef
 		var b = pb.mclassdef
-		var ca = a.mclass
-		var cb = b.mclass
-		if ca != cb then return mmodule.flatten_mnominal_hierarchy.compare(ca, cb)
-		return mmodule.model.mclassdef_hierarchy.compare(a, b)
+		return mclassdef_sorter.compare(a, b)
 	end
 end
 
