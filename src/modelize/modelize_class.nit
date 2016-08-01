@@ -254,12 +254,27 @@ redef class ModelBuilder
 	do
 		var mmodule = nmodule.mmodule
 		if mmodule == null then return
-		var objectclass = try_get_mnominal_by_name(nmodule, mmodule, "Object")
-		var pointerclass = try_get_mnominal_by_name(nmodule, mmodule, "Pointer")
 		var mclass = nclassdef.mclass
 		if mclass == null then return
 		var mclassdef = nclassdef.mclassdef
 		if mclassdef == null then return
+
+		var supertypes = list_supertypes(nmodule, nclassdef,
+				mclass.name, mclass.kind, mclassdef.is_nominal_intro)
+		mclassdef.set_supertypes(supertypes)
+		if not supertypes.is_empty then self.toolcontext.info("{mclassdef} new super-types: {supertypes.join(", ")}", 3)
+	end
+
+	# Visit the AST and list the super-types specified or implied by the class definition.
+	#
+	# REQUIRE: `nmodule.mmodule != null`
+	private fun list_supertypes(nmodule: AModule, nclassdef: AClassdef,
+			name: String, kind: MClassKind, is_nominal_intro: Bool): Array[MClassType]
+	do
+		var mmodule = nmodule.mmodule.as(not null)
+		var mclassdef = nclassdef.mclassdef
+		var objectclass = try_get_mnominal_by_name(nmodule, mmodule, "Object")
+		var pointerclass = try_get_mnominal_by_name(nmodule, mmodule, "Pointer")
 
 		# Do we need to specify Object as a super class?
 		var specobject = true
@@ -277,29 +292,29 @@ redef class ModelBuilder
 				if mtype == null then continue # Skip because of error
 				if not mtype isa MClassType then
 					error(ntype, "Error: supertypes cannot be a formal type.")
-					return
+					continue
 				end
-				if not mclass.kind.can_specialize(mtype.mnominal.kind) then
-					error(ntype, "Error: {mclass.kind} `{mclass}` cannot specialize {mtype.mnominal.kind} `{mtype.mnominal}`.")
+				var superclass = mtype.mnominal
+				if not kind.can_specialize(superclass.kind) then
+					error(ntype, "Error: {kind} `{name}` cannot specialize {superclass.kind} `{superclass}`.")
 				end
 				supertypes.add mtype
 				#print "new super : {mclass} < {mtype}"
-				if mtype.mnominal.kind == extern_kind then specpointer = false
+				if superclass.kind == extern_kind then specpointer = false
 			end
 		end
 
-		if mclassdef.is_class_intro and objectclass != null then
-			if mclass.kind == extern_kind and mclass.name != "Pointer" then
+		if is_nominal_intro and objectclass != null then
+			if kind == extern_kind and name != "Pointer" then
 				# it is an extern class, but not a Pointer
 				if specpointer then supertypes.add pointerclass.mclass_type
-			else if specobject and mclass.name != "Object" then
+			else if specobject and name != "Object" then
 				# it is a standard class without super class (but is not Object)
 				supertypes.add objectclass.mclass_type
 			end
 		end
 
-		mclassdef.set_supertypes(supertypes)
-		if not supertypes.is_empty then self.toolcontext.info("{mclassdef} new super-types: {supertypes.join(", ")}", 3)
+		return supertypes
 	end
 
 	# Check the validity of the specialization heirarchy
