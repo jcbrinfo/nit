@@ -2719,8 +2719,9 @@ class MClassKind
 			# no other case for interfaces
 			return false
 		else if self == subset_kind then
-			# a type subset may apply to anything
-			return true
+			# a type subset may apply to anything, except to another subset
+			# TODO: Allow sub-subsets once we can handle them.
+			return other != subset_kind
 		else if self == extern_kind then
 			# only compatible with themselves
 			return self == other
