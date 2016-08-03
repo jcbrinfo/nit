@@ -445,7 +445,7 @@ abstract class MNominal
 
 	# Each generic formal parameters in order.
 	# is empty if the class is not generic
-	fun mparameters: SequenceRead[MParameterType] is abstract
+	var mparameters: Array[MParameterType] is noinit
 
 	# A string version of the signature a generic class.
 	#
@@ -664,6 +664,9 @@ end
 #
 # Instances of a type subset are instances of its base class that are accepted
 # by the subset’s membership test.
+#
+# Note: `arity`, `mparameters` and `mclass_type` are only set once `data_class`
+# is set.
 class MSubset
 	super MNominal
 
@@ -676,9 +679,18 @@ class MSubset
 	fun data_class=(data_class: MClass)
 	do
 		p_data_class = data_class
+		arity = data_class.arity
+		mparameters = data_class.mparameters
+
+		if arity > 0 then
+			var mclass_type = new MGenericType(self, mparameters)
+			self.mclass_type = mclass_type
+			self.get_mtype_cache[mparameters] = mclass_type
+		else
+			self.mclass_type = new MClassType(self)
+		end
 	end
 
-	redef fun mparameters do return data_class.mparameters
 	private var p_data_class: MClass is noinit
 
 	redef fun kind do return subset_kind
