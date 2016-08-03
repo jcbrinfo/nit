@@ -415,6 +415,26 @@ end
 abstract class MNominal
 	super MEntity
 
+	# Create a `MClass` or a `MSubset`, depending on the class kind.
+	#
+	# SEE: `intro_mmodule`
+	# SEE: `name`
+	# SEE: `location`
+	# SEE: `MClass::setup_parameter_names`
+	# SEE: `kind`
+	# SEE: `visibility`
+	new(intro_mmodule: MModule, name: String, location: Location,
+			parameter_names: nullable Array[String],
+			kind: MClassKind, visibility: MVisibility)
+	do
+		if kind == subset_kind then
+			return new MSubset(intro_mmodule, name, location, visibility)
+		else
+			return new MClass(intro_mmodule, name, location, parameter_names,
+					kind, visibility)
+		end
+	end
+
 	# The module that introduce the class
 	#
 	# While classes are not bound to a specific module,
