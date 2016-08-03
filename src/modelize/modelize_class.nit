@@ -256,8 +256,9 @@ redef class ModelBuilder
 		var mclassdef = nclassdef.mclassdef
 		if mclassdef == null then return
 
+		# TODO: Subsets: only at introduction
 		var supertypes = list_supertypes(nmodule, nclassdef,
-				mclass.name, mclass.kind, mclassdef.is_nominal_intro)
+				mclassdef.is_nominal_intro)
 		mclassdef.set_supertypes(supertypes)
 		if not supertypes.is_empty then self.toolcontext.info("{mclassdef} new super-types: {supertypes.join(", ")}", 3)
 	end
@@ -265,11 +266,16 @@ redef class ModelBuilder
 	# Visit the AST and list the super-types specified or implied by the class definition.
 	#
 	# REQUIRE: `nmodule.mmodule != null`
+	# REQUIRE: `nclassdef.mclass != null`
 	private fun list_supertypes(nmodule: AModule, nclassdef: AClassdef,
-			name: String, kind: MClassKind, is_nominal_intro: Bool): Array[MClassType]
+			is_nominal_intro: Bool): Array[MClassType]
 	do
 		var mmodule = nmodule.mmodule.as(not null)
+		var mclass = nclassdef.mclass.as(not null)
 		var mclassdef = nclassdef.mclassdef
+		var name = mclass.name
+		var kind = mclass.kind
+
 		var objectclass = try_get_mnominal_by_name(nmodule, mmodule, "Object")
 		var pointerclass = try_get_mnominal_by_name(nmodule, mmodule, "Pointer")
 
