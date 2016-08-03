@@ -489,6 +489,9 @@ abstract class MNominal
 	# The main `MClass` associated to this nominal.
 	#
 	# For `MClass`es, returns `self`.
+	#
+	# Warning: such a definition may not exist in the early life of the object.
+	# In this case, the method will abort.
 	fun data_class: MClass is abstract
 
 	# Alias for `name`
@@ -656,9 +659,18 @@ class MSubset
 	super MNominal
 
 	# The main `MClass` associated to this subset (the base class)
-	redef var data_class: MClass
+	#
+	# Warning: such a definition may not exist in the early life of the object.
+	# In this case, the method will abort.
+	redef fun data_class do return p_data_class
+
+	fun data_class=(data_class: MClass)
+	do
+		p_data_class = data_class
+	end
 
 	redef fun mparameters do return data_class.mparameters
+	private var p_data_class: MClass is noinit
 
 	redef fun kind do return subset_kind
 
