@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# First style of specifying type parameter’s bounds of a subset: in the signature.
+
 import core
 
 class Natural #alt1# class Natural[BOOM]
