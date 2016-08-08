@@ -249,7 +249,10 @@ redef class ModelBuilder
 
 		var bounds = new Array[MType]
 		if nclassdef isa AStdClassdef and mclass.arity > 0 then
-			# Revolve bound for formal parameters
+			var objectclass = try_get_mnominal_by_name(nmodule, mmodule,
+					"Object")
+
+			# Resolve bounds for formal parameters
 			for i in [0..mclass.arity[ do
 				if nclassdef.n_formaldefs.is_empty then
 					# Inherit the bound
