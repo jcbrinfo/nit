@@ -428,7 +428,8 @@ abstract class MNominal
 			kind: MClassKind, visibility: MVisibility)
 	do
 		if kind == subset_kind then
-			return new MSubset(intro_mmodule, name, location, visibility)
+			return new MSubset(intro_mmodule, name, location, parameter_names,
+					visibility)
 		else
 			return new MClass(intro_mmodule, name, location, parameter_names,
 					kind, visibility)
@@ -465,7 +466,34 @@ abstract class MNominal
 
 	# Each generic formal parameters in order.
 	# is empty if the class is not generic
-	var mparameters: Array[MParameterType] is noinit
+	var mparameters = new Array[MParameterType]
+
+	# Initialize `mparameters` from their names.
+	protected fun setup_parameter_names(parameter_names: nullable Array[String]) is
+		autoinit
+	do
+		if parameter_names == null then
+			self.arity = 0
+		else
+			self.arity = parameter_names.length
+		end
+
+		# Create the formal parameter types
+		if arity > 0 then
+			assert parameter_names != null
+			var mparametertypes = new Array[MParameterType]
+			for i in [0..arity[ do
+				var mparametertype = new MParameterType(self, i, parameter_names[i])
+				mparametertypes.add(mparametertype)
+			end
+			self.mparameters = mparametertypes
+			var mclass_type = new MGenericType(self, mparametertypes)
+			self.mclass_type = mclass_type
+			self.get_mtype_cache[mparametertypes] = mclass_type
+		else
+			self.mclass_type = new MClassType(self)
+		end
+	end
 
 	# A string version of the signature a generic class.
 	#
@@ -612,35 +640,6 @@ class MClass
 	super MNominal
 	autoinit(intro_mmodule, name, location, setup_parameter_names, kind, visibility)
 
-	redef var mparameters = new Array[MParameterType]
-
-	# Initialize `mparameters` from their names.
-	protected fun setup_parameter_names(parameter_names: nullable Array[String]) is
-		autoinit
-	do
-		if parameter_names == null then
-			self.arity = 0
-		else
-			self.arity = parameter_names.length
-		end
-
-		# Create the formal parameter types
-		if arity > 0 then
-			assert parameter_names != null
-			var mparametertypes = new Array[MParameterType]
-			for i in [0..arity[ do
-				var mparametertype = new MParameterType(self, i, parameter_names[i])
-				mparametertypes.add(mparametertype)
-			end
-			self.mparameters = mparametertypes
-			var mclass_type = new MGenericType(self, mparametertypes)
-			self.mclass_type = mclass_type
-			self.get_mtype_cache[mparametertypes] = mclass_type
-		else
-			self.mclass_type = new MClassType(self)
-		end
-	end
-
 	redef var kind: MClassKind
 
 	redef init
@@ -679,8 +678,11 @@ end
 # Instances of a type subset are instances of its base class that are accepted
 # by the subset’s membership test.
 #
-# Note: `arity`, `mparameters` and `mclass_type` are only set once `data_class`
-# is set.
+# Note: `arity`, `mparameters` and `mclass_type` are set twice: once by the
+# constructor, then again when `data_class` is set. This allows to have the
+# declared type parameters while reading the `super` declarations. For example,
+# we have to correctly deduce that in `subset S[T: B] super A[T] end`, the `T`
+# type of `A` is the same than the `T` type of `S`.
 class MSubset
 	super MNominal
 
@@ -1738,7 +1740,7 @@ class MParameterType
 	super MFormalType
 
 	# The generic class where the parameter belong
-	var mclass: MClass
+	var mclass: MNominal
 
 	redef fun model do return self.mclass.intro_mmodule.model
 
