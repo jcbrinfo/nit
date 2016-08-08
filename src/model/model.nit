@@ -1706,7 +1706,7 @@ class MParameterType
 		resolved_receiver = resolved_receiver.undecorate
 		assert resolved_receiver isa MClassType # It is the only remaining type
 		var goalclass = self.mclass
-		if resolved_receiver.mnominal == goalclass then
+		if resolved_receiver.mnominal.data_class == goalclass then
 			return resolved_receiver.arguments[self.rank]
 		end
 		var supertypes = resolved_receiver.collect_mtypes(mmodule)
@@ -1742,7 +1742,7 @@ class MParameterType
 		assert can_resolve_for(mtype, anchor, mmodule)
 		#print "{class_name}: {self}/{mtype}/{anchor}?"
 
-		if mtype isa MGenericType and mtype.mnominal == self.mclass then
+		if mtype isa MGenericType and mtype.mnominal.data_class == self.mclass then
 			var res = mtype.arguments[self.rank]
 			if anchor != null and res.need_anchor then
 				# Maybe the result can be resolved more if are bound to a final class
