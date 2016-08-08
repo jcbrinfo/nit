@@ -249,14 +249,15 @@ redef class ModelBuilder
 
 		var bounds = new Array[MType]
 		if nclassdef isa AStdClassdef and mclass.arity > 0 then
+			assert subset_supertype == null or subset_supertype isa MGenericType
 			var objectclass = try_get_mnominal_by_name(nmodule, mmodule,
 					"Object")
 
 			# Resolve bounds for formal parameters
 			for i in [0..mclass.arity[ do
+
 				if nclassdef.n_formaldefs.is_empty then
-					# Inherit the bound
-					var bound = mclass.intro.bound_mtype.arguments[i]
+					var bound = get_inherited_bound(mclass, i, subset_supertype)
 					bounds.add(bound)
 					continue
 				end
@@ -280,7 +281,8 @@ redef class ModelBuilder
 					if bound isa MClassType and bound.mnominal.kind == enum_kind then
 						warning(nfdt, "useless-bound", "Warning: useless formal parameter type since `{bound}` cannot have subclasses.")
 					end
-				else if mclass.mclassdefs.is_empty then
+				else if mclass.mclassdefs.is_empty and
+						subset_supertype == null then
 					if objectclass == null then
 						error(nfd, "Error: formal parameter type `{pname}` unbounded but no `Object` class exists.")
 						return null
@@ -290,14 +292,31 @@ redef class ModelBuilder
 					bounds.add(bound)
 					nfd.bound = bound
 				else
-					# Inherit the bound
-					var bound = mclass.intro.bound_mtype.arguments[i]
+					var bound = get_inherited_bound(mclass, i, subset_supertype)
 					bounds.add(bound)
 					nfd.bound = bound
 				end
 			end
 		end
 		return mclass.get_mtype(bounds)
+	end
+
+	# Return the inherited bound of the specified type parameter.
+	#
+	# Used by `get_bound_mtype` when no bound is specified in the signature of
+	# the class definition.
+	private fun get_inherited_bound(mnominal: MNominal, parameter_index: Int,
+			subset_supertype: nullable MGenericType): MType
+	do
+		var bound: MType
+		if subset_supertype != null and
+				not subset_supertype.arguments[parameter_index].need_anchor then
+			bound = subset_supertype.arguments[parameter_index]
+		else
+			bound = mnominal.data_class.intro.bound_mtype.arguments[
+					parameter_index]
+		end
+		return bound
 	end
 
 	# Visit the AST and return the lone supertype of the specified type subset definition.
