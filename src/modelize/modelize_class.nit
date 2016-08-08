@@ -149,7 +149,6 @@ redef class ModelBuilder
 	private fun build_a_mclassdef(nmodule: AModule, nclassdef: AClassdef)
 	do
 		var mmodule = nmodule.mmodule.as(not null)
-		var objectclass = try_get_mnominal_by_name(nmodule, mmodule, "Object")
 		var mclass = nclassdef.mclass
 		if mclass == null then return # Skip error
 
@@ -161,55 +160,9 @@ redef class ModelBuilder
 			return
 		end
 
-		var bounds = new Array[MType]
-		if nclassdef isa AStdClassdef and mclass.arity > 0 then
-			# Revolve bound for formal parameters
-			for i in [0..mclass.arity[ do
-				if nclassdef.n_formaldefs.is_empty then
-					# Inherit the bound
-					var bound = mclass.intro.bound_mtype.arguments[i]
-					bounds.add(bound)
-					continue
-				end
+		var bound_mtype = get_bound_mtype(nmodule, nclassdef, subset_supertype)
+		if bound_mtype == null then return
 
-				var nfd = nclassdef.n_formaldefs[i]
-				var pname = mclass.mparameters[i].name
-				if nfd.n_id.text != pname then
-					error(nfd.n_id, "Error: formal parameter type #{i} `{nfd.n_id.text}` must be named `{pname}` as in the original definition in module `{mclass.intro.mmodule}`.")
-				end
-				var nfdt = nfd.n_type
-				if nfdt != null then
-					var bound = resolve_mtype_unchecked(mmodule, null, nfdt, false)
-					if bound == null then return # Forward error
-					if bound.need_anchor then
-						# No F-bounds!
-						error(nfd, "Error: formal parameter type `{pname}` bounded with a formal parameter type.")
-					else
-						bounds.add(bound)
-						nfd.bound = bound
-					end
-					if bound isa MClassType and bound.mnominal.kind == enum_kind then
-						warning(nfdt, "useless-bound", "Warning: useless formal parameter type since `{bound}` cannot have subclasses.")
-					end
-				else if mclass.mclassdefs.is_empty then
-					if objectclass == null then
-						error(nfd, "Error: formal parameter type `{pname}` unbounded but no `Object` class exists.")
-						return
-					end
-					# No bound, then implicitely bound by nullable Object
-					var bound = objectclass.mclass_type.as_nullable
-					bounds.add(bound)
-					nfd.bound = bound
-				else
-					# Inherit the bound
-					var bound = mclass.intro.bound_mtype.arguments[i]
-					bounds.add(bound)
-					nfd.bound = bound
-				end
-			end
-		end
-
-		var bound_mtype = mclass.get_mtype(bounds)
 		var mclassdef = new MClassDef(mmodule, bound_mtype, nclassdef.location)
 		nclassdef.mclassdef = mclassdef
 		self.mclassdef2nclassdef[mclassdef] = nclassdef
@@ -230,6 +183,72 @@ redef class ModelBuilder
 		else
 			self.toolcontext.info("{mclassdef} refines {mclass.kind} {mclass.full_name}", 3)
 		end
+	end
+
+	# Visit the AST and return the bound type of the specified class definition.
+	#
+	# In case of error, return `null`.
+	#
+	# `subset_supertype` corresponds to the `super` declaration (or the implied
+	# base class) in a type subset definition. It must be `null` for other class
+	# kinds.
+	private fun get_bound_mtype(nmodule: AModule, nclassdef: AClassdef,
+			subset_supertype: nullable MType): nullable MClassType
+	do
+		var mmodule = nmodule.mmodule.as(not null)
+		var mclass = nclassdef.mclass.as(not null)
+
+		var bounds = new Array[MType]
+		if nclassdef isa AStdClassdef and mclass.arity > 0 then
+			var objectclass = try_get_mnominal_by_name(nmodule, mmodule,
+					"Object")
+
+			# Resolve bounds for formal parameters
+			for i in [0..mclass.arity[ do
+				if nclassdef.n_formaldefs.is_empty then
+					# Inherit the bound
+					var bound = mclass.intro.bound_mtype.arguments[i]
+					bounds.add(bound)
+					continue
+				end
+
+				var nfd = nclassdef.n_formaldefs[i]
+				var pname = mclass.mparameters[i].name
+				if nfd.n_id.text != pname then
+					error(nfd.n_id, "Error: formal parameter type #{i} `{nfd.n_id.text}` must be named `{pname}` as in the original definition in module `{mclass.intro.mmodule}`.")
+				end
+				var nfdt = nfd.n_type
+				if nfdt != null then
+					var bound = resolve_mtype_unchecked(mmodule, null, nfdt, false)
+					if bound == null then return null # Forward error
+					if bound.need_anchor then
+						# No F-bounds!
+						error(nfd, "Error: formal parameter type `{pname}` bounded with a formal parameter type.")
+					else
+						bounds.add(bound)
+						nfd.bound = bound
+					end
+					if bound isa MClassType and bound.mnominal.kind == enum_kind then
+						warning(nfdt, "useless-bound", "Warning: useless formal parameter type since `{bound}` cannot have subclasses.")
+					end
+				else if mclass.mclassdefs.is_empty then
+					if objectclass == null then
+						error(nfd, "Error: formal parameter type `{pname}` unbounded but no `Object` class exists.")
+						return null
+					end
+					# No bound, then implicitely bound by nullable Object
+					var bound = objectclass.mclass_type.as_nullable
+					bounds.add(bound)
+					nfd.bound = bound
+				else
+					# Inherit the bound
+					var bound = mclass.intro.bound_mtype.arguments[i]
+					bounds.add(bound)
+					nfd.bound = bound
+				end
+			end
+		end
+		return mclass.get_mtype(bounds)
 	end
 
 	# Visit the AST and set the super-types of the `MClassDef` objects
