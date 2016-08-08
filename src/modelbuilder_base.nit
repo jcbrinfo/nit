@@ -259,11 +259,31 @@ class ModelBuilder
 		return res
 	end
 
-	# Return the static type associated to the node `ntype`.
-	# `mmodule` and `mclassdef` is the context where the call is made (used to understand formal types)
-	# In case of problem, an error is displayed on `ntype` and null is returned.
+	# Same as `resolve_mtype_unchecked2`, but with `mnominal` extracted from `mclassdef` when possible.
+	#
+	# SEE: `resolve_mtype_unchecked2`
 	# FIXME: the name "resolve_mtype" is awful
-	fun resolve_mtype_unchecked(mmodule: MModule, mclassdef: nullable MClassDef, ntype: AType, with_virtual: Bool): nullable MType
+	fun resolve_mtype_unchecked(mmodule: MModule, mclassdef: nullable MClassDef,
+			ntype: AType, with_virtual: Bool): nullable MType
+	do
+		var mnominal: nullable MNominal = null
+		if mclassdef != null then
+			mnominal = mclassdef.mnominal
+		end
+		return resolve_mtype_unchecked2(mmodule, mnominal, mclassdef, ntype,
+				with_virtual)
+	end
+
+	# Return the static type associated to the node `ntype`.
+	# `mmodule`, `mnominal` and `mclassdef` is the context where the call is
+	# made (used to understand formal types).
+	# In case of problem, an error is displayed on `ntype` and null is returned.
+	#
+	# SEE: `resolve_mtype_unchecked`
+	# FIXME: the name "resolve_mtype" is awful
+	fun resolve_mtype_unchecked2(mmodule: MModule, mnominal: nullable MNominal,
+			mclassdef: nullable MClassDef, ntype: AType, with_virtual: Bool):
+			nullable MType
 	do
 		var qid = ntype.n_qid
 		var name = qid.n_id.text
@@ -284,8 +304,8 @@ class ModelBuilder
 		end
 
 		# Check parameter type
-		if mclassdef != null then
-			for p in mclassdef.data_class.mparameters do
+		if mnominal != null then
+			for p in mnominal.mparameters do
 				if p.name != name then continue
 
 				if not ntype.n_types.is_empty then
@@ -300,32 +320,32 @@ class ModelBuilder
 		end
 
 		# Check class
-		var mclass = try_get_mnominal_by_qid(qid, mmodule)
-		if mclass != null then
+		var found_class = try_get_mnominal_by_qid(qid, mmodule)
+		if found_class != null then
 			var arity = ntype.n_types.length
-			if arity != mclass.arity then
+			if arity != found_class.arity then
 				if arity == 0 then
-					error(ntype, "Type Error: `{mclass.signature_to_s}` is a generic class.")
-				else if mclass.arity == 0 then
+					error(ntype, "Type Error: `{found_class.signature_to_s}` is a generic class.")
+				else if found_class.arity == 0 then
 					error(ntype, "Type Error: `{name}` is not a generic class.")
 				else
-					error(ntype, "Type Error: expected {mclass.arity} formal argument(s) for `{mclass.signature_to_s}`; got {arity}.")
+					error(ntype, "Type Error: expected {found_class.arity} formal argument(s) for `{found_class.signature_to_s}`; got {arity}.")
 				end
 				return null
 			end
 			if arity == 0 then
-				res = mclass.mclass_type
+				res = found_class.mclass_type
 				if ntype.n_kwnullable != null then res = res.as_nullable
 				ntype.mtype = res
 				return res
 			else
 				var mtypes = new Array[MType]
 				for nt in ntype.n_types do
-					var mt = resolve_mtype_unchecked(mmodule, mclassdef, nt, with_virtual)
+					var mt = resolve_mtype_unchecked2(mmodule, mnominal, mclassdef, nt, with_virtual)
 					if mt == null then return null # Forward error
 					mtypes.add(mt)
 				end
-				res = mclass.get_mtype(mtypes)
+				res = found_class.get_mtype(mtypes)
 				if ntype.n_kwnullable != null then res = res.as_nullable
 				ntype.mtype = res
 				return res
