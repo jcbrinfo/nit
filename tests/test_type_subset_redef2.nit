@@ -49,7 +49,7 @@ class Positive
 	super Numeric
 	subset do return self >= self.zero
 end
-#alt5# redef class NonZero of Positive end
+#alt5# redef class NonZero super Positive end
 
 var x: NonZero
 
