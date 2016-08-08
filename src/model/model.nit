@@ -303,7 +303,7 @@ redef class MModule
 				# of the implicit casts.
 				var loc = model.no_location
 				var c = new MClass(self, name, loc, null, enum_kind, public_visibility)
-				var cladef = new MClassDef(self, c.mclass_type, loc)
+				var cladef = new MClassDef(self, c, c.mclass_type, loc)
 				cladef.set_supertypes([object_type])
 				cladef.add_in_hierarchy
 				return c
@@ -726,7 +726,7 @@ class MClassDef
 	var mmodule: MModule
 
 	# The associated `MClass`
-	var data_class: MClass is noinit
+	var data_class: MClass
 
 	# The associated `MNominal`
 	#
@@ -757,7 +757,6 @@ class MClassDef
 	init
 	do
 		self.mnominal = bound_mtype.mnominal
-		self.data_class = self.mnominal.data_class
 		mmodule.mclassdefs.add(self)
 
 		if data_class.intro_mmodule == mmodule then
