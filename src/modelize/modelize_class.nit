@@ -598,7 +598,10 @@ redef class ModelBuilder
 				var sc = mtype.mnominal
 				if not parents.has(sc) or sc == objectclass then
 					# Skip the warning on generated code
-					if ntype.location.file != null and not ntype.location.file.filename.is_empty then
+					# and type subsets refinements.
+					if ntype.location.file != null and
+							not ntype.location.file.filename.is_empty and
+							(not mclassdef.is_subset_def or mclassdef.is_nominal_intro) then
 						warning(ntype, "useless-superclass", "Warning: superfluous super-class `{mtype}` in class `{mclassdef.mnominal}`.")
 					end
 				else if not seen_parents.has_key(sc) then
