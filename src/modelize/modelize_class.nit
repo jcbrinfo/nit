@@ -253,7 +253,12 @@ redef class ModelBuilder
 				var nfd = nclassdef.n_formaldefs[i]
 				var pname = mclass.mparameters[i].name
 				if nfd.n_id.text != pname then
-					error(nfd.n_id, "Error: formal parameter type #{i} `{nfd.n_id.text}` must be named `{pname}` as in the original definition in module `{mclass.intro.mmodule}`.")
+					if mclass.kind == subset_kind and
+							mclass.mclassdefs.is_empty then
+						error(nfd.n_id, "Error: formal parameter type #{i} `{nfd.n_id.text}` must be named `{pname}` as in the original definition in base class `{mclass.data_class}`.")
+					else
+						error(nfd.n_id, "Error: formal parameter type #{i} `{nfd.n_id.text}` must be named `{pname}` as in the original definition in module `{mclass.intro.mmodule}`.")
+					end
 				end
 				var nfdt = nfd.n_type
 				if nfdt != null then
