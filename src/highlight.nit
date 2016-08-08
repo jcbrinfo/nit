@@ -486,10 +486,10 @@ redef class MClassDef
 				c.open("li").add x.linkto(v)
 			end
 		end
-		if mnominal.defs.length > 1 then
+		if mnominal.mclassdefs.length > 1 then
 			# TODO: Hidden defs
 			var c = res.new_dropdown("redefs", "refinements")
-			for x in mnominal.defs do
+			for x in mnominal.mclassdefs do
 				if x == self then continue
 				c.open("li").add x.linkto_text(v, "in {x.mmodule}")
 			end

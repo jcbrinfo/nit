@@ -111,7 +111,7 @@ redef class MClassPage
 	redef fun build_concerns(v) do
 		var doc = v.doc
 		# collect mclassdefs
-		for mclassdef in mentity.defs do
+		for mclassdef in mentity.mclassdefs do
 			if doc.mclassdefs.has(mclassdef) then mclassdefs.add mclassdef
 		end
 		# collect mpropdefs

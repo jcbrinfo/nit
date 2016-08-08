@@ -203,7 +203,7 @@ redef class ModelBuilder
 					if bound isa MClassType and bound.mnominal.kind == enum_kind then
 						warning(nfdt, "useless-bound", "Warning: useless formal parameter type since `{bound}` cannot have subclasses.")
 					end
-				else if mclass.defs.is_empty then
+				else if mclass.mclassdefs.is_empty then
 					if objectclass == null then
 						error(nfd, "Error: formal parameter type `{pname}` unbounded but no `Object` class exists.")
 						return

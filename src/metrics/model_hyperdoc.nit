@@ -114,14 +114,14 @@ do
 		buf.append("<dt>module of introduction</dt>\n")
 		buf.append("<dd>{linkto(mclass.intro_mmodule)}</dd>\n")
 		buf.append("<dt>class definitions</dt>\n")
-		for x in mclass.defs do
+		for x in mclass.mclassdefs do
 			buf.append("<dd>{linkto(x)} in {linkto(x.mmodule)}</dd>\n")
 		end
 		buf.append("</dl>\n")
 	end
 	buf.append("<h2>Class Definitions</h2>\n")
 	for mclass in model.mnominals do
-		for mclassdef in mclass.defs do
+		for mclassdef in mclass.mclassdefs do
 			buf.append("<h3 id='classdef-{mclassdef}'>{mclassdef}</h3>\n")
 			buf.append("<dl>\n")
 			buf.append("<dt>module</dt>\n")
