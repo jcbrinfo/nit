@@ -575,8 +575,8 @@ abstract class MNominal
 
 	private var get_mtype_cache = new HashMap[Array[MType], MGenericType]
 
-	# TODO -> mclassdefs
-	fun defs: Array[MClassDef] is abstract
+	# All definitions of this class (introduction, refinements and subsets’ definitions)
+	var mclassdefs = new Array[MClassDef]
 
 	# Is there a `new` factory to allow the pseudo instantiation?
 	var has_new_factory = false is writable
@@ -642,12 +642,6 @@ class MClass
 
 	redef fun data_class do return self
 
-	# All definitions of this class (introduction, refinements and subsets’ definitions)
-	var mclassdefs = new Array[MClassDef]
-
-	# TODO -> mclassdefs
-	redef fun defs do return mclassdefs
-
 	redef var is_class is lazy do return kind == concrete_kind or kind == abstract_kind
 	redef var is_interface is lazy do return kind == interface_kind
 	redef var is_enum is lazy do return kind == enum_kind
@@ -705,9 +699,6 @@ class MSubset
 	private var p_data_class: MClass is noinit
 
 	redef fun kind do return subset_kind
-
-	# TODO -> mclassdefs
-	redef var defs = new Array[MClassDef]
 
 	redef fun is_class do return false
 	redef fun is_interface do return false
@@ -769,18 +760,18 @@ class MClassDef
 		self.data_class = self.mnominal.data_class
 		mmodule.mclassdefs.add(self)
 
-		data_class.mclassdefs.add(self)
 		if data_class.intro_mmodule == mmodule then
 			assert not isset data_class._intro
 			data_class.intro = self
 		end
+		data_class.mclassdefs.add(self)
 
 		if mnominal != data_class then
-			mnominal.defs.add(self)
 			if mnominal.intro_mmodule == mmodule then
 				assert not isset mnominal._intro
 				mnominal.intro = self
 			end
+			mnominal.mclassdefs.add(self)
 		end
 
 		self.to_s = "{mmodule}${mnominal}"
@@ -1427,7 +1418,7 @@ class MClassType
 		while not todo.is_empty do
 			var mclass = todo.pop
 			#print "process {mclass}"
-			for mclassdef in mclass.defs do
+			for mclassdef in mclass.mclassdefs do
 				if mclassdef.mnominal != mclass then continue
 				if not mmodule.in_importation <= mclassdef.mmodule then continue
 				#print "  process {mclassdef}"

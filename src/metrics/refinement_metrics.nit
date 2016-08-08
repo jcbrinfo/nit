@@ -55,7 +55,7 @@ do
 	var refined = 0
 	for c in model.mnominals do
 		kinds.inc(c.kind)
-		if c.defs.length > 1 then
+		if c.mclassdefs.length > 1 then
 			refined += 1
 		end
 	end

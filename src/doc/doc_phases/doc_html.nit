@@ -426,7 +426,7 @@ redef class MClassPage
 	# FIXME this method is used to translate a mprop into a mpropdefs for
 	# section linking. A better page structure should avoid this...
 	private fun select_mpropdef(mprop: MProperty): MPropDef do
-		for mclassdef in mentity.defs do
+		for mclassdef in mentity.mclassdefs do
 			for mpropdef in mclassdef.mpropdefs do
 				if mpropdef.mproperty == mprop then return mpropdef
 			end
