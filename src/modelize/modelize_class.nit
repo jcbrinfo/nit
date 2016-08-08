@@ -178,6 +178,45 @@ redef class ModelBuilder
 			return
 		end
 
+		var bound_mtype = get_bound_mtype(nmodule, nclassdef, subset_supertype)
+		if bound_mtype == null then return
+
+		var mclassdef = new MClassDef(mmodule, bound_mtype, nclassdef.location)
+		nclassdef.mclassdef = mclassdef
+		self.mclassdef2nclassdef[mclassdef] = nclassdef
+		if set_base_class then mclassdef.set_supertypes([data_class.mclass_type])
+
+		if nclassdef isa AStdClassdef then
+			var ndoc = nclassdef.n_doc
+			if ndoc != null then
+				var mdoc = ndoc.to_mdoc
+				mclassdef.mdoc = mdoc
+				mdoc.original_mentity = mclassdef
+			else if mclassdef.is_nominal_intro and mclass.visibility >= public_visibility then
+				advice(nclassdef, "missing-doc", "Documentation warning: Undocumented public class `{mclass}`")
+			end
+		end
+
+		if mclassdef.is_nominal_intro then
+			self.toolcontext.info("{mclassdef} introduces new {mclass.kind} {mclass.full_name}", 3)
+		else
+			self.toolcontext.info("{mclassdef} refine {mclass.kind} {mclass.full_name}", 3)
+		end
+	end
+
+	# Visit the AST and return the bound type of the specified class definition.
+	#
+	# In case of error, return `null`.
+	#
+	# `subset_supertype` corresponds to the `super` declaration (or the implied
+	# base class) in a type subset definition. It must be `null` for other class
+	# kinds.
+	private fun get_bound_mtype(nmodule: AModule, nclassdef: AClassdef,
+			subset_supertype: nullable MType): nullable MClassType
+	do
+		var mmodule = nmodule.mmodule.as(not null)
+		var mclass = nclassdef.mclass.as(not null)
+
 		var bounds = new Array[MType]
 		if nclassdef isa AStdClassdef and mclass.arity > 0 then
 			# Revolve bound for formal parameters
@@ -197,7 +236,7 @@ redef class ModelBuilder
 				var nfdt = nfd.n_type
 				if nfdt != null then
 					var bound = resolve_mtype_unchecked(mmodule, null, nfdt, false)
-					if bound == null then return # Forward error
+					if bound == null then return null # Forward error
 					if bound.need_anchor then
 						# No F-bounds!
 						error(nfd, "Error: formal parameter type `{pname}` bounded with a formal parameter type.")
@@ -211,7 +250,7 @@ redef class ModelBuilder
 				else if mclass.mclassdefs.is_empty then
 					if objectclass == null then
 						error(nfd, "Error: formal parameter type `{pname}` unbounded but no `Object` class exists.")
-						return
+						return null
 					end
 					# No bound, then implicitely bound by nullable Object
 					var bound = objectclass.mclass_type.as_nullable
@@ -225,28 +264,7 @@ redef class ModelBuilder
 				end
 			end
 		end
-
-		var bound_mtype = mclass.get_mtype(bounds)
-		var mclassdef = new MClassDef(mmodule, bound_mtype, nclassdef.location)
-		nclassdef.mclassdef = mclassdef
-		self.mclassdef2nclassdef[mclassdef] = nclassdef
-
-		if nclassdef isa AStdClassdef then
-			var ndoc = nclassdef.n_doc
-			if ndoc != null then
-				var mdoc = ndoc.to_mdoc
-				mclassdef.mdoc = mdoc
-				mdoc.original_mentity = mclassdef
-			else if mclassdef.is_nominal_intro and mclass.visibility >= public_visibility then
-				advice(nclassdef, "missing-doc", "Documentation warning: Undocumented public class `{mclass}`")
-			end
-		end
-
-		if mclassdef.is_nominal_intro then
-			self.toolcontext.info("{mclassdef} introduces new {mclass.kind} {mclass.full_name}", 3)
-		else
-			self.toolcontext.info("{mclassdef} refine {mclass.kind} {mclass.full_name}", 3)
-		end
+		return mclass.get_mtype(bounds)
 	end
 
 	# Visit the AST and set the super-types of the `MClassDef` objects
