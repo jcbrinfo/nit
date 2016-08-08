@@ -56,7 +56,8 @@ redef class ToolContext
 
 			var recv = mainmodule.sys_type
 			assert recv != null
-			var mclassdef = new MClassDef(mainmodule, recv, location)
+			var mclassdef = new MClassDef(mainmodule, recv.mnominal.data_class,
+					recv, location)
 			mclassdef.add_in_hierarchy
 
 			for define in defines do

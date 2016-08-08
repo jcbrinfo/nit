@@ -173,10 +173,13 @@ redef class ModelBuilder
 			return
 		end
 
+		var data_class: nullable MClass
+			data_class = mclass
 		var bound_mtype = get_bound_mtype(nmodule, nclassdef, subset_supertype)
 		if bound_mtype == null then return
 
-		var mclassdef = new MClassDef(mmodule, bound_mtype, nclassdef.location)
+		var mclassdef = new MClassDef(mmodule, data_class, bound_mtype,
+				nclassdef.location)
 		nclassdef.mclassdef = mclassdef
 		self.mclassdef2nclassdef[mclassdef] = nclassdef
 		if set_base_class then mclassdef.set_supertypes([data_class.mclass_type])
