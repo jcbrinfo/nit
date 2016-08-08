@@ -168,7 +168,6 @@ redef class ModelBuilder
 	private fun build_a_mclassdef(nmodule: AModule, nclassdef: AClassdef)
 	do
 		var mmodule = nmodule.mmodule.as(not null)
-		var objectclass = try_get_mnominal_by_name(nmodule, mmodule, "Object")
 		var mclass = nclassdef.mclass
 		if mclass == null then return # Skip error
 
@@ -188,7 +187,6 @@ redef class ModelBuilder
 				nclassdef.location)
 		nclassdef.mclassdef = mclassdef
 		self.mclassdef2nclassdef[mclassdef] = nclassdef
-		if set_base_class then mclassdef.set_supertypes([data_class.mclass_type])
 
 		if nclassdef isa AStdClassdef then
 			var ndoc = nclassdef.n_doc
