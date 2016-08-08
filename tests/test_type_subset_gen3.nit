@@ -12,31 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Second style of specifying type parameter’s bounds of a subset: in the `super` declaration.
+# Mix of both styles of specifying type parameter’s bounds of a subset.
 
 import core
 
-class Summable #alt1# class Summable[E: Numeric] #alt2# class Summable[BOOM]
-	super SequenceRead[Numeric]
+class IntMap[K: Int, V]
+	super Map[K, V] #alt1-4#
+	#alt1# super Map[K, String]
+	#alt2# super Map[V, K]
+	#alt3# super Map[Int, V]
+	#alt4# super Map[nullable Object, V]
 	subset do return true
-
-	fun sum: E do
-		total = zero
-		for x in self do total += x
-		return total
-	end
-
-	fun zero: E is abstract
 end
-
-redef class Summable
-	super SequenceRead[Int]
-
-	redef fun zero do return 0
-end
-
-var arr = [0, 1, 2, 3]
-var s = arr.as(
-	Summable[Numeric]
-)
-print(s.sum)
