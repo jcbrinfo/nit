@@ -770,14 +770,14 @@ class MClassDef
 		self.mnominal = bound_mtype.mnominal
 		mmodule.mclassdefs.add(self)
 
-		if data_class.intro_mmodule == mmodule then
+		if data_class.mclassdefs.is_empty then
 			assert not isset data_class._intro
 			data_class.intro = self
 		end
 		data_class.mclassdefs.add(self)
 
 		if mnominal != data_class then
-			if mnominal.intro_mmodule == mmodule then
+			if mnominal.mclassdefs.is_empty then
 				assert not isset mnominal._intro
 				mnominal.intro = self
 			end
