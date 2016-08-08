@@ -19,9 +19,13 @@ class Foo
 	subset
 end
 
+#alt1# class Foo
+	#alt1# subset
+#alt1# end
+
 var foo: Foo
-foo = 1.as(Foo) #alt1#
-#alt1# foo = 0.5
+foo = 1.as(Foo) #alt2#
+#alt2# foo = 0.5
 
 assert foo + 1 == 2
 assert foo isa Foo
