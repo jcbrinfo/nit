@@ -26,7 +26,7 @@ class Natural #alt1# class Natural[BOOM]
 	end
 end
 
-class Summable[E: Numeric]
+class Summable[E: Numeric] #alt2# class Summable[E: Boom]
 	super SequenceRead[E]
 	subset do return true
 
@@ -40,7 +40,7 @@ class Summable[E: Numeric]
 end
 
 redef class Summable[E: Natural]
-	super SequenceRead[E] #alt2# super Bytes #alt3# super Range[E]
+	super SequenceRead[E] #alt3# super Bytes #alt4# super Range[E]
 
 	redef fun zero do return 0
 end
@@ -48,6 +48,6 @@ end
 var arr: Array[Natural] = [0, 1, 2, 3]
 for x in arr do print(x.fib)
 var s = arr.as(
-	Summable[Numeric] #alt4# Summable[Natural] #alt5# Summable[Int]
+	Summable[Numeric] #alt5# Summable[Natural] #alt6# Summable[Int]
 )
 print(s.sum)
