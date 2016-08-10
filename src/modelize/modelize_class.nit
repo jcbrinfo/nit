@@ -193,6 +193,11 @@ redef class ModelBuilder
 					# initialized.
 					mclass.unlink
 				end
+				# Go back to a state before we looked at the supertypes. That
+				# way, `build_classes` won’t check them and won’t try to use
+				# the references to the type parameters of the invalid
+				# definition.
+				unresolve_supertypes(nclassdef)
 				return
 			end
 			data_class = subset_supertype.mnominal.as(MClass)
@@ -208,7 +213,16 @@ redef class ModelBuilder
 		assert mclass isa MNominal
 
 		var bound_mtype = get_bound_mtype(nmodule, nclassdef, subset_supertype)
-		if bound_mtype == null then return
+		if bound_mtype == null then
+			if subset_supertype != null then
+				# Go back to a state before we looked at the supertypes. That
+				# way, `build_classes` won’t check them and won’t try to use
+				# the references to the type parameters of the invalid
+				# definition.
+				unresolve_supertypes(nclassdef)
+			end
+			return
+		end
 
 		var mclassdef = new MClassDef(mmodule, data_class, bound_mtype,
 				nclassdef.location)
@@ -462,6 +476,15 @@ redef class ModelBuilder
 		end
 
 		return supertypes
+	end
+
+	# Undo side-effects of `list_supertypes`.
+	private fun unresolve_supertypes(nclassdef: AClassdef)
+	do
+		if not nclassdef isa AStdClassdef then return
+		for nsc in nclassdef.n_superclasses do
+			nsc.n_type.clear_mtype
+		end
 	end
 
 	# Check the validity of the specialization heirarchy
