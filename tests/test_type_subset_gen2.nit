@@ -17,7 +17,7 @@
 import core
 
 class Summable #alt1# class Summable[E: Numeric] #alt2# class Summable[BOOM]
-	super SequenceRead[Numeric]
+	super SequenceRead[Numeric] #alt3# super SequenceRead[Boom]
 	subset do return true
 
 	fun sum: E do
