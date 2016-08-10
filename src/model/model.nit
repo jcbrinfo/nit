@@ -532,6 +532,22 @@ abstract class MNominal
 		model.mnominals.add(self)
 	end
 
+	# Remove the class from the model.
+	#
+	# Remove inbound links added by the constructor.
+	#
+	# Usually, this method should not be called. Whenever possible, consider
+	# flagging the class as broken (`is_broken`) instead.
+	#
+	# SEE: `is_broken=`
+	fun unlink
+	do
+		intro_mmodule.intro_mnominals.remove(self)
+		var model = intro_mmodule.model
+		model.mnominals_by_name.remove_one(name, self)
+		model.mnominals.remove(self)
+	end
+
 	redef fun model do return intro_mmodule.model
 
 	# The main `MClass` associated to this nominal.
