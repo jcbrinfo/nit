@@ -513,6 +513,12 @@ redef class AType
 
 	# Is the mtype a valid one?
 	var checked_mtype: Bool = false
+
+	# Unlink the `MType` to this node.
+	#
+	# This is only needed in extreme cases to invalidate the cache of the
+	# `ModelBuilder::resolve_mtype*` family of methods.
+	fun clear_mtype do mtype = null
 end
 
 redef class AVisibility
