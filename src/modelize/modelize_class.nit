@@ -187,7 +187,12 @@ redef class ModelBuilder
 			subset_supertype = get_subset_supertype(nmodule, nclassdef,
 					is_nominal_intro)
 			if subset_supertype == null then
-				if is_nominal_intro then mclass.is_broken = true
+				if is_nominal_intro then
+					mclass.is_broken = true
+					# The class is so broken that some attributes can not be
+					# initialized.
+					mclass.unlink
+				end
 				return
 			end
 			data_class = subset_supertype.mnominal.as(MClass)
