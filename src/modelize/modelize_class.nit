@@ -389,6 +389,21 @@ redef class ModelBuilder
 			# specializations rules.
 			return null
 		end
+
+		# A type subset must have the same arity than its base class.
+		var data_class = supertype.mnominal
+		var arity = mclass.arity
+		var expected_arity = data_class.arity
+		if arity != 0 and arity != expected_arity then
+			if mclass.is_broken then return null # We already have an error.
+			error(nclassdef,
+				"Error: expected {expected_arity} formal parameter(s) " +
+				"for a {mclass.kind} of {data_class.signature_to_s}; " +
+				"got {arity}."
+			)
+			return null
+		end
+
 		return supertype
 	end
 
