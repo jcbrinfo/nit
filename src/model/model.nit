@@ -303,7 +303,7 @@ redef class MModule
 				# of the implicit casts.
 				var loc = model.no_location
 				var c = new MClass(self, name, loc, null, enum_kind, public_visibility)
-				var cladef = new MClassDef(self, c, c.mclass_type, loc)
+				var cladef = new MClassDef(self, c.mclass_type, loc)
 				cladef.set_supertypes([object_type])
 				cladef.add_in_hierarchy
 				return c
@@ -744,7 +744,7 @@ class MClassDef
 	var mmodule: MModule
 
 	# The associated `MClass`
-	var data_class: MClass
+	var data_class: MClass is lazy do return mnominal.data_class
 
 	# The associated `MNominal`
 	#
