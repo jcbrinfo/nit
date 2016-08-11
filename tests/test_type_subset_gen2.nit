@@ -20,23 +20,17 @@ class Summable #alt1# class Summable[E: Numeric] #alt2# class Summable[BOOM]
 	super SequenceRead[Numeric] #alt3# super SequenceRead[Boom]
 	subset do return true
 
-	fun sum: E do
-		total = zero
-		for x in self do total += x
+	fun sum(default: E): E do
+		if is_empty then return default
+		var i = iterator
+		var total = i.item
+		for x in i do total += x
 		return total
 	end
-
-	fun zero: E is abstract
-end
-
-redef class Summable
-	super SequenceRead[Int]
-
-	redef fun zero do return 0
 end
 
 var arr = [0, 1, 2, 3]
 var s = arr.as(
 	Summable[Numeric]
 )
-print(s.sum)
+print(s.sum(0))

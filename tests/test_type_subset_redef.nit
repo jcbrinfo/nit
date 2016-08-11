@@ -17,7 +17,7 @@
 import kernel
 
 class NonZero
-	subset
+	subset do return not self.is_zero
 	super Numeric
 
 	fun int_inverse: Int do
@@ -25,16 +25,4 @@ class NonZero
 	end
 end
 
-# If the supertype is specified in a "redef", a specialization of the subset is
-# created if it not already exists.
-
-redef class NonZero
-	super Int
-
-	redef fun int_inverse: Int do
-		return super - 1
-	end
-
-	#alt3# fun something do return 0
-	#alt4# redef fun abs do return super
-end
+#alt1# redef class NonZero end

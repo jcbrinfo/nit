@@ -22,10 +22,4 @@ class Natural #alt1# class Natural `{ long `}
 	fun baz: String import Natural::foo `{ return Natural_foo(self); `}
 end
 
-redef class Natural #alt2# redef class Natural `{ double `}
-	super Float
-
-	redef fun foo: String do return "fu" + super
-end
-
-print(1.as(Natural).baz) #alt3# print(1.baz)
+print(1.as(Natural).baz)

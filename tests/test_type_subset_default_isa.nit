@@ -19,11 +19,5 @@ class NonZero
 	subset do return not self.is_zero #alt1# subset
 end
 
-redef class NonZero
-	super Float
-	subset do return self == self and super #alt2# subset
-end
-
 assert 42 isa NonZero
 assert not 0 isa NonZero #alt1# assert 0 isa NonZero
-assert not 0.0 / 0.0 isa NonZero #alt2# assert 0.0 / 0.0 isa NonZero
