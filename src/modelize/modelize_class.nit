@@ -543,13 +543,26 @@ redef class ModelBuilder
 			self.build_a_mclass(nmodule, nclassdef)
 		end
 
-		# Create all classdefs
+		# Create all classdefs.
+		# Process type subsets last so the introducing definition of a `MClass`
+		# is always the first built.
+		# Process `AStdClassdef`s before other definitions so that a
+		# non-`AStdClassdef` definition can be attached to the `MClassDef`
+		# built for the `AStdClassdef` node of the same class, if any.
 		for nclassdef in nmodule.n_classdefs do
 			if not nclassdef isa AStdClassdef then continue
+			if nclassdef.mclass == null then continue
+			if nclassdef.mclass.kind == subset_kind then continue
 			self.build_a_mclassdef(nmodule, nclassdef)
 		end
 		for nclassdef in nmodule.n_classdefs do
 			if nclassdef isa AStdClassdef then continue
+			self.build_a_mclassdef(nmodule, nclassdef)
+		end
+		for nclassdef in nmodule.n_classdefs do
+			if not nclassdef isa AStdClassdef then continue
+			if nclassdef.mclass == null then continue
+			if nclassdef.mclass.kind != subset_kind then continue
 			self.build_a_mclassdef(nmodule, nclassdef)
 		end
 
