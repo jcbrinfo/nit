@@ -339,7 +339,11 @@ redef class ModelBuilder
 		return bound
 	end
 
-	# Visit the AST and return the lone supertype of the specified type subset definition.
+	# Visit the AST and return the lone supertype of the specified type subset.
+	#
+	# For the introducing definition, bounds that are specified in the `super`
+	# declaration are included in the returned type (so that `build_a_mclassdef`
+	# can include them in the `bound_mtype`).
 	#
 	# In case of error, return `null`.
 	private fun get_subset_supertype(nmodule: AModule, nclassdef: AClassdef,
@@ -348,35 +352,42 @@ redef class ModelBuilder
 		var mclass = nclassdef.mclass.as(not null)
 		var supertypes = list_supertypes(nmodule, nclassdef, is_nominal_intro)
 
-		if supertypes.length != 1 then
-			if supertypes.is_empty then
-				if not is_nominal_intro then
-					# A regular (unscoped) refinement.
-					# Same as specifying the root scope.
-					return mclass.data_class.mclass_type
-				else
+		if is_nominal_intro then
+			# A subset can only have one direct supertype.
+			if supertypes.length != 1 then
+				if supertypes.is_empty then
 					var mmodule = nmodule.mmodule.as(not null)
-					var objectclass = try_get_mnominal_by_name(nmodule, mmodule, "Object")
+					var objectclass = try_get_mnominal_by_name(nmodule, mmodule,
+							"Object")
 
 					if objectclass == null then
 						# No base class is specified and `Object` is not defined.
-						error(nclassdef, "Error: {mclass.kind} `{mclass.name}` must have a base class.")
+						error(nclassdef,
+							"Error: {mclass.kind} `{mclass.name}` must have " +
+							"a base class."
+						)
 					end
 					# Else, `list_supertypes` failed and we already have an
 					# error message.
-					return null
-				end
-			else
-				var name = mclass.name
-				var kind = mclass.kind
-
-				if is_nominal_intro then
-					error(nclassdef, "Error: {kind} `{name}` has multiple base classes.")
 				else
-					error(nclassdef, "Error: The specialization of the `{name}` {kind} has multiple scopes.")
+					var name = mclass.name
+					var kind = mclass.kind
+
+					error(nclassdef,
+						"Error: {mclass.kind} `{mclass.name}` has multiple " +
+						"base classes."
+					)
 				end
 				return null
 			end
+		else if supertypes.is_empty then
+			# All definitions have the same base class.
+			return mclass.data_class.mclass_type
+		else
+			error(nclassdef,
+				"Error: Only the introducing definition of " +
+				"{mclass.kind} `{mclass.name}` may specify a base class."
+			)
 		end
 
 		var supertype = supertypes.first
@@ -391,7 +402,6 @@ redef class ModelBuilder
 		var arity = mclass.arity
 		var expected_arity = data_class.arity
 		if arity != 0 and arity != expected_arity then
-			if mclass.is_broken then return null # We already have an error.
 			error(nclassdef,
 				"Error: expected {expected_arity} formal parameter(s) " +
 				"for a {mclass.kind} of {data_class.signature_to_s}; " +
