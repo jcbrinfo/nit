@@ -84,7 +84,6 @@ redef class ModelBuilder
 	end
 
 	# Build the properties of `nclassdef`.
-	# REQUIRE: all superclasses are built.
 	private fun build_properties(nclassdef: AClassdef)
 	do
 		# Force building recursively
