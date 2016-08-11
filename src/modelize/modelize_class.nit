@@ -153,8 +153,6 @@ redef class ModelBuilder
 		if not nmodule.mclass2nclassdef.has_key(mclass) then
 			nmodule.mclass2nclassdef[mclass] = nclassdef
 			nclassdef.all_defs = [nclassdef]
-		else if mclass.kind == subset_kind then
-			nclassdef.all_defs = [nclassdef]
 		else
 			nmodule.mclass2nclassdef[mclass].all_defs.add(nclassdef)
 		end
@@ -169,7 +167,8 @@ redef class ModelBuilder
 
 		# In case of non-standard AClassdef, try to attach to an already existing mclassdef
 		var other_nclassdef = nmodule.mclass2nclassdef[mclass]
-		if not nclassdef isa AStdClassdef and other_nclassdef != nclassdef then
+		if other_nclassdef != nclassdef then
+			assert not nclassdef isa AStdClassdef
 			nclassdef.mclassdef = other_nclassdef.mclassdef
 			return
 		end
