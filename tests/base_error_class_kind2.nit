@@ -82,28 +82,28 @@ end
 # Futhermore, a subset can be specialized using the `redef` keyword.
 
 redef class SSetI
-	super SubI #alt21-27#
-	#alt21# super IC2
-	#alt22# super AC2
-	#alt23# super CC2
-	#alt24# super EnC2
-	#alt25# super ExC2
-	#alt26# super SSet2
-	#alt27# super Object
+	#alt21# super SubI
+	#alt22# super IC2
+	#alt23# super AC2
+	#alt24# super CC2
+	#alt25# super EnC2
+	#alt26# super ExC2
+	#alt27# super SSet2
+	#alt28# super Object
 end
 
 redef class SSetA
-	super SubA
+	#alt29# super SubA
 end
 
 redef class SSetC
-	super SubC
+	#alt30# super SubC
 end
 
 redef class SSetEn
-	super SubEn
+	#alt31# super SubEn
 end
 
 redef class SSetEx
-	super SubEx
+	#alt32# super SubEx
 end

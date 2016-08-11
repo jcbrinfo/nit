@@ -26,28 +26,26 @@ class Natural #alt1# class Natural[BOOM]
 	end
 end
 
-class Summable[E: Numeric] #alt2# class Summable[E: Boom]
-	super SequenceRead[E]
+class Summable[E: Numeric] #alt2,3#
+#alt2# class Summable[E: Natural]
+#alt3# class Summable[E: Boom]
+	super SequenceRead[E] #alt4,5#
+	#alt4# super Bytes
+	#alt5# super Range[E]
 	subset do return true
 
-	fun sum: E do
-		total = zero
-		for x in self do total += x
+	fun sum(default: E): E do
+		if is_empty then return default
+		var i = iterator
+		var total = i.item
+		for x in i do total += x
 		return total
 	end
-
-	fun zero: E is abstract
-end
-
-redef class Summable[E: Natural]
-	super SequenceRead[E] #alt3# super Bytes #alt4# super Range[E]
-
-	redef fun zero do return 0
 end
 
 var arr: Array[Natural] = [0, 1, 2, 3]
 for x in arr do print(x.fib)
 var s = arr.as(
-	Summable[Numeric] #alt5# Summable[Natural] #alt6# Summable[Int]
+	Summable[Numeric] #alt6# Summable[Natural] #alt7# Summable[Int]
 )
-print(s.sum)
+print(s.sum(0))

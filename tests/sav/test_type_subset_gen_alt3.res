@@ -1,1 +1,1 @@
-alt/test_type_subset_gen_alt3.nit:42,13--20: Error: expected 0 formal parameter(s) for a subset of Bytes; got 1.
+alt/test_type_subset_gen_alt3.nit:31,19--22: Error: class `Boom` not found in module `test_type_subset_gen_alt3`. Did you mean `core::Bool`?

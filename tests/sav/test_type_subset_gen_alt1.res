@@ -1,2 +1,1 @@
 alt/test_type_subset_gen_alt1.nit:19,7--13: Error: expected 0 formal parameter(s) for a subset of Int; got 1.
-alt/test_type_subset_gen_alt1.nit:42,25--31: Error: class `Natural` not found in module `test_type_subset_gen_alt1`.
