@@ -137,9 +137,7 @@ redef class ModelBuilder
 			mclass = new MNominal(mmodule, name, nclassdef.location, names,
 					mkind, mvisibility)
 			#print "new class {mclass}"
-		else if nclassdef isa AStdClassdef and
-				(mclass.kind != subset_kind or nclassdef.n_kwredef == null) and
-				nmodule.mclass2nclassdef.has_key(mclass) then
+		else if nclassdef isa AStdClassdef and nmodule.mclass2nclassdef.has_key(mclass) then
 			error(nclassdef, "Error: a class `{name}` is already defined at line {nmodule.mclass2nclassdef[mclass].location.line_start}.")
 			mclass.is_broken = true
 			return
