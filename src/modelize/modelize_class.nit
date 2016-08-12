@@ -177,10 +177,10 @@ redef class ModelBuilder
 		# class.
 		var subset_supertype: nullable MClassType = null
 		var data_class: nullable MClass
+		var is_nominal_intro = mclass.mclassdefs.is_empty
 		# Do we have to set `data_class` as the base class?
 		var set_base_class = false
 		if mclass isa MSubset then
-			var is_nominal_intro = mclass.mclassdefs.is_empty
 			subset_supertype = get_subset_supertype(nmodule, nclassdef,
 					is_nominal_intro)
 			if subset_supertype == null then
@@ -209,7 +209,8 @@ redef class ModelBuilder
 		# FIXME: Workaround
 		assert mclass isa MNominal
 
-		var bound_mtype = get_bound_mtype(nmodule, nclassdef, subset_supertype)
+		var bound_mtype = get_bound_mtype(nmodule, nclassdef, subset_supertype,
+				is_nominal_intro)
 		if bound_mtype == null then
 			if subset_supertype != null then
 				# Go back to a state before we looked at the supertypes. That
@@ -252,7 +253,8 @@ redef class ModelBuilder
 	# base class) in a type subset definition. It must be `null` for other class
 	# kinds.
 	private fun get_bound_mtype(nmodule: AModule, nclassdef: AClassdef,
-			subset_supertype: nullable MType): nullable MClassType
+			subset_supertype: nullable MType, is_nominal_intro: Bool):
+			nullable MClassType
 	do
 		var mmodule = nmodule.mmodule.as(not null)
 		var mclass = nclassdef.mclass.as(not null)
@@ -275,11 +277,35 @@ redef class ModelBuilder
 				var nfd = nclassdef.n_formaldefs[i]
 				var pname = mclass.mparameters[i].name
 				if nfd.n_id.text != pname then
-					if mclass.kind == subset_kind and
-							mclass.mclassdefs.is_empty then
+					if mclass.kind == subset_kind and is_nominal_intro then
 						error(nfd.n_id, "Error: formal parameter type #{i} `{nfd.n_id.text}` must be named `{pname}` as in the original definition in base class `{mclass.data_class}`.")
 					else
 						error(nfd.n_id, "Error: formal parameter type #{i} `{nfd.n_id.text}` must be named `{pname}` as in the original definition in module `{mclass.intro.mmodule}`.")
+					end
+				else if subset_supertype != null and is_nominal_intro then
+					# Each `MFormalType` of the supertype of a type subset must
+					# refer to the correct type parameter in the subset’s
+					# signature.
+					var arg = subset_supertype.arguments[i]
+					if arg isa MFormalType then
+						# Ensure it is really a reference to the susbset’s
+						# signature, just in case we missed an edge case.
+						assert arg isa MParameterType and arg.mclass == mclass
+						# Check that the indices are in sync.
+						if arg.rank != i then
+							# We already know that the subset’s signature use
+							# the good name. So, it is the name that is in the
+							# `super` declaration that is wrong.
+							# TODO: Find a robust way to locate the error.
+							var arg_node = nclassdef.n_superclasses.
+									first.n_type.n_types[i]
+							error(arg_node,
+								"Error: formal parameter type #{i} `{arg}` " +
+								"must be named `{pname}` as in the original " +
+								"definition in module " +
+								"`{mclass.data_class.intro.mmodule}`."
+							)
+						end
 					end
 				end
 				var nfdt = nfd.n_type
