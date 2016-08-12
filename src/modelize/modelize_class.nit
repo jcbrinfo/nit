@@ -315,6 +315,20 @@ redef class ModelBuilder
 				end
 				var nfdt = nfd.n_type
 				if nfdt != null then
+					if subset_supertype != null and is_nominal_intro then
+						# Since we already have a bound, the supertype must
+						# not define another. Else, we have a conflict.
+						# TODO: Maybe we should relax this restriction.
+						var arg = subset_supertype.arguments[i]
+						if not arg isa MFormalType then
+							error(nfd,
+								"Error: formal parameter type #{i} `{pname}` " +
+								"has a bounds in both the signature and the " +
+								"`super` declaration. Please remove one of " +
+								"the bounds."
+							)
+						end
+					end
 					var bound = resolve_mtype_unchecked(mmodule, null, nfdt, false)
 					if bound == null then return null # Forward error
 					if bound.need_anchor then
