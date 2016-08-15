@@ -331,7 +331,7 @@ class RapidTypeAnalysis
 				if not ot.can_resolve_for(t, t, mainmodule) then continue
 				var rt = ot.anchor_to(mainmodule, t)
 				if not rt.is_legal_in(mainmodule) then continue
-				live_cast_types.add(rt)
+				add_cast_closed(rt)
 				#print "  {ot}/{t} -> {rt}"
 			end
 		end
@@ -390,7 +390,18 @@ class RapidTypeAnalysis
 		if mtype.need_anchor then
 			live_open_cast_types.add(mtype)
 		else
-			live_cast_types.add(mtype)
+			add_cast_closed(mtype)
+		end
+	end
+
+	private fun add_cast_closed(mtype: MType)
+	do
+		# assert not mtype.need_anchor
+		live_cast_types.add(mtype)
+		# If a type subset, there is an implicit cast to the base type.
+		if mtype isa MClassType and mtype.mnominal.kind == subset_kind then
+			var base = mtype.mnominal.data_class.intro.bound_mtype
+			live_cast_types.add(base)
 		end
 	end
 
