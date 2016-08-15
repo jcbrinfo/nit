@@ -30,3 +30,4 @@ foo = 1.as(Foo) #alt2#
 assert foo + 1 == 2
 assert foo isa Foo
 assert foo isa Int
+#alt3# assert foo isa nullable Foo
