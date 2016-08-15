@@ -316,7 +316,7 @@ class GlobalCompilerVisitor
 			end
 			self.add("{res} = BOX_{valtype.c_name}({value}); /* autobox from {value.mtype} to {mtype} */")
 			return res
-		else if value.mtype.ctype == "void*" and mtype.ctype == "void*" then
+		else if value.mtype.ctype == mtype.ctype then
 			return value
 		else
 			# Bad things will appen!
