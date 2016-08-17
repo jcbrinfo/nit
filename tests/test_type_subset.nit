@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import kernel
+import core::kernel
 
 # TODO `subset` as a class kind keyword
 

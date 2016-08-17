@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import kernel
 import test_type_subset_private #alt1# import test_type_subset_redef
 
 redef private class NonZero
