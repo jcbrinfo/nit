@@ -1230,7 +1230,11 @@ class SeparateCompilerVisitor
 			end
 			return self.new_expr("((struct instance_{mtype.c_name}*){value})->value; /* autounbox from {value.mtype} to {mtype} */", mtype)
 		else if not mtype.is_c_primitive then
-			assert value.mtype == value.mcasttype
+			# TODO: Without type subsets, we can (and should)
+			# `assert value.mtype == value.mcasttype`. However, with type
+			# susbsets, the `mcasttype` can be a sibling class (a type subset of
+			# a superclass). So, until we can handle type intersections, we may
+			# lose typing information with subsets.
 			if value.mtype.is_tagged then
 				var res
 				if value.mtype.name == "Int" then
