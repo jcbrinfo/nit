@@ -14,7 +14,7 @@
 
 # Actual testing is done in `test_type_subset_redef2`.
 
-import kernel
+import core::kernel
 
 class NonZero
 	subset do return not self.is_zero
