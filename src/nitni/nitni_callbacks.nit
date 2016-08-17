@@ -151,7 +151,11 @@ redef class AMethPropdef
 		for sup in foreign_callbacks.supers do
 			v.analysis.add_super_send(sup.from.mclassdef.mnominal.mclass_type, sup.from.as(MMethodDef))
 		end
-		for t in foreign_callbacks.types do if t isa MClassType then v.add_type t
+		for t in foreign_callbacks.types do
+			if t isa MClassType then
+				v.add_type t.as_data_type
+			end
+		end
 	end
 end
 
