@@ -526,7 +526,7 @@ class SeparateCompiler
 
 		var layouts = new HashMap[MClass, Array[nullable MType]]
 		for c in runtime_type_analysis.live_classes do
-			if not c isa MClass then continue
+			assert c isa MClass else print_error "subset {c} is live"
 			layouts[c] = colorer.build_layout(c)
 		end
 
