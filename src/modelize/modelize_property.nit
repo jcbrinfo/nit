@@ -1701,7 +1701,11 @@ redef class ATypePropdef
 				break
 			end
 			if p.mclassdef.data_class == mclassdef.data_class then
-				modelbuilder.error(n_type, "Redef Error: a virtual type cannot be refined.")
+				if mclassdef.is_subset_def then
+					modelbuilder.error(n_type, "Redef Error: the virtual type `{mpropdef.mproperty.full_name}` cannot be overriden in a type subset.")
+				else
+					modelbuilder.error(n_type, "Redef Error: a virtual type cannot be refined.")
+				end
 				break
 			end
 			if not modelbuilder.check_subtype(n_type, mmodule, anchor, bound, supbound) then
