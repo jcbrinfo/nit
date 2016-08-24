@@ -1288,6 +1288,15 @@ abstract class MType
 	# ENSURE: `not self.need_anchor implies result == true`
 	fun can_resolve_for(mtype: MType, anchor: nullable MClassType, mmodule: MModule): Bool is abstract
 
+	# Return the type where the main `MNominal` is replaced by its `data_class`.
+	#
+	# If `self` is a `MClassType` or a wrapper over a `MClassType`, then return
+	# a type equivalent to `self`, but with `mnominal` replaced by
+	# `mnominal.data_class`. Else, return `self`.
+	#
+	# This is mostly used to compare types while ignoring type subsets.
+	fun as_data_type: MType do return self
+
 	# Return the nullable version of the type
 	# If the type is already nullable then self is returned
 	fun as_nullable: MType
@@ -1418,6 +1427,11 @@ class MClassType
 	redef fun resolve_for(mtype: MType, anchor: nullable MClassType, mmodule: MModule, cleanup_virtual: Bool): MClassType do return self
 
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
+
+	redef fun as_data_type: MClassType
+	do
+		return mnominal.data_class.get_mtype(arguments)
+	end
 
 	redef fun collect_mclassdefs(mmodule)
 	do
@@ -1892,6 +1906,7 @@ abstract class MProxyType
 
 	redef fun model do return self.mtype.model
 	redef fun need_anchor do return mtype.need_anchor
+	redef fun as_data_type do return mtype.as_data_type
 	redef fun as_nullable do return mtype.as_nullable
 	redef fun as_notnull do return mtype.as_notnull
 	redef fun undecorate do return mtype.undecorate
@@ -1954,6 +1969,7 @@ class MNullableType
 
 	redef var c_name is lazy do return "nullable__{mtype.c_name}"
 
+	redef fun as_data_type do return super.as_nullable
 	redef fun as_nullable do return self
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
 	do
@@ -1980,6 +1996,7 @@ class MNotNullType
 	redef var full_name is lazy do return "not null {mtype.full_name}"
 	redef var c_name is lazy do return "notnull__{mtype.c_name}"
 
+	redef fun as_data_type do return super.as_notnull
 	redef fun as_notnull do return self
 
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
