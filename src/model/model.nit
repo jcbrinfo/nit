@@ -1368,6 +1368,17 @@ abstract class MType
 	# REQUIRE: `not self.need_anchor`
 	fun collect_mclassdefs(mmodule: MModule): Set[MClassDef] is abstract
 
+	# Compute all the classdefs of the applicable type subsets.
+	#
+	# The returned set contains:
+	#  * the subset definitions from `mmodule` and its imported modules
+	#  * the subset definitions of this type, its super-types
+	#
+	# This function is used mainly internally.
+	#
+	# REQUIRE: `not self.need_anchor`
+	fun collect_subset_defs(mmodule: MModule): Set[MClassDef] is abstract
+
 	# Compute all the super-classes.
 	# This function is used mainly internally.
 	#
@@ -1443,6 +1454,16 @@ class MClassType
 		return cache[mmodule]
 	end
 
+	redef fun collect_subset_defs(mmodule)
+	do
+		assert not self.need_anchor
+		var cache = self.collect_subset_defs_cache
+		if not cache.has_key(mmodule) then
+			self.collect_things(mmodule)
+		end
+		return cache[mmodule]
+	end
+
 	redef fun collect_mnominals(mmodule)
 	do
 		if collect_mnominals_last_module == mmodule then return collect_mnominals_last_module_cache
@@ -1474,6 +1495,7 @@ class MClassType
 	private fun collect_things(mmodule: MModule)
 	do
 		var res = new HashSet[MClassDef]
+		var subset_defs = new HashSet[MClassDef]
 		var seen = new HashSet[MNominal]
 		var types = new HashSet[MClassType]
 		seen.add(self.mnominal)
@@ -1482,8 +1504,12 @@ class MClassType
 			var mclass = todo.pop
 			#print "process {mclass}"
 			for mclassdef in mclass.mclassdefs do
-				if mclassdef.mnominal != mclass then continue
 				if not mmodule.in_importation <= mclassdef.mmodule then continue
+				if mclassdef.mnominal != mclass then
+					#print "  subset {mclassdef}"
+					subset_defs.add(mclassdef)
+					continue
+				end
 				#print "  process {mclassdef}"
 				res.add(mclassdef)
 				for supertype in mclassdef.supertypes do
@@ -1497,11 +1523,13 @@ class MClassType
 			end
 		end
 		collect_mclassdefs_cache[mmodule] = res
+		collect_subset_defs_cache[mmodule] = subset_defs
 		collect_mnominals_cache[mmodule] = seen
 		collect_mtypes_cache[mmodule] = types
 	end
 
 	private var collect_mclassdefs_cache = new HashMap[MModule, Set[MClassDef]]
+	private var collect_subset_defs_cache = new HashMap[MModule, Set[MClassDef]]
 	private var collect_mnominals_cache = new HashMap[MModule, Set[MNominal]]
 	private var collect_mtypes_cache = new HashMap[MModule, Set[MClassType]]
 
@@ -1941,6 +1969,12 @@ abstract class MProxyType
 		return self.mtype.collect_mclassdefs(mmodule)
 	end
 
+	redef fun collect_subset_defs(mmodule)
+	do
+		assert not self.need_anchor
+		return self.mtype.collect_subset_defs(mmodule)
+	end
+
 	redef fun collect_mnominals(mmodule)
 	do
 		assert not self.need_anchor
@@ -2032,6 +2066,8 @@ class MNullType
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
 
+	redef fun collect_subset_defs(mmodule) do return new HashSet[MClassDef]
+
 	redef fun collect_mnominals(mmodule) do return new HashSet[MNominal]
 
 	redef fun collect_mtypes(mmodule) do return new HashSet[MClassType]
@@ -2057,6 +2093,8 @@ class MBottomType
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
+
+	redef fun collect_subset_defs(mmodule) do return new HashSet[MClassDef]
 
 	redef fun collect_mnominals(mmodule) do return new HashSet[MNominal]
 
