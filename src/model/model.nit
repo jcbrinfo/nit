@@ -2506,7 +2506,7 @@ abstract class MProperty
 	# FIXME: the linearization is still unspecified
 	#
 	# REQUIRE: `not mtype.need_anchor` to simplify the API (no `anchor` parameter)
-	# REQUIRE: `mtype.has_mproperty(mmodule, self)`
+	# REQUIRE: `mtype.may_have_mproperty(mmodule, self)`
 	fun lookup_first_definition(mmodule: MModule, mtype: MType): MPROPDEF
 	do
 		return lookup_all_definitions(mmodule, mtype).first
@@ -2516,7 +2516,7 @@ abstract class MProperty
 	# Most specific first, most general last
 	#
 	# REQUIRE: `not mtype.need_anchor` to simplify the API (no `anchor` parameter)
-	# REQUIRE: `mtype.has_mproperty(mmodule, self)`
+	# REQUIRE: `mtype.may_have_mproperty(mmodule, self)`
 	fun lookup_all_definitions(mmodule: MModule, mtype: MType): Array[MPROPDEF]
 	do
 		mtype = mtype.undecorate
@@ -2525,16 +2525,18 @@ abstract class MProperty
 		if cache != null then return cache
 
 		assert not mtype.need_anchor
-		assert mtype.has_mproperty(mmodule, self)
+		assert mtype.may_have_mproperty(mmodule, self)
 
 		#print "select prop {mproperty} for {mtype} in {self}"
 		# First, select all candidates
 		var candidates = new Array[MPROPDEF]
+		var data_type = mtype.as_data_type
 		for mpropdef in self.mpropdefs do
 			# If the definition is not imported by the module, then skip
 			if not mmodule.in_importation <= mpropdef.mclassdef.mmodule then continue
 			# If the definition is not inherited by the type, then skip
-			if not mtype.is_subtype(mmodule, null, mpropdef.mclassdef.bound_mtype) then continue
+			var sup = mpropdef.mclassdef.bound_mtype.as_data_type
+			if not data_type.is_subtype(mmodule, null, sup) then continue
 			# Else, we keep it
 			candidates.add(mpropdef)
 		end
