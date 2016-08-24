@@ -1369,6 +1369,18 @@ abstract class MType
 		assert not self.need_anchor
 		return self.collect_mclassdefs(mmodule).has(mproperty.intro_mclassdef)
 	end
+
+	# Is the property in self or a subset for the given module?
+	#
+	# This method does not filter visibility or whatever.
+	#
+	# REQUIRE: `not self.need_anchor`
+	# SEE: `has_mproperty`
+	fun may_have_mproperty(mmodule: MModule, mproperty: MProperty): Bool
+	do
+		return has_mproperty(mmodule, mproperty) or
+				collect_subset_defs(mmodule).has(mproperty.intro_mclassdef)
+	end
 end
 
 # A type based on a class.
