@@ -797,6 +797,9 @@ redef class AMethPropdef
 			else if n_kwinit != null then
 				name = "init"
 				name_node = n_kwinit
+				if not check_can_init(modelbuilder, mclassdef, name_node) then
+					return
+				end
 			else if n_kwnew != null then
 				name = "new"
 				name_node = n_kwnew
@@ -1106,6 +1109,23 @@ redef class AMethPropdef
 		var ret_type = n_signature.ret_type
 		if ret_type != null and ret_type == n_intro.n_signature.ret_type then
 			modelbuilder.advice(n_signature.n_type, "useless-signature", "Warning: useless return type repetition for redefined method `{mpropdef.name}`")
+		end
+	end
+
+	# Check if we can define a constructor for the specified class definition.
+	#
+	# `name_node` point to the name of the constructor (the `init` keyword).
+	private fun check_can_init(modelbuilder: ModelBuilder, mclassdef: MClassDef,
+			name_node: ANode): Bool
+	do
+		var mclass = mclassdef.mnominal
+		var kind = mclass.kind
+		if kind.can_init then
+			return true
+		else
+			modelbuilder.error(name_node,
+					"Error: {kind} `{mclass}` can not have a constructor.")
+			return false
 		end
 	end
 end

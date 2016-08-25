@@ -2830,6 +2830,9 @@ class MClassKind
 
 	# TODO: private init because enumeration.
 
+	# Can a class of kind `self` define a constructor?
+	fun can_init: Bool do return self != subset_kind
+
 	# Can a class of kind `self` specializes a class of kind `other`?
 	fun can_specialize(other: MClassKind): Bool
 	do
