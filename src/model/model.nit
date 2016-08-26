@@ -558,6 +558,9 @@ abstract class MNominal
 	# In this case, the method will abort.
 	fun data_class: MClass is abstract
 
+	# All subsets that has this class as their nearest non-subset ancestors.
+	var subsets: SimpleCollection[MSubset] = new Array[MSubset]
+
 	# Alias for `name`
 	redef fun to_s do return self.name
 
@@ -702,6 +705,7 @@ class MSubset
 	fun data_class=(data_class: MClass)
 	do
 		p_data_class = data_class
+		data_class.subsets.add(self)
 		arity = data_class.arity
 		mparameters = data_class.mparameters
 
