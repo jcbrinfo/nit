@@ -777,19 +777,11 @@ class MClassDef
 		self.mnominal = bound_mtype.mnominal
 		mmodule.mclassdefs.add(self)
 
-		if data_class.mclassdefs.is_empty then
-			assert not isset data_class._intro
-			data_class.intro = self
+		if mnominal.mclassdefs.is_empty then
+			assert not isset mnominal._intro
+			mnominal.intro = self
 		end
-		data_class.mclassdefs.add(self)
-
-		if mnominal != data_class then
-			if mnominal.mclassdefs.is_empty then
-				assert not isset mnominal._intro
-				mnominal.intro = self
-			end
-			mnominal.mclassdefs.add(self)
-		end
+		mnominal.mclassdefs.add(self)
 
 		self.to_s = "{mmodule}${mnominal}"
 	end
@@ -1485,11 +1477,6 @@ class MClassType
 			#print "process {mclass}"
 			for mclassdef in mclass.mclassdefs do
 				if not mmodule.in_importation <= mclassdef.mmodule then continue
-				if mclassdef.mnominal != mclass then
-					#print "  subset {mclassdef}"
-					subset_defs.add(mclassdef)
-					continue
-				end
 				#print "  process {mclassdef}"
 				res.add(mclassdef)
 				for supertype in mclassdef.supertypes do
