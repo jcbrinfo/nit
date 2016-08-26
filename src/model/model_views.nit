@@ -74,7 +74,6 @@ class ModelView
 	var mclassdefs: Set[MClassDef] is lazy do
 		var mclassdefs = new HashSet[MClassDef]
 		for mclass in mnominals do
-			if not mclass isa MClass then continue
 			for mclassdef in mclass.mclassdefs do
 				if not accept_mentity(mclassdef) then continue
 				mclassdefs.add mclassdef
