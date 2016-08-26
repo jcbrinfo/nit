@@ -33,6 +33,7 @@ import mmodule
 import mdoc
 import ordered_tree
 private import more_collections
+private import pipeline
 
 redef class MEntity
 	# The visibility of the MEntity.
@@ -625,6 +626,14 @@ abstract class MNominal
 	# All definitions of this class (introduction, refinements and subsets’ definitions)
 	var mclassdefs = new Array[MClassDef]
 
+	# An iterator over all definitions, including subsets’ definitions
+	fun vt_defs: Iterator[MClassDef]
+	do
+		return mclassdefs.iterator + new Iterator2[MClassDef](
+			mclassdefs_function.map(subsets.iterator)
+		)
+	end
+
 	# Is there a `new` factory to allow the pseudo instantiation?
 	var has_new_factory = false is writable
 
@@ -641,6 +650,17 @@ abstract class MNominal
 	fun is_abstract: Bool is abstract
 
 	redef fun mdoc_or_fallback do return intro.mdoc_or_fallback
+end
+
+private class MClassDefsFunction
+	super Function[MNominal, Iterator[MClassDef]]
+
+	redef fun apply(e) do return e.mclassdefs.iterator
+end
+
+private fun mclassdefs_function: MClassDefsFunction
+do
+	return once new MClassDefsFunction
 end
 
 # A named class
