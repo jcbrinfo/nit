@@ -1469,7 +1469,14 @@ class MClassType
 
 	redef fun as_data_type: MClassType
 	do
-		return mnominal.data_class.get_mtype(arguments)
+		var args = self.arguments
+		if self.arguments.not_empty then
+			args = new Array[MType].with_capacity(self.arguments.length)
+			for arg in self.arguments do
+				args.add(arg.as_data_type)
+			end
+		end
+		return mnominal.data_class.get_mtype(args)
 	end
 
 	redef fun collect_mclassdefs(mmodule)
