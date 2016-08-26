@@ -544,6 +544,9 @@ abstract class MNominal
 	# All class definitions (introduction and refinements)
 	var mclassdefs = new Array[MClassDef]
 
+	# All subsets that has this class as their nearest non-subset ancestor.
+	var subsets: SimpleCollection[MSubset] = new Array[MSubset]
+
 	# Alias for `name`
 	redef fun to_s do return self.name
 
@@ -690,6 +693,7 @@ class MSubset
 	fun data_class=(data_class: MClass)
 	do
 		p_data_class = data_class
+		data_class.subsets.add(self)
 		arity = data_class.arity
 		mparameters = data_class.mparameters
 
