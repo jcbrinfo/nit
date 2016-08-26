@@ -4080,7 +4080,7 @@ redef class MModule
 				assert parent isa MClass
 				properties.add_all(self.properties(parent))
 			end
-			for mclassdef in mclass.mclassdefs do
+			for mclassdef in mclass.vt_defs do
 				if not self.in_importation <= mclassdef.mmodule then continue
 				for mprop in mclassdef.intro_mproperties do
 					properties.add(mprop)
