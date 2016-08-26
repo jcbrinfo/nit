@@ -54,7 +54,7 @@ do
 		# So, visit all definitions of all super-classes
 		for sup in hier[c].greaters do
 			if not sup isa MClass then continue
-			for cd in sup.mclassdefs do
+			for cd in sup.vt_defs do
 				nl += 1
 
 				# Now, search properties introduced
