@@ -1492,6 +1492,15 @@ class MClassType
 					todo.add(superclass)
 				end
 			end
+			for msubset in mclass.subsets do
+				#print "  subset {msubset}"
+				for mclassdef in msubset.mclassdefs do
+					if not mmodule.in_importation <= mclassdef.mmodule then continue
+					#print "    def {mclassdef}"
+					subset_defs.add(mclassdef)
+					continue
+				end
+			end
 		end
 		collect_mclassdefs_cache[mmodule] = res
 		collect_subset_defs_cache[mmodule] = subset_defs
