@@ -2652,6 +2652,9 @@ class MMethod
 	# Is the property a 'new' constructor?
 	var is_new: Bool = false is writable
 
+	# Is the property a membership test (`isa`)?
+	var is_isa: Bool = false is writable
+
 	# Is the property a legal constructor for a given class?
 	# As usual, visibility is not considered.
 	# FIXME not implemented
