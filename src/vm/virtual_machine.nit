@@ -57,7 +57,9 @@ class VirtualMachine super NaiveInterpreter
 	end
 
 	# Runtime subtyping test
-	redef fun is_subtype(sub, sup: MType): Bool
+	# TODO: Add support for subsets if needed.
+	# TODO: Do not use this method to check if an object is an instance of a given class: you have to do more than a type comparison with type subsets.
+	fun is_subtype(sub, sup: MType): Bool
 	do
 		if sub == sup then return true
 
