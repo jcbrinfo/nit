@@ -858,7 +858,7 @@ redef class APropdef
 	end
 end
 
-redef class AMethPropdef
+redef class AAbstractMethPropdef
 	super TablesCapable
 
 	redef fun call(v, mpropdef, args)
