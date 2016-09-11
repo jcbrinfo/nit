@@ -1280,7 +1280,8 @@ abstract class MType
 	# a type equivalent to `self`, but with `mnominal` replaced by
 	# `mnominal.data_class`. Else, return `self`.
 	#
-	# This is mostly used to compare types while ignoring type subsets.
+	# This is mostly used to compare types while assuming that the membership
+	# tests implied by type subsets will succeed.
 	fun as_data_type: MType do return self
 
 	# Return the nullable version of the type
