@@ -1112,7 +1112,7 @@ redef class AMethPropdef
 
 	# Check if we can define a constructor for the specified class definition.
 	#
-	# `name_node` point to the name of the constructor (the `init` keyword).
+	# `name_node` points to the name of the constructor (the `init` keyword).
 	private fun check_can_init(modelbuilder: ModelBuilder, mclassdef: MClassDef,
 			name_node: ANode): Bool
 	do
