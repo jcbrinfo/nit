@@ -550,8 +550,30 @@ class NaiveInterpreter
 		var vt_type = mtype.as_data_type
 		if not value.mtype.is_subtype(mainmodule, anchor, vt_type) then
 			return false
-		else
+		else if vt_type == mtype then
+			# `mtype` is neither a type subset nor a wrapper around one. So,
+			# `is_subtype` suffices.
 			return true
+		else if value == null_instance then
+			# `mtype` is a nullable type subset and the value is null.
+			return true
+		else
+			mtype = mtype.undecorate
+			assert mtype isa MClassType
+			# `mtype` represents a type subset and the value is not null. So, we
+			# must take the subset’s membership test into account.
+
+			var mclass = mtype.mnominal
+			var args = [value]
+			var method = mclass.isa_method
+
+			# The `isa` method returns `true` by default.
+			if method == null then return true
+
+			var method_def = method.lookup_first_definition(mainmodule, mtype)
+			var result = call(method_def, args)
+			assert result != null
+			return result.is_true
 		end
 	end
 
