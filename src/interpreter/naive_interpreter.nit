@@ -106,12 +106,6 @@ class NaiveInterpreter
 		end
 	end
 
-	# Subtype test in the context of the mainmodule
-	fun is_subtype(sub, sup: MType): Bool
-	do
-		return sub.is_subtype(self.mainmodule, current_receiver_class, sup)
-	end
-
 	# Get a primitive method in the context of the main module
 	fun force_get_primitive_method(name: String, recv: MType): MMethod
 	do
@@ -163,12 +157,11 @@ class NaiveInterpreter
 		end
 		var implicit_cast_to = n.implicit_cast_to
 		if i != null and implicit_cast_to != null then
-			var mtype = self.unanchor_type(implicit_cast_to)
-			if not self.is_subtype(i.mtype, mtype) then n.fatal(self, "Cast failed. Expected `{implicit_cast_to}`, got `{i.mtype}`")
+			if not value_isa(i, implicit_cast_to) then n.fatal(self, "Cast failed. Expected `{implicit_cast_to}`, got `{i.mtype}`")
 		end
 
 		#n.debug("OUT Execute expr: value is {i}")
-		#if not is_subtype(i.mtype, n.mtype.as(not null)) then n.debug("Expected {n.mtype.as(not null)} got {i}")
+		#if not value_isa(i, n.mtype.as(not null)) then n.debug("Expected {n.mtype.as(not null)} got {i}")
 		frame.current_node = old
 		return i
 	end
@@ -538,6 +531,26 @@ class NaiveInterpreter
 		end
 	end
 
+	# Indicate if the specified value is an instance of the specified type.
+	#
+	# Alias for `value_isa3(value, current_receiver_class, mtype)`
+	fun value_isa(value: Instance, mtype: MType): Bool
+	do
+		return value_isa3(value, current_receiver_class, mtype)
+	end
+
+	# Indicate if the specified value is an instance of the specified type.
+	fun value_isa3(value: Instance, anchor: MClassType, mtype: MType): Bool
+	do
+		mtype = mtype.anchor_to(mainmodule, anchor)
+		var vt_type = mtype.as_data_type
+		if not value.mtype.is_subtype(mainmodule, anchor, vt_type) then
+			return false
+		else
+			return true
+		end
+	end
+
 	# Execute type checks of covariant parameters
 	fun parameter_check(node: ANode, mpropdef: MMethodDef, args: Array[Instance])
 	do
@@ -558,7 +571,7 @@ class NaiveInterpreter
 			var mtype = mp.mtype
 			var anchor = args.first.mtype.as(MClassType)
 			var amtype = mtype.anchor_to(self.mainmodule, anchor)
-			if not args[i+1].mtype.is_subtype(self.mainmodule, anchor, amtype) then
+			if not value_isa3(args[i+1], anchor, mtype) then
 				node.fatal(self, "Cast failed. Expected `{mtype}`, got `{args[i+1].mtype}`")
 			end
 		end
@@ -2124,8 +2137,8 @@ redef class AIsaExpr
 	do
 		var i = v.expr(self.n_expr)
 		if i == null then return null
-		var mtype = v.unanchor_type(self.cast_type.as(not null))
-		return v.bool_instance(v.is_subtype(i.mtype, mtype))
+		var mtype = self.cast_type.as(not null)
+		return v.bool_instance(v.value_isa(i, mtype))
 	end
 end
 
@@ -2136,7 +2149,7 @@ redef class AAsCastExpr
 		if i == null then return null
 		var mtype = self.mtype.as(not null)
 		var amtype = v.unanchor_type(mtype)
-		if not v.is_subtype(i.mtype, amtype) then
+		if not v.value_isa(i, amtype) then
 			fatal(v, "Cast failed. Expected `{amtype}`, got `{i.mtype}`")
 		end
 		return i
