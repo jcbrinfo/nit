@@ -1194,6 +1194,35 @@ redef class AMethPropdef
 		return n_methid != null and n_methid.return_is_mandatory
 	end
 end
+
+redef class AAnnotPropdef
+
+	redef fun build_property(modelbuilder, mclassdef)
+	do
+		var name_node = n_atid.n_id
+		var name = name_node.text
+		if name == "subset" then
+			if n_args.length < 1 then return
+			# TODO: Check if exactly 1 arg, and is a block/do return
+			name = "isa"
+			build_method(modelbuilder, mclassdef, name_node, name)
+		end
+	end
+
+	redef fun build_signature(modelbuilder)
+	do
+		build_method_signature(modelbuilder, n_atid.n_id)
+	end
+
+	redef fun accept_special_last_parameter do return false
+
+	redef fun is_extern(modelbuilder) do return false
+
+	redef fun is_init do return false
+
+	redef fun is_new do return false
+
+	redef fun return_is_mandatory do return n_atid.n_id.text == "subset"
 end
 
 redef class AMethid
