@@ -649,6 +649,11 @@ abstract class MNominal
 	# Is `self` and abstract class?
 	fun is_abstract: Bool is abstract
 
+	# The `isa` method (user-defined membership test), if defined.
+	#
+	# Always `null` for anything that is not a type subset.
+	fun isa_method: nullable MMethod do return null
+
 	redef fun mdoc_or_fallback do return intro.mdoc_or_fallback
 end
 
@@ -746,6 +751,8 @@ class MSubset
 	redef fun is_interface do return false
 	redef fun is_enum do return false
 	redef fun is_abstract do return false
+
+	redef var isa_method = null is writable
 end
 
 
