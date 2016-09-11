@@ -1625,7 +1625,7 @@ redef class AAttrPropdef
 		if n_intro == null then return
 		# get intro type
 		var ntype = null
-		if n_intro isa AMethPropdef then
+		if n_intro isa AAbstractMethPropdef then
 			ntype = n_intro.n_signature.ret_type
 		else if n_intro isa AAttrPropdef and n_intro.n_type != null then
 			ntype = n_intro.n_type.mtype

@@ -1311,9 +1311,22 @@ class AAttrPropdef
 	end
 end
 
+# Any node that may represent a method definition.
+#
+# `AMethPropdef` or `AAnnotPropdef`.
+abstract class AAbstractMethPropdef
+	super APropdef
+
+	# The body (in Nit) of the method, if any.
+	fun n_block: nullable AExpr is abstract
+
+	# The signature of the method, if any.
+	fun n_signature: nullable ASignature is abstract
+end
+
 # A definition of all kind of method (including constructors)
 class AMethPropdef
-	super APropdef
+	super AAbstractMethPropdef
 
 	# The `fun` keyword, if any
 	var n_kwmeth: nullable TKwmeth = null is writable
@@ -1327,14 +1340,12 @@ class AMethPropdef
 	# The name of the method, if any
 	var n_methid: nullable AMethid = null is writable
 
-	# The signature of the method, if any
-	var n_signature: nullable ASignature = null is writable
+	redef var n_signature = null is writable
 
 	# The `do` keyword
 	var n_kwdo: nullable TKwdo = null is writable
 
-	# The body (in Nit) of the method, if any
-	var n_block: nullable AExpr = null is writable
+	redef var n_block = null is writable
 
 	# The `end` keyword
 	var n_kwend: nullable TKwend = null is writable
@@ -1365,8 +1376,16 @@ class AMainMethPropdef
 end
 
 class AAnnotPropdef
-	super APropdef
+	super AAbstractMethPropdef
 	super AAnnotation
+
+	redef fun n_block
+	do
+		if n_args.length != 1 then return null
+		return n_args.first
+	end
+
+	redef fun n_signature do return null
 end
 
 # A super-class. eg `super X`

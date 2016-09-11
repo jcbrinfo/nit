@@ -72,6 +72,7 @@ private class TypeVisitor
 			self.mclassdef = mclassdef
 			self.anchor = mclassdef.bound_mtype
 
+			# TODO: Not sure…
 			var mclass = mclassdef.mnominal
 
 			var selfvariable = new Variable("self")
@@ -752,7 +753,7 @@ redef class APropdef
 	var selfvariable: nullable Variable
 end
 
-redef class AMethPropdef
+redef class AAbstractMethPropdef
 	redef fun do_typing(modelbuilder: ModelBuilder)
 	do
 		var mpropdef = self.mpropdef

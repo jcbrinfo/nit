@@ -61,7 +61,7 @@ abstract class StaticAnalysis
 	# Returns `new_initial_flow` by default.
 	# Redefine this method to inject things in the inset like parameters from
 	# the signature.
-	fun new_initial_method_flow(v: AMethPropdef): FLOW do return new_initial_flow
+	fun new_initial_method_flow(v: AAbstractMethPropdef): FLOW do return new_initial_flow
 
 	# The merge operation on sets for confluence.
 	#
@@ -235,7 +235,7 @@ redef class AForExpr
 	end
 end
 
-redef class AMethPropdef
+redef class AAbstractMethPropdef
 	redef fun accept_forward_analysis(v) do
 		v.current_inset = v.new_initial_method_flow(self)
 		v.current_outset = v.current_inset.clone

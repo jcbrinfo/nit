@@ -47,12 +47,19 @@ private class AutoSuperInitVisitor
 end
 
 
-redef class AMethPropdef
+redef class AAbstractMethPropdef
 	# In case of introduced constructor, the list of implicit auto super init constructors invoked (if needed)
-	var auto_super_inits: nullable Array[CallSite] = null
+	fun auto_super_inits: nullable Array[CallSite] do return null
 
 	# In case of redefined constructors, is an implicit call-to-super required?
-	var auto_super_call = false
+	fun auto_super_call: Bool do return false
+end
+
+redef class AMethPropdef
+
+	redef var auto_super_inits = null
+
+	redef var auto_super_call = false
 
 	# Collect initializers and build the auto-init
 	fun do_auto_super_init(modelbuilder: ModelBuilder)

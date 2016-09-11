@@ -489,7 +489,7 @@ redef class AAttrPropdef
 	end
 end
 
-redef class AMethPropdef
+redef class AAbstractMethPropdef
 	redef fun generate_basic_blocks(ssa: SSA)
 	do
 		basic_block = new BasicBlock

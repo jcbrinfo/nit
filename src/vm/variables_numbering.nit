@@ -116,7 +116,7 @@ redef class APropdef
 	fun numbering_variables(vm: VirtualMachine) is abstract
 end
 
-redef class AMethPropdef
+redef class AAbstractMethPropdef
 	# Assign a position in the environment to each local variable
 	# *`vm` The current VirtualMachine
 	redef fun numbering_variables(vm: VirtualMachine)
