@@ -747,92 +747,26 @@ redef class AParam
 	var mparameter: nullable MParameter = null
 end
 
-redef class AMethPropdef
+redef class AAbstractMethPropdef
+
 	redef type MPROPDEF: MMethodDef
 
 	# Is the method annotated `autoinit`?
 	var is_autoinit = false
 
 	# Can self be used as a root init?
-	private fun look_like_a_root_init(modelbuilder: ModelBuilder, mclassdef: MClassDef): Bool
+	protected fun look_like_a_root_init(modelbuilder: ModelBuilder,
+			mclassdef: MClassDef): Bool do return false
+
+	protected fun build_method(modelbuilder: ModelBuilder, mclassdef: MClassDef,
+			name_node: ANode, name: String, n_block: nullable AExpr)
 	do
-		# Need the `init` keyword
-		if n_kwinit == null then return false
-		# Need to by anonymous
-		if self.n_methid != null then return false
-		# No annotation on itself
-		if get_single_annotation("old_style_init", modelbuilder) != null then return false
-		# Nor on its module
-		var amod = self.parent.parent.as(AModule)
-		var amoddecl = amod.n_moduledecl
-		if amoddecl != null then
-			var old = amoddecl.get_single_annotation("old_style_init", modelbuilder)
-			if old != null then return false
-		end
-		# No parameters
-		if self.n_signature.n_params.length > 0 then
-			modelbuilder.advice(self, "old-init", "Warning: init with signature in {mclassdef}")
-			return false
-		end
-		# Cannot be private or something
-		if not self.n_visibility isa APublicVisibility then
-			modelbuilder.advice(self, "old-init", "Warning: non-public init in {mclassdef}")
-			return false
-		end
-
-		return true
-	end
-
-	redef fun build_property(modelbuilder, mclassdef)
-	do
-		var n_kwinit = n_kwinit
-		var n_kwnew = n_kwnew
-		var is_init = n_kwinit != null or n_kwnew != null
-		var name: String
-		var amethodid = self.n_methid
-		var name_node: ANode
-		if amethodid == null then
-			if not is_init then
-				name = "main"
-				name_node = self
-			else if n_kwinit != null then
-				name = "init"
-				name_node = n_kwinit
-				if not check_can_init(modelbuilder, mclassdef, name_node) then
-					return
-				end
-			else if n_kwnew != null then
-				name = "new"
-				name_node = n_kwnew
-			else
-				abort
-			end
-		else if amethodid isa AIdMethid then
-			name = amethodid.n_id.text
-			name_node = amethodid
-		else
-			# operator, bracket or assign
-			name = amethodid.collect_text
-			name_node = amethodid
-
-			var arity = self.n_signature.n_params.length
-			if name == "+" and arity == 0 then
-				name = "unary +"
-			else if name == "-" and arity == 0 then
-				name = "unary -"
-			else if name == "~" and arity == 0 then
-				name = "unary ~"
-			else
-				if amethodid.is_binary and arity != 1 then
-					modelbuilder.error(self.n_signature, "Syntax Error: binary operator `{name}` requires exactly one parameter; got {arity}.")
-				else if amethodid.min_arity > arity then
-					modelbuilder.error(self.n_signature, "Syntax Error: `{name}` requires at least {amethodid.min_arity} parameter(s); got {arity}.")
-				end
-			end
-		end
-
 		var look_like_a_root_init = look_like_a_root_init(modelbuilder, mclassdef)
+		var is_new = self.is_new
+		var is_init = self.is_init
+		var is_isa = (name == "isa")
 		var mprop: nullable MMethod = null
+
 		if not is_init or n_kwredef != null then mprop = modelbuilder.try_get_mproperty_by_name(name_node, mclassdef, name).as(nullable MMethod)
 		if mprop == null and look_like_a_root_init then
 			mprop = modelbuilder.the_root_init_mmethod
@@ -849,8 +783,13 @@ redef class AMethPropdef
 				mprop.is_root_init = true
 			end
 			mprop.is_init = is_init
-			mprop.is_new = n_kwnew != null
-			if mprop.is_new then mclassdef.mnominal.has_new_factory = true
+			mprop.is_new = is_new
+			mprop.is_isa = is_isa
+			if is_new then mclassdef.mnominal.has_new_factory = true
+			if is_isa then
+				# TODO: Error message if the class is not a subset.
+				mclassdef.mnominal.as(MSubset).isa_method = mprop
+			end
 			if name == "sys" then mprop.is_toplevel = true # special case for sys allowed in `new` factories
 			if not self.check_redef_keyword(modelbuilder, mclassdef, n_kwredef, false, mprop) then
 				mprop.is_broken = true
@@ -890,10 +829,11 @@ redef class AMethPropdef
 		end
 	end
 
-	redef fun build_signature(modelbuilder)
+	protected fun build_method_signature(modelbuilder: ModelBuilder,
+			name_node: nullable ANode)
 	do
 		var mpropdef = self.mpropdef
-		if mpropdef == null then return # Error thus skiped
+		if mpropdef == null then return # Error or not applicable, thus skipped.
 		var mclassdef = mpropdef.mclassdef
 		var mmodule = mclassdef.mmodule
 		var nsig = self.n_signature
@@ -908,8 +848,8 @@ redef class AMethPropdef
 			end
 		end
 
-		var accept_special_last_parameter = self.n_methid == null or self.n_methid.accept_special_last_parameter
-		var return_is_mandatory = self.n_methid != null and self.n_methid.return_is_mandatory
+		var accept_special_last_parameter = self.accept_special_last_parameter
+		var return_is_mandatory = self.return_is_mandatory
 
 		# Retrieve info from the signature AST
 		var param_names = new Array[String] # Names of parameters from the AST
@@ -922,6 +862,8 @@ redef class AMethPropdef
 			param_types = nsig.param_types
 			vararg_rank = nsig.vararg_rank
 			ret_type = nsig.ret_type
+		else if mpropdef.mproperty.is_isa then
+			ret_type = mmodule.bool_type
 		end
 
 		# Look for some signature to inherit
@@ -986,17 +928,17 @@ redef class AMethPropdef
 
 		# Special checks for operator methods
 		if not accept_special_last_parameter and mparameters.not_empty and mparameters.last.is_vararg then
-			modelbuilder.error(self.n_signature.n_params.last, "Error: illegal variadic parameter `{mparameters.last}` for `{mpropdef.mproperty.name}`.")
+			modelbuilder.error(nsig.n_params.last, "Error: illegal variadic parameter `{mparameters.last}` for `{mpropdef.mproperty.name}`.")
 		end
 		if ret_type == null and return_is_mandatory then
-			modelbuilder.error(self.n_methid, "Error: mandatory return type for `{mpropdef.mproperty.name}`.")
+			modelbuilder.error(name_node, "Error: mandatory return type for `{mpropdef.mproperty.name}`.")
 		end
 
 		msignature = new MSignature(mparameters, ret_type)
 		mpropdef.msignature = msignature
 		mpropdef.is_abstract = self.get_single_annotation("abstract", modelbuilder) != null
 		mpropdef.is_intern = self.get_single_annotation("intern", modelbuilder) != null
-		mpropdef.is_extern = self.n_extern_code_block != null or self.get_single_annotation("extern", modelbuilder) != null
+		mpropdef.is_extern = is_extern(modelbuilder)
 
 		# Check annotations
 		var at = self.get_single_annotation("lazy", modelbuilder)
@@ -1016,10 +958,10 @@ redef class AMethPropdef
 		end
 	end
 
-	redef fun check_signature(modelbuilder)
+	redef fun check_signature(modelbuilder: ModelBuilder)
 	do
 		var mpropdef = self.mpropdef
-		if mpropdef == null then return # Error thus skiped
+		if mpropdef == null then return # Error or not applicable, thus skipped.
 		var mclassdef = mpropdef.mclassdef
 		var mmodule = mclassdef.mmodule
 		var nsig = self.n_signature
@@ -1092,9 +1034,10 @@ redef class AMethPropdef
 
 	# For parameters, type is always useless in a redef.
 	# For return type, type is useless if not covariant with introduction.
-	redef fun check_repeated_types(modelbuilder) do
+	private fun check_methods_repeated_types(modelbuilder: ModelBuilder) do
 		var mpropdef = self.mpropdef
 		if mpropdef == null then return
+		var n_signature = self.n_signature
 		if mpropdef.is_intro or n_signature == null then return
 		# check params
 		for param in n_signature.n_params do
@@ -1105,12 +1048,118 @@ redef class AMethPropdef
 		# get intro
 		var intro = mpropdef.mproperty.intro
 		var n_intro = modelbuilder.mpropdef2npropdef.get_or_null(intro)
-		if n_intro == null or not n_intro isa AMethPropdef then return
+		if n_intro == null or not n_intro isa AAbstractMethPropdef then return
 		# check return type
 		var ret_type = n_signature.ret_type
 		if ret_type != null and ret_type == n_intro.n_signature.ret_type then
 			modelbuilder.advice(n_signature.n_type, "useless-signature", "Warning: useless return type repetition for redefined method `{mpropdef.name}`")
 		end
+	end
+
+	# Can the last parameter be special like a vararg?
+	protected fun accept_special_last_parameter: Bool is abstract
+
+	# Is this method extern?
+	protected fun is_extern(modelbuilder: ModelBuilder): Bool is abstract
+
+	# Is this method a constructor or a “`new`” factory?
+	protected fun is_init: Bool is abstract
+
+	# Is this method a “`new`” factory?
+	protected fun is_new: Bool is abstract
+
+	# Is a return required?
+	protected fun return_is_mandatory: Bool is abstract
+end
+
+redef class AMethPropdef
+
+	# Can self be used as a root init?
+	redef fun look_like_a_root_init(modelbuilder: ModelBuilder, mclassdef: MClassDef): Bool
+	do
+		# Need the `init` keyword
+		if n_kwinit == null then return false
+		# Need to by anonymous
+		if self.n_methid != null then return false
+		# No annotation on itself
+		if get_single_annotation("old_style_init", modelbuilder) != null then return false
+		# Nor on its module
+		var amod = self.parent.parent.as(AModule)
+		var amoddecl = amod.n_moduledecl
+		if amoddecl != null then
+			var old = amoddecl.get_single_annotation("old_style_init", modelbuilder)
+			if old != null then return false
+		end
+		# No parameters
+		if self.n_signature.n_params.length > 0 then
+			modelbuilder.advice(self, "old-init", "Warning: init with signature in {mclassdef}")
+			return false
+		end
+		# Cannot be private or something
+		if not self.n_visibility isa APublicVisibility then
+			modelbuilder.advice(self, "old-init", "Warning: non-public init in {mclassdef}")
+			return false
+		end
+
+		return true
+	end
+
+	redef fun build_property(modelbuilder, mclassdef)
+	do
+		var n_kwinit = n_kwinit
+		var n_kwnew = n_kwnew
+		var name: String
+		var amethodid = self.n_methid
+		var name_node: ANode
+		if amethodid == null then
+			if n_kwinit != null then
+				name = "init"
+				name_node = n_kwinit
+				if not check_can_init(modelbuilder, mclassdef, name_node) then
+					return
+				end
+			else if n_kwnew != null then
+				name = "new"
+				name_node = n_kwnew
+			else
+				name = "main"
+				name_node = self
+			end
+		else if amethodid isa AIdMethid then
+			name = amethodid.n_id.text
+			name_node = amethodid
+		else
+			# operator, bracket or assign
+			name = amethodid.collect_text
+			name_node = amethodid
+
+			var arity = self.n_signature.n_params.length
+			if name == "+" and arity == 0 then
+				name = "unary +"
+			else if name == "-" and arity == 0 then
+				name = "unary -"
+			else if name == "~" and arity == 0 then
+				name = "unary ~"
+			else
+				if amethodid.is_binary and arity != 1 then
+					modelbuilder.error(self.n_signature, "Syntax Error: binary operator `{name}` requires exactly one parameter; got {arity}.")
+				else if amethodid.min_arity > arity then
+					modelbuilder.error(self.n_signature, "Syntax Error: `{name}` requires at least {amethodid.min_arity} parameter(s); got {arity}.")
+				end
+			end
+		end
+
+		build_method(modelbuilder, mclassdef, name_node, name)
+	end
+
+	redef fun build_signature(modelbuilder)
+	do
+		build_method_signature(modelbuilder, n_methid)
+	end
+
+	redef fun accept_special_last_parameter
+	do
+		return n_methid == null or n_methid.accept_special_last_parameter
 	end
 
 	# Check if we can define a constructor for the specified class definition.
@@ -1129,6 +1178,22 @@ redef class AMethPropdef
 			return false
 		end
 	end
+
+	redef fun is_extern(modelbuilder)
+	do
+		return n_extern_code_block != null or
+				get_single_annotation("extern", modelbuilder) != null
+	end
+
+	redef fun is_init do return n_kwinit != null or is_new
+
+	redef fun is_new do return n_kwnew != null
+
+	redef fun return_is_mandatory
+	do
+		return n_methid != null and n_methid.return_is_mandatory
+	end
+end
 end
 
 redef class AMethid
