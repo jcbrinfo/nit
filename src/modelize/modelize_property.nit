@@ -901,11 +901,12 @@ redef class AMethPropdef
 	do
 		var mpropdef = self.mpropdef
 		if mpropdef == null then return # Error thus skiped
+		var mproperty = mpropdef.mproperty
 		var mclassdef = mpropdef.mclassdef
 		var mmodule = mclassdef.mmodule
 		var nsig = self.n_signature
 
-		if mpropdef.mproperty.is_root_init and not mclassdef.is_nominal_intro then
+		if mproperty.is_root_init and not mclassdef.is_nominal_intro then
 			var root_init = mclassdef.mnominal.root_init
 			if root_init != null then
 				# Inherit the initializers by refinement
@@ -935,7 +936,7 @@ redef class AMethPropdef
 		# FIXME: do not inherit from the intro, but from the most specific
 		var msignature: nullable MSignature = null
 		if not mpropdef.is_intro then
-			msignature = mpropdef.mproperty.intro.msignature
+			msignature = mproperty.intro.msignature
 			if msignature == null then return # Skip error
 
 			# The local signature is adapted to use the local formal types, if any.
@@ -945,10 +946,10 @@ redef class AMethPropdef
 			if param_names.length != msignature.arity then
 				var node: ANode
 				if nsig != null then node = nsig else node = self
-				modelbuilder.error(node, "Redef Error: expected {msignature.arity} parameter(s) for `{mpropdef.mproperty.name}{msignature}`; got {param_names.length}. See introduction at `{mpropdef.mproperty.full_name}`.")
+				modelbuilder.error(node, "Redef Error: expected {msignature.arity} parameter(s) for `{mproperty.name}{msignature}`; got {param_names.length}. See introduction at `{mproperty.full_name}`.")
 				return
 			end
-		else if mpropdef.mproperty.is_init and not mpropdef.mproperty.is_new then
+		else if mproperty.is_init and not mproperty.is_new then
 			# FIXME UGLY: inherit signature from a super-constructor
 			for msupertype in mclassdef.supertypes do
 				msupertype = msupertype.anchor_to(mmodule, mclassdef.bound_mtype)
@@ -996,7 +997,7 @@ redef class AMethPropdef
 			modelbuilder.error(self.n_signature.n_params.last, "Error: illegal variadic parameter `{mparameters.last}` for `{mpropdef.mproperty.name}`.")
 		end
 		if ret_type == null and return_is_mandatory then
-			modelbuilder.error(self.n_methid, "Error: mandatory return type for `{mpropdef.mproperty.name}`.")
+			modelbuilder.error(self.n_methid, "Error: mandatory return type for `{mproperty.name}`.")
 		end
 
 		msignature = new MSignature(mparameters, ret_type)
