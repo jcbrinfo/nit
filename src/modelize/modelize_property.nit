@@ -992,12 +992,30 @@ redef class AMethPropdef
 			mparameters.add(mparameter)
 		end
 
-		# In `new`-factories, the return type is by default the classtype.
-		if ret_type == null and mpropdef.mproperty.is_new then ret_type = mclassdef.mnominal.mclass_type
+		if ret_type == null then
+			if mproperty.is_new then
+				# For “`new`” factories, the return type is by default the
+				# classtype.
+				ret_type = mclassdef.mnominal.mclass_type
+			else if mproperty.is_isa then
+				# For membership tests, the return type must be `Bool`.
+				ret_type = mmodule.bool_type
+			end
+		end
 
 		# Special checks for operator methods
-		if not accept_special_last_parameter and mparameters.not_empty and mparameters.last.is_vararg then
-			modelbuilder.error(self.n_signature.n_params.last, "Error: illegal variadic parameter `{mparameters.last}` for `{mpropdef.mproperty.name}`.")
+		if mparameters.not_empty then
+			if mproperty.is_isa then
+				modelbuilder.error(self.n_signature,
+					"Error: method `{mproperty.name}` can not have parameters."
+				)
+			else if not accept_special_last_parameter and
+					mparameters.last.is_vararg then
+				modelbuilder.error(self.n_signature.n_params.last,
+					"Error: illegal variadic parameter `{mparameters.last}` " +
+					"for `{mproperty.name}`."
+				)
+			end
 		end
 		if ret_type == null and return_is_mandatory then
 			modelbuilder.error(self.n_methid, "Error: mandatory return type for `{mproperty.name}`.")
