@@ -804,9 +804,6 @@ redef class AMethPropdef
 			if n_kwinit != null then
 				name = "init"
 				name_node = n_kwinit
-				if not check_can_init(modelbuilder, mclassdef, name_node) then
-					return
-				end
 			else if n_kwnew != null then
 				name = "new"
 				name_node = n_kwnew
@@ -838,6 +835,14 @@ redef class AMethPropdef
 				else if amethodid.min_arity > arity then
 					modelbuilder.error(self.n_signature, "Syntax Error: `{name}` requires at least {amethodid.min_arity} parameter(s); got {arity}.")
 				end
+			end
+		end
+
+		# Check if the class kind allows to define/override the method.
+		if is_init then
+			if not is_new and
+					not check_can_init(modelbuilder, mclassdef, name_node) then
+				return
 			end
 		end
 
@@ -1145,7 +1150,7 @@ redef class AMethPropdef
 
 	# Check if we can define a constructor for the specified class definition.
 	#
-	# `name_node` points to the name of the constructor (the `init` keyword).
+	# `name_node` points to the name of the constructor.
 	private fun check_can_init(modelbuilder: ModelBuilder, mclassdef: MClassDef,
 			name_node: ANode): Bool
 	do
