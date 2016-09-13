@@ -870,7 +870,10 @@ redef class AMethPropdef
 			mprop.is_init = is_init
 			mprop.is_new = is_new
 			mprop.is_isa = is_isa
-			if mprop.is_new then mclassdef.mnominal.has_new_factory = true
+			if is_new then mclassdef.mnominal.has_new_factory = true
+			if is_isa then
+				mclassdef.mnominal.as(MSubset).isa_method = mprop
+			end
 			if name == "sys" then mprop.is_toplevel = true # special case for sys allowed in `new` factories
 			if not (
 				check_redef_keyword(modelbuilder, mclassdef, n_kwredef, false,
