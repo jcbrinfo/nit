@@ -844,6 +844,10 @@ redef class AMethPropdef
 					not check_can_init(modelbuilder, mclassdef, name_node) then
 				return
 			end
+		else if is_isa then
+			if not check_can_isa(modelbuilder, mclassdef, name_node) then
+				return
+			end
 		end
 
 		var look_like_a_root_init = look_like_a_root_init(modelbuilder, mclassdef)
@@ -1161,6 +1165,24 @@ redef class AMethPropdef
 		else
 			modelbuilder.error(name_node,
 					"Error: {kind} `{mclass}` can not have a constructor.")
+			return false
+		end
+	end
+
+	# Check if we can define a custom membership test for the specified class definition.
+	#
+	# `name_node` points to the name of the membership test (the `isa` keyword).
+	private fun check_can_isa(modelbuilder: ModelBuilder, mclassdef: MClassDef,
+			name_node: ANode): Bool
+	do
+		var mclass = mclassdef.mnominal
+		var kind = mclass.kind
+		if kind.has_customizable_isa then
+			return true
+		else
+			modelbuilder.error(name_node,
+				"Error: {kind} `{mclass}` can not have a custom membership test."
+			)
 			return false
 		end
 	end
