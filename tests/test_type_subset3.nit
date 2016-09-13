@@ -23,6 +23,7 @@ class Foo
 	#alt2# var bar: Int
 	#alt3# init do end
 	#alt4# fun set_x(x: Int) is autoinit do end
+	#alt5# init with_name do end
 end
 
 assert sys isa Foo
