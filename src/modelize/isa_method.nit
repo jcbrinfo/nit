@@ -12,20 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Replacement of `subset` annotations by a method definitions
-# TODO: Will become useless (and wrong) once the annotation is replaced by a
-# true method definition.
+# Injection of `isa` method definitions.
+#
+# TODO: Will become useless (and wrong) once the `subset` annotation is replaced
+# by true method definitions.
 module isa_method
 
 import modelize_class
 
 redef class ToolContext
-	# The phase that injects implicit code for type subsets’ support.
-	var isa_method_phase: Phase = new IsaMethodPhase(self, [
-		# As we remove the `subset` annotation, `modelize_class` must be done
-		# first.
-		modelize_class_phase
-	])
+	# The phase that injects `isa` method definitions.
+	var isa_method_phase: Phase = new IsaMethodPhase(self, null)
 end
 
 private class IsaMethodPhase
@@ -48,6 +45,7 @@ private class IsaMethodVisitor
 		node.accept_isa_method_visitor(self)
 	end
 
+	# Process a `subset` annotation.
 	fun visit_subset_annotation(node: AAnnotPropdef)
 	do
 		# Check if the annotation defines a membership test.
@@ -62,17 +60,24 @@ private class IsaMethodVisitor
 			return
 		end
 
-		# Replace the annotation by a definition of the `isa` method.
+		var n_id = node.n_atid.n_id
+		var class_def = node.parent.as(AClassdef)
+
+		# Add a definition of the `isa` method with the same body than the
+		# annotation.
 
 		var method_def = new AMethPropdef
+		method_def.location = node.location
 		method_def.n_doc = node.n_doc
 		method_def.n_kwredef = node.n_kwredef
-		method_def.n_visibility = node.n_visibility
 		method_def.n_annotations = node.n_annotations
 		method_def.n_block = node.n_args.first
-		method_def.n_kwisa = new TKwisa.init_tk(node.n_atid.location)
+		method_def.n_kwisa = new TKwisa.init_tk(n_id.location)
+		if node.n_visibility != null then
+			method_def.n_visibility = node.n_visibility
+		end
 
-		node.replace_with(method_def)
+		class_def.n_propdefs.add(method_def)
 	end
 end
 

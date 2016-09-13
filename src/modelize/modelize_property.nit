@@ -28,6 +28,7 @@ private import annotation
 redef class ToolContext
 	# Run `AClassdef::build_property` on the classdefs of each module
 	var modelize_property_phase: Phase = new ModelizePropertyPhase(self, [
+		modelize_class_phase,
 		isa_method_phase
 	])
 end
