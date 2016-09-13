@@ -872,7 +872,11 @@ redef class AMethPropdef
 			mprop.is_isa = is_isa
 			if mprop.is_new then mclassdef.mnominal.has_new_factory = true
 			if name == "sys" then mprop.is_toplevel = true # special case for sys allowed in `new` factories
-			if not self.check_redef_keyword(modelbuilder, mclassdef, n_kwredef, false, mprop) then
+			if not (
+				check_redef_keyword(modelbuilder, mclassdef, n_kwredef, false,
+					mprop) and
+				check_intro_visibility(modelbuilder, mprop)
+			) then
 				mprop.is_broken = true
 				return
 			end
@@ -1184,6 +1188,20 @@ redef class AMethPropdef
 				"Error: {kind} `{mclass}` can not have a custom membership test."
 			)
 			return false
+		end
+	end
+
+	# Check if the method is introduced with a valid visibility.
+	private fun check_intro_visibility(modelbuilder: ModelBuilder,
+			mproperty: MMethod): Bool
+	do
+		if n_visibility == null then return true
+		if mproperty.is_isa and not n_visibility isa APublicVisibility then
+			modelbuilder.error(self,
+					"Error: the membership test must be public.")
+			return false
+		else
+			return true
 		end
 	end
 end
