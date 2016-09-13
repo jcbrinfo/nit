@@ -2892,6 +2892,9 @@ class MClassKind
 			return other == abstract_kind or other == concrete_kind
 		end
 	end
+
+	# Can the membership test be customized for classes of this kind?
+	fun has_customizable_isa: Bool do return self == subset_kind
 end
 
 # The class kind `abstract`
