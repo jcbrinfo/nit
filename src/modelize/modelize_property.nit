@@ -641,7 +641,8 @@ redef class APropdef
 			modelbuilder.error(self, "Error: a property `{mprop}` is already defined in class `{mclassdef.mnominal}` at line {mclassdef.mprop2npropdef[mprop].location.line_start}.")
 			return false
 		end
-		if mprop isa MMethod and mprop.is_root_init then return true
+		# TODO: Remove the `mprop.is_isa` condition as soon as the `subset` annotation is dropped?
+		if mprop isa MMethod and (mprop.is_root_init or mprop.is_isa) then return true
 		if kwredef == null then
 			if need_redef then
 				modelbuilder.error(self, "Redef Error: `{mclassdef.mnominal}::{mprop.name}` is an inherited property. To redefine it, add the `redef` keyword.")
