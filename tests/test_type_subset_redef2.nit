@@ -15,7 +15,7 @@
 import test_type_subset_redef
 
 redef class NonZero
-	subset do return self == self and super
+	subset do return (not self isa Float or self == self * 1.0) and super
 	#alt1# super Numeric
 	#alt2# super Int
 
@@ -27,17 +27,20 @@ redef class NonZero
 		end
 	end
 
-	#alt3# fun something do return 0
+	#alt3# fun something do end
 	#alt4# redef fun zero do return super
 end
 
-var x: NonZero
+var x: nullable Object
 
 x = 0.5 #alt5# x = 0 #alt6# x = 0.0 #alt7# x = 0.0 / 0.0
+assert x isa NonZero
 assert x.int_inverse == 2
 
 x = 2
-assert x.int_inverse == -2
+assert x isa NonZero
+assert x.int_inverse == -1
 
 x = 1.0 / 0.0
+assert x isa NonZero
 assert x.int_inverse == 0
