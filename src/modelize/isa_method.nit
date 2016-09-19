@@ -18,7 +18,7 @@
 # by true method definitions.
 module isa_method
 
-import modelize_class
+import phase
 
 redef class ToolContext
 	# The phase that injects `isa` method definitions.
@@ -52,7 +52,7 @@ private class IsaMethodVisitor
 		var number_of_args = node.n_args.length
 		if number_of_args != 1 then
 			if number_of_args > 1 then
-				phase.toolcontext.error(node.location,
+				toolcontext.error(node.location,
 					"Error: {number_of_args} arguments specified for the " +
 					"`subset` annotation; at most 1 expected."
 				)
@@ -61,7 +61,7 @@ private class IsaMethodVisitor
 		end
 
 		var n_id = node.n_atid.n_id
-		var class_def = node.parent.as(AClassdef)
+		var n_classdef = node.parent.as(AClassdef)
 
 		# Add a definition of the `isa` method with the same body than the
 		# annotation.
@@ -69,7 +69,6 @@ private class IsaMethodVisitor
 		var method_def = new AMethPropdef
 		method_def.location = node.location
 		method_def.n_doc = node.n_doc
-		method_def.n_kwredef = node.n_kwredef
 		method_def.n_annotations = node.n_annotations
 		method_def.n_block = node.n_args.first
 		method_def.n_kwisa = new TKwisa.init_tk(n_id.location)
@@ -77,8 +76,10 @@ private class IsaMethodVisitor
 			method_def.n_visibility = node.n_visibility
 		end
 
-		class_def.n_propdefs.add(method_def)
+		n_classdef.n_propdefs.add(method_def)
 	end
+
+	fun toolcontext: ToolContext do return phase.toolcontext
 end
 
 redef class ANode
