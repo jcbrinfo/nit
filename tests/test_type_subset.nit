@@ -22,20 +22,23 @@ class Natural
 
 	fun fib: Natural do
 		if self < 2 then return self
-		return (self - 1).as(Natural).fib + (self - 2).as(Natural).fib
+		var a = (self - 1).as(Natural).fib
+		var b = (self - 2).as(Natural).fib
+		return (a + b).as(Natural)
 	end
 end
 
 class Bool2
 	super Int
 	subset do return self == 0 or self == 1
-	new (x: Int) do return x
+	new (x: Int) do return x.as(Bool2)
 
 	fun is_true: Bool do return self == 1
 end
 
-var x: Natural = 4 #alt1# var x: Natural = -1 #alt2# var x: Natural = 1.0
-assert x.fib == 5
+var x = 4 #alt1# var x = -1 #alt2# var x = 1.0
+assert x isa Natural
+assert x.fib == 3
 
 var y = new Bool2(1) #alt3# var y = new Bool2(-1)
 assert y.is_true

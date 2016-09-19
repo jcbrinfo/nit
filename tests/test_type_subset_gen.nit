@@ -22,7 +22,9 @@ class Natural #alt1# class Natural[BOOM]
 
 	fun fib: Natural do
 		if self < 2 then return self
-		return (self - 1).as(Natural).fib + (self - 2).as(Natural).fib
+		var a = (self - 1).as(Natural).fib
+		var b = (self - 2).as(Natural).fib
+		return (a + b).as(Natural)
 	end
 end
 
@@ -38,14 +40,21 @@ class Summable[E: Numeric] #alt2,3#
 		if is_empty then return default
 		var i = iterator
 		var total = i.item
-		for x in i do total += x
+		i.next
+		for x in i do total = (total + x).as(E)
 		return total
 	end
 end
 
-var arr: Array[Natural] = [0, 1, 2, 3]
+assert not [3, 2, 1, 0] isa Array[Natural]
+var arr = new Array[Natural].with_items(
+	3.as(Natural),
+	2.as(Natural),
+	1.as(Natural),
+	0.as(Natural)
+)
 for x in arr do print(x.fib)
 var s = arr.as(
 	Summable[Numeric] #alt6# Summable[Natural] #alt7# Summable[Int]
 )
-print(s.sum(0))
+print(s.sum(0.as(Natural)))

@@ -24,12 +24,13 @@ class Summable #alt1# class Summable[E: Numeric] #alt2# class Summable[BOOM]
 		if is_empty then return default
 		var i = iterator
 		var total = i.item
-		for x in i do total += x
+		i.next
+		for x in i do total = (total + x).as(E)
 		return total
 	end
 end
 
-var arr = [0, 1, 2, 3]
+var arr = [4, 2, 3]
 var s = arr.as(
 	Summable[Numeric]
 )

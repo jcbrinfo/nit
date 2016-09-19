@@ -21,7 +21,7 @@ class NonZero
 	super Numeric
 
 	fun int_inverse: Int do
-		return (1 / self).to_i
+		return (1.0 / self.to_f).to_i
 	end
 end
 

@@ -28,7 +28,7 @@ redef class NonZero
 	end
 
 	#alt3# fun something do return 0
-	#alt4# redef fun abs do return super
+	#alt4# redef fun zero do return super
 end
 
 var x: NonZero

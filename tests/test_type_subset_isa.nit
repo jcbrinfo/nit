@@ -16,7 +16,11 @@ import core::kernel
 
 class NonZero
 	super Numeric
-	subset do return not self.is_zero #alt1# subset
+	subset do return not is_zero #alt1# subset #alt2# subset do return my_isa
+
+	# Being specific to the subset, this method should not be callable from the
+	# membership test.
+	fun my_isa: Bool do return not is_zero
 end
 
 assert 42 isa NonZero

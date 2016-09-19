@@ -31,7 +31,9 @@ class S
 	subset do return true
 	new(x: Int) do
 		print("new S({x})")
-		return new A(x)
+		var a = new A(x)
+		assert a isa S #alt1#
+		return a
 	end
 end
 

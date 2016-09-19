@@ -22,14 +22,19 @@ class Natural
 	#alt4# init (x: Int) do end
 	#alt5# redef fun abs do return super
 	#alt6# subset # The annotation can not be specified twice.
-	#alt7# type BOOM: Int
+	#alt7# type MY_INT: Int
 	#alt8# redef type OTHER: Int
 
 	fun fib: Natural do
 		if self < 2 then return self
-		return (self - 1).as(Natural).fib + (self - 2).as(Natural).fib
+		var a = (self - 1).as(Natural).fib
+		var b = (self - 2).as(Natural).fib
+		return (a + b).as(Natural)
 	end
 end
 
-var x: Natural = 0
-assert x.fib == 1
+var x = 0.as(Natural)
+var y = 2.as(Natural)
+
+assert x.fib == 0
+assert y.fib == 1
