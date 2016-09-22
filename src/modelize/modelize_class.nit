@@ -402,9 +402,6 @@ redef class ModelBuilder
 					# Else, `list_supertypes` failed and we already have an
 					# error message.
 				else
-					var name = mclass.name
-					var kind = mclass.kind
-
 					error(nclassdef,
 						"Error: {mclass.kind} `{mclass.name}` has multiple " +
 						"base classes."
