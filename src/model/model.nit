@@ -1318,7 +1318,7 @@ abstract class MType
 	# `mnominal.data_class`. Else, return `self`.
 	#
 	# This is mostly used to compare types while assuming that the membership
-	# tests implied by type subsets will succeed.
+	# tests implied by type subsets always succeed.
 	fun as_data_type: MType do return self
 
 	# Return the nullable version of the type
@@ -1477,14 +1477,10 @@ class MClassType
 
 	redef fun as_data_type: MClassType
 	do
-		var args = self.arguments
-		if self.arguments.not_empty then
-			args = new Array[MType].with_capacity(self.arguments.length)
-			for arg in self.arguments do
-				args.add(arg.as_data_type)
-			end
-		end
-		return mnominal.data_class.get_mtype(args)
+		# We must retain type parameters/arguments as is. Else, it would mean,
+		# for example, that we can add `-1` to an `Array[Natural]` (where
+		# `Natural` is a subset of `Int` that disallow negative numbers).
+		return mnominal.data_class.get_mtype(self.arguments)
 	end
 
 	redef fun collect_mclassdefs(mmodule)
