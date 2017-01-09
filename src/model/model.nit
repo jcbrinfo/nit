@@ -1353,6 +1353,11 @@ abstract class MType
 
 	private var as_nullable_cache: nullable MType = null
 
+	# Indicates if the main `MNominal` is a type subset.
+	#
+	# This means that this method returns `true` if and only if the type
+	# returned by `as_data_type` is not equivalent to `self`.
+	fun is_subset: Bool do return false
 
 	# The depth of the type seen as a tree.
 	#
@@ -1482,6 +1487,8 @@ class MClassType
 		# `Natural` is a subset of `Int` that disallow negative numbers).
 		return mnominal.data_class.get_mtype(self.arguments)
 	end
+
+	redef fun is_subset do return mnominal isa MSubset
 
 	redef fun collect_mclassdefs(mmodule)
 	do
@@ -1981,6 +1988,8 @@ abstract class MProxyType
 	redef fun as_nullable do return mtype.as_nullable
 	redef fun as_notnull do return mtype.as_notnull
 	redef fun undecorate do return mtype.undecorate
+	redef fun is_subset do return mtype.is_subset
+
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
 	do
 		var res = self.mtype.resolve_for(mtype, anchor, mmodule, cleanup_virtual)
