@@ -1931,6 +1931,77 @@ class SeparateCompilerVisitor
 		return res
 	end
 
+	# Compile a call to the `isa` method of the specified type.
+	private fun call_isa(mtype: MType, recv: RuntimeVariable,
+			type_struct: nullable String): RuntimeVariable
+	do
+		if mtype.need_anchor then
+			assert type_struct != null
+			return call_isa_dynamic(mtype, recv, type_struct)
+		else if mtype isa MClassType then
+			var isa_method = mtype.mnominal.isa_method
+			if isa_method == null then
+				var accepted = new_var(bool_type)
+				self.add("{accepted} = 1;")
+				return accepted
+			else
+				recv = new RuntimeVariable(recv.name, recv.mtype, mtype)
+				return send(isa_method, [recv]).as(not null)
+			end
+		else
+			self.add("PRINT_ERROR(\"NOT YET IMPLEMENTED: call_isa({mtype}, %s, ...).\\n\", \"{recv.inspect}\"); fatal_exit(1);")
+			return new_var(bool_type)
+		end
+	end
+
+	# Compile a call to a `isa` method when the actual type to test is unknown at compile-time.
+	#
+	# We fall in that case when the type used in a cast or a type test is a
+	# virtual type or a type parameter.
+	private fun call_isa_dynamic(mtype: MType, recv: RuntimeVariable,
+			type_struct: String): RuntimeVariable
+	do
+		# This is basically a customization of `table_send` with an additional
+		# level of indirection.
+
+		var modelbuilder = compiler.modelbuilder
+		var toolcontext = modelbuilder.toolcontext
+		modelbuilder.nb_invok_by_tables += 1
+		if toolcontext.opt_invocation_metrics.value then
+			add("count_invoke_by_tables++;")
+		end
+
+		var c_funptrtype = "{bool_type.ctype}(*)({mtype.ctype} self)"
+
+		recv = autobox(recv, mtype)
+		var res = new_var(bool_type)
+
+		var color = get_name("color")
+		add_decl("int {color};")
+		add("{color} = {type_struct}->isa.color;")
+		# TODO: Provide a default implementation instead?
+		add("if ({color} < 0) \{")
+		add("{res} = 1;")
+		add("\} else \{")
+
+		var isa_ptr = get_name("isa_ptr")
+		add_decl("{bool_type.ctype}(*{isa_ptr})({mtype.ctype} self);")
+		if toolcontext.opt_guard_call.value then
+			add("{isa_ptr} = {type_struct}->isa.fun;")
+			add("if (!{isa_ptr}) \{")
+			add("{isa_ptr} = (({c_funptrtype})({class_info(recv)}->vft[{color}]));")
+			add("\}")
+		else if toolcontext.opt_trampoline_call.value then
+			add("{isa_ptr} = {type_struct}->isa.fun;")
+		else
+			add("{isa_ptr} = (({c_funptrtype})({class_info(recv)}->vft[{color}]));")
+		end
+		add("{res} = {isa_ptr}({recv}); /* isa on {recv.inspect} */")
+
+		add("\}") # End case for defined method.
+		return res
+	end
+
 	redef fun is_same_type_test(value1, value2)
 	do
 		var res = self.new_var(bool_type)
