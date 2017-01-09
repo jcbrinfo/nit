@@ -104,6 +104,7 @@ interface Object
 	#
 	# Unless specific code, you should not use this method because it is inconsistent
 	# with the fact that a subclass can be used in lieu of a superclass.
+	# Futhermore, this method does not consider type subsets.
 	fun is_same_type(other: Object): Bool is intern
 
 	# Return true if `self` and `other` are the same instance (i.e. same identity).
