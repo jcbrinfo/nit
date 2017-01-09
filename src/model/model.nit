@@ -1467,7 +1467,7 @@ class MClassType
 
 	redef fun full_name do return mnominal.full_name
 
-	redef fun c_name do return mnominal.data_class.c_name
+	redef fun c_name do return mnominal.c_name
 
 	redef fun need_anchor do return false
 
