@@ -1401,7 +1401,7 @@ abstract class MType
 	#
 	# The returned set contains:
 	#  * the subset definitions from `mmodule` and its imported modules
-	#  * the subset definitions of this type, its super-types
+	#  * the subset definitions of this type and its super-types
 	#
 	# This function is used mainly internally.
 	#
