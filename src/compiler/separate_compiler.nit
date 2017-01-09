@@ -445,6 +445,7 @@ class SeparateCompiler
 			compute_type_test_layouts(live_types, live_cast_types)
 
 			type_ids = new HashMap[MType, Int]
+			# 0 is reserved for dead types.
 			for x in res do type_ids[x] = type_ids.length + 1
 		end
 
@@ -726,7 +727,7 @@ class SeparateCompiler
 		if is_cast_live then
 			v.add_decl("{type_ids[mtype]},")
 		else
-			v.add_decl("-1, /*CAST DEAD*/")
+			v.add_decl("0, /*CAST DEAD*/")
 		end
 
 		# type name
@@ -767,7 +768,7 @@ class SeparateCompiler
 			v.add_decl("\{")
 			for stype in self.type_tables[mtype] do
 				if stype == null then
-					v.add_decl("-1, /* empty */")
+					v.add_decl("0, /* empty */")
 				else
 					v.add_decl("{type_ids[stype]}, /* {stype} */")
 				end
@@ -777,6 +778,7 @@ class SeparateCompiler
 			# Use -1 to indicate dead type, the info is used by --hardening
 			v.add_decl("-1, \{\}, /*DEAD TYPE*/")
 		end
+
 		v.add_decl("\};")
 	end
 
@@ -1759,7 +1761,7 @@ class SeparateCompilerVisitor
 		add("if({t} == NULL) \{")
 		add_abort("cast type null")
 		add("\}")
-		add("if({t}->id == -1 || {t}->color == -1) \{")
+		add("if({t}->id == 0 || {t}->color == -1) \{")
 		add("PRINT_ERROR(\"Try to cast on a dead cast type: %s\\n\", {t}->name);")
 		add_abort("cast type dead")
 		add("\}")
