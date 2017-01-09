@@ -1537,7 +1537,7 @@ class MClassType
 		return cache[mmodule]
 	end
 
-	# common implementation for `collect_mclassdefs`, `collect_mclasses`, and `collect_mtypes`.
+	# Common implementation for `collect_mclassdefs`, `collect_mclasses`, `collect_mtypes` and `collect_subset_defs`.
 	private fun collect_things(mmodule: MModule)
 	do
 		var res = new HashSet[MClassDef]
