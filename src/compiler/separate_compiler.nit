@@ -1878,7 +1878,7 @@ class SeparateCompilerVisitor
 
 		# check color is in table
 		var value_type_info = self.type_info(value)
-		self.add("if({cltype} >= {value_type_info}->table_size) \{")
+		self.add("if ({cltype} >= {value_type_info}->table_size) \{")
 		self.add("{res} = 0;")
 		self.add("\} else \{")
 		self.add("{res} = {value_type_info}->type_table[{cltype}] == {idtype};")
