@@ -1267,11 +1267,13 @@ class SeparateCompilerVisitor
 
 	redef fun autobox(value, mtype)
 	do
-		if value.mtype == mtype then
+		var valtype = value.mtype.as_data_type
+		mtype = mtype.as_data_type
+		if valtype == mtype then
 			return value
-		else if not value.mtype.is_c_primitive and not mtype.is_c_primitive then
+		else if not valtype.is_c_primitive and not mtype.is_c_primitive then
 			return value
-		else if not value.mtype.is_c_primitive then
+		else if not valtype.is_c_primitive then
 			if mtype.is_tagged then
 				if mtype.name == "Int" then
 					return self.new_expr("(long)({value})>>2", mtype)
@@ -1283,20 +1285,20 @@ class SeparateCompilerVisitor
 					abort
 				end
 			end
-			return self.new_expr("((struct instance_{mtype.c_name}*){value})->value; /* autounbox from {value.mtype} to {mtype} */", mtype)
+			return self.new_expr("((struct instance_{mtype.c_name}*){value})->value; /* autounbox from {valtype} to {mtype} */", mtype)
 		else if not mtype.is_c_primitive then
 			# TODO: Without type subsets, we can (and should)
 			# `assert value.mtype == value.mcasttype`. However, with type
 			# susbsets, the `mcasttype` can be a sibling class (a type subset of
 			# a superclass). So, until we can handle type intersections, we may
 			# lose typing information with subsets.
-			if value.mtype.is_tagged then
+			if valtype.is_tagged then
 				var res
-				if value.mtype.name == "Int" then
+				if valtype.name == "Int" then
 					res = self.new_expr("(val*)({value}<<2|1)", mtype)
-				else if value.mtype.name == "Char" then
+				else if valtype.name == "Char" then
 					res = self.new_expr("(val*)((long)({value})<<2|2)", mtype)
-				else if value.mtype.name == "Bool" then
+				else if valtype.name == "Bool" then
 					res = self.new_expr("(val*)((long)({value})<<2|3)", mtype)
 				else
 					abort
@@ -1305,7 +1307,7 @@ class SeparateCompilerVisitor
 				res.mcasttype = value.mcasttype
 				return res
 			end
-			var valtype = value.mtype.as(MClassType)
+			assert valtype isa MClassType
 			if mtype isa MClassType and
 					mtype.mnominal.data_class.kind == extern_kind and
 					mtype.mnominal.data_class.name != "CString" then
@@ -1315,17 +1317,17 @@ class SeparateCompilerVisitor
 			# Do not loose type info
 			res.mcasttype = value.mcasttype
 			self.require_declaration("BOX_{valtype.c_name}")
-			self.add("{res} = BOX_{valtype.c_name}({value}); /* autobox from {value.mtype} to {mtype} */")
+			self.add("{res} = BOX_{valtype.c_name}({value}); /* autobox from {valtype} to {mtype} */")
 			return res
-		else if (value.mtype.ctype == mtype.ctype) or
-			(value.mtype.ctype == "char*" and mtype.ctype == "void*") or
-			(value.mtype.ctype == "void*" and mtype.ctype == "char*") then
+		else if (valtype.ctype == mtype.ctype) or
+			(valtype.ctype == "char*" and mtype.ctype == "void*") or
+			(valtype.ctype == "void*" and mtype.ctype == "char*") then
 			return value
 		else
 			# Bad things will appen!
 			var res = self.new_var(mtype)
-			self.add("/* {res} left unintialized (cannot convert {value.mtype} to {mtype}) */")
-			self.add("PRINT_ERROR(\"Cast error: Cannot cast %s to %s.\\n\", \"{value.mtype}\", \"{mtype}\"); fatal_exit(1);")
+			self.add("/* {res} left unintialized (cannot convert {valtype} to {mtype}) */")
+			self.add("PRINT_ERROR(\"Cast error: Cannot cast %s to %s.\\n\", \"{valtype}\", \"{mtype}\"); fatal_exit(1);")
 			return res
 		end
 	end
