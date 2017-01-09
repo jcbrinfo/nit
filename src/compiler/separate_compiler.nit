@@ -712,12 +712,8 @@ class SeparateCompiler
 	fun compile_type_to_c(mtype: MType)
 	do
 		assert not mtype.need_anchor
-		if mtype isa MClassType and mtype.mnominal.kind == subset_kind then
-			# For type susbsets, re-use the `type` structure of the base class.
-			return
-		end
-		var is_live = mtype isa MClassType and runtime_type_analysis.live_types.has(mtype)
 		var is_cast_live = runtime_type_analysis.live_cast_types.has(mtype)
+		var is_live = mtype isa MClassType and runtime_type_analysis.live_types.has(mtype)
 		var c_name = mtype.c_name
 		var v = new SeparateCompilerVisitor(self)
 		v.add_decl("/* runtime type {mtype} */")
