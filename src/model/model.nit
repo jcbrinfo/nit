@@ -1311,7 +1311,7 @@ abstract class MType
 	# ENSURE: `not self.need_anchor implies result == true`
 	fun can_resolve_for(mtype: MType, anchor: nullable MClassType, mmodule: MModule): Bool is abstract
 
-	# Return the type where the main `MNominal` is replaced by its `data_class`.
+	# Return the type where the main `MNominal` is replaced by its `vt_class`.
 	#
 	# If `self` is a `MClassType` or a wrapper over a `MClassType`, then return
 	# a type equivalent to `self`, but with `mnominal` replaced by
