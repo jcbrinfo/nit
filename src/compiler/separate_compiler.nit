@@ -217,8 +217,11 @@ class SeparateCompiler
 		self.compile_header_attribute_structs
 		self.header.add_decl("struct class \{ int box_kind; nitmethod_t vft[]; \}; /* general C type representing a Nit class. */")
 
+		# Only needed for calls to the `isa` method.
+		self.header.add_decl("struct methodref \{ int color; nitmethod_t fun; \}; /* an indirect reference to a method */")
+
 		# With resolution_table_table, all live type resolution are stored in a big table: resolution_table
-		self.header.add_decl("struct type \{ int id; const char *name; int color; short int is_nullable; const struct types *resolution_table; int table_size; int type_table[]; \}; /* general C type representing a Nit type. */")
+		self.header.add_decl("struct type \{ int id; const char *name; int color; short int is_nullable; const struct methodref isa; const struct types *resolution_table; int table_size; int type_table[]; \}; /* general C type representing a Nit type. */")
 		self.header.add_decl("struct instance \{ const struct type *type; const struct class *class; nitattribute_t attrs[]; \}; /* general C type representing a Nit instance. */")
 		self.header.add_decl("struct types \{ int dummy; const struct type *types[]; \}; /* a list types (used for vts, fts and unresolved lists). */")
 		self.header.add_decl("typedef struct instance val; /* general C type representing a Nit instance. */")
@@ -298,6 +301,9 @@ class SeparateCompiler
 				if color == -1 then color = 0 # Symbols cannot be negative, so just use 0 for dead things
 				# Teach the linker that the address of 'XC' is `color`.
 				linker_script.add("X{m.const_color} = {color};")
+			end
+			if m isa MMethod then
+				m.color = color
 			end
 		else
 			abort
@@ -763,6 +769,36 @@ class SeparateCompiler
 			v.add_decl("1,")
 		else
 			v.add_decl("0,")
+		end
+
+		# Reference to the `isa` method
+		# A negative color means “undefined”
+		var utype = mtype.undecorate
+		if utype isa MClassType then
+			var isa_method = utype.mnominal.isa_method
+			if isa_method == null then
+				v.add_decl("\{ -1, NULL, \},")
+			else
+				# Because of the limitations of C, we unfortunately have to
+				# specify a litteral value for the color.
+				var color = isa_method.color
+				assert color >= 0 else
+					print_error("`{isa_method.full_name}` not yet colored.")
+				end
+				var callsym: String
+				var toolcontext = modelbuilder.toolcontext
+				if toolcontext.opt_guard_call.value or
+						toolcontext.opt_trampoline_call.value then
+					# TODO: Test
+					callsym = "CALL_" + isa_method.const_color
+					v.require_declaration(callsym)
+				else
+					callsym = "NULL"
+				end
+				v.add_decl("\{ {color}, {callsym}, \},")
+			end
+		else
+			v.add_decl("\{ -1, NULL, \},")
 		end
 
 		# resolution table (for receiver)
@@ -2436,6 +2472,14 @@ interface PropertyLayoutElement end
 
 redef class MProperty
 	super PropertyLayoutElement
+end
+
+redef class MMethod
+
+	# The actual color of the method.
+	#
+	# Only used to implement indirect calls to the `isa` method.
+	var color: Int = -1 is writable
 end
 
 redef class MPropDef
