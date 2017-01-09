@@ -428,8 +428,15 @@ class SeparateCompiler
 		var live_cast_types = runtime_type_analysis.live_cast_types
 
 		var res = new HashSet[MType]
+		var subsets = new Array[MType]
 		res.add_all live_types
-		res.add_all live_cast_types
+		for mtype in live_cast_types do
+			if mtype.is_subset then
+				subsets.add(mtype)
+			else
+				res.add(mtype)
+			end
+		end
 
 		if modelbuilder.toolcontext.opt_type_poset.value then
 			# Compute colors with a type poset
@@ -447,6 +454,16 @@ class SeparateCompiler
 			type_ids = new HashMap[MType, Int]
 			# 0 is reserved for dead types.
 			for x in res do type_ids[x] = type_ids.length + 1
+		end
+
+		# For type subsets, use the opposite of the base class’ id, so we can
+		# detect them easily.
+		for mtype in subsets do
+			var base = mtype.as_data_type
+			type_colors[mtype] = type_colors[base]
+			var id = type_ids[base]
+			assert id > 0
+			type_ids[mtype] = -id
 		end
 
 		# VT and FT are stored with other unresolved types in the big resolution_tables
