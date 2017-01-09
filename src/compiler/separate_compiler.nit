@@ -1874,8 +1874,9 @@ class SeparateCompilerVisitor
 			return res
 		end
 
+		var type_struct: nullable String = null
 		if ntype.need_anchor then
-			var type_struct = self.get_name("type_struct")
+			type_struct = get_name("type_struct")
 			self.add_decl("const struct type* {type_struct};")
 
 			# Either with resolution_table with a direct resolution
@@ -1920,6 +1921,17 @@ class SeparateCompilerVisitor
 		var value_type_info = self.type_info(value)
 		self.add("if ({cltype} >= {value_type_info}->table_size) \{")
 		self.add("{res} = 0;")
+
+		# Type subset (dynamic) test
+		self.add("\} else if ({idtype} < 0) \{")
+		self.add("if ({value_type_info}->type_table[{cltype}] == -{idtype}) \{")
+		var dynamic_res = call_isa(ntype, value, type_struct)
+		self.add("{res} = {dynamic_res};")
+		self.add("\} else \{")
+		self.add("{res} = 0;")
+		self.add("\}")
+
+		# Normal (fast) test
 		self.add("\} else \{")
 		self.add("{res} = {value_type_info}->type_table[{cltype}] == {idtype};")
 		self.add("\}")
