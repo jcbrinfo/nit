@@ -408,10 +408,16 @@ class RapidTypeAnalysis
 	do
 		# assert not mtype.need_anchor
 		live_cast_types.add(mtype)
-		# If a type subset, there is an implicit cast to the base type.
-		if mtype isa MClassType and mtype.mnominal.kind == subset_kind then
-			var base = mtype.mnominal.data_class.intro.bound_mtype
-			live_cast_types.add(base)
+		# If a type subset, there is an implicit cast to the base type and an
+		# implicit call to the `isa` method.
+		if mtype.is_subset then
+			live_cast_types.add(mtype.as_data_type)
+			var utype = mtype.undecorate
+			assert utype isa MClassType
+			var isa_method = utype.mnominal.isa_method
+			if isa_method != null then
+				add_send(utype, isa_method)
+			end
 		end
 	end
 
