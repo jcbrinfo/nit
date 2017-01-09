@@ -24,4 +24,5 @@ class NonZero
 end
 
 assert 42 isa NonZero
+assert 42 isa nullable NonZero
 assert not 0 isa NonZero #alt1# assert 0 isa NonZero
