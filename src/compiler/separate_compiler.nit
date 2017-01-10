@@ -2022,13 +2022,15 @@ class SeparateCompilerVisitor
 			value1 = value2
 			value2 = tmp
 		end
-		if value1.mtype.is_c_primitive then
-			if value2.mtype == value1.mtype then
-				self.add("{res} = 1; /* is_same_type_test: compatible types {value1.mtype} vs. {value2.mtype} */")
-			else if value2.mtype.is_c_primitive then
-				self.add("{res} = 0; /* is_same_type_test: incompatible types {value1.mtype} vs. {value2.mtype}*/")
+		var mtype1 = value1.mtype.as_data_type
+		var mtype2 = value2.mtype.as_data_type
+		if mtype1.is_c_primitive then
+			if mtype2 == mtype1 then
+				self.add("{res} = 1; /* is_same_type_test: compatible types {mtype1} vs. {mtype2} */")
+			else if mtype2.is_c_primitive then
+				self.add("{res} = 0; /* is_same_type_test: incompatible types {mtype1} vs. {mtype2}*/")
 			else
-				var mtype1 = value1.mtype.as(MClassType)
+				assert mtype1 isa MClassType
 				self.require_declaration("class_{mtype1.c_name}")
 				self.add("{res} = ({value2} != NULL) && ({class_info(value2)} == &class_{mtype1.c_name}); /* is_same_type_test */")
 			end
