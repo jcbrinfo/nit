@@ -1985,6 +1985,7 @@ class SeparateCompilerVisitor
 
 		var c_funptrtype = "{bool_type.ctype}(*)({mtype.ctype} self)"
 
+		mtype = anchor(mtype)
 		recv = autobox(recv, mtype)
 		var res = new_var(bool_type)
 
