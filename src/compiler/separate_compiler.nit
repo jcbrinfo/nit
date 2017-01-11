@@ -1387,9 +1387,10 @@ class SeparateCompilerVisitor
 			end
 			return "{value}->class"
 		else
+			var mtype = value.mtype.as_data_type
 			compiler.undead_types.add(value.mtype)
-			self.require_declaration("class_{value.mtype.c_name}")
-			return "(&class_{value.mtype.c_name})"
+			self.require_declaration("class_{mtype.c_name}")
+			return "(&class_{mtype.c_name})"
 		end
 	end
 
