@@ -31,7 +31,7 @@ end
 class Qux[BAR: Int]
 	super Foo[BAR]
 
-	#alt1# redef type BAZ: Natural
+	#alt1,3,5# redef type BAZ: Natural
 end
 
 var qux = new Qux[Natural]
