@@ -550,8 +550,11 @@ class SeparateCompiler
 
 		var layouts = new HashMap[MClass, Array[nullable MType]]
 		for c in runtime_type_analysis.live_classes do
-			assert c isa MClass else print_error "subset {c} is live"
-			layouts[c] = colorer.build_layout(c)
+			# No need to build a vtable for a subset: its vtable is integrated
+			# in the base type’s
+			if c isa MClass then
+				layouts[c] = colorer.build_layout(c)
+			end
 		end
 
 		# Build the table for each live type
