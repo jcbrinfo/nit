@@ -1984,11 +1984,10 @@ class SeparateCompilerVisitor
 			add("count_invoke_by_tables++;")
 		end
 
-		var c_funptrtype = "{bool_type.ctype}(*)({mtype.ctype} self)"
-
 		mtype = anchor(mtype)
 		recv = autobox(recv, mtype)
 		var res = new_var(bool_type)
+		var c_funptrtype = "{bool_type.ctype}(*)({mtype.ctype} self)"
 
 		var color = get_name("color")
 		add_decl("int {color};")
