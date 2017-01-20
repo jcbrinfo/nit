@@ -357,6 +357,10 @@ class RapidTypeAnalysis
 		else
 			if live_types.has(mtype) then return
 			live_types.add(mtype)
+			for msubset in mtype.collect_subsets(mainmodule) do
+				# Enable method definitions in subsets.
+				live_classes.add(msubset)
+			end
 		end
 
 		var mclass = mtype.mnominal
@@ -419,7 +423,7 @@ class RapidTypeAnalysis
 
 	fun try_send(recv: MClassType, mproperty: MMethod)
 	do
-		recv = recv.mnominal.data_class.intro.bound_mtype
+		recv = recv.mnominal.intro.bound_mtype
 		if not recv.has_mproperty(mainmodule, mproperty) then return
 		var d = mproperty.lookup_first_definition(mainmodule, recv)
 		add_call(d)
@@ -464,7 +468,7 @@ class RapidTypeAnalysis
 
 	fun try_super_send(recv: MClassType, mpropdef: MMethodDef)
 	do
-		recv = recv.mnominal.data_class.intro.bound_mtype
+		recv = recv.mnominal.intro.bound_mtype
 		if not recv.collect_mclassdefs(mainmodule).has(mpropdef.mclassdef) then return
 		var d = mpropdef.lookup_next_definition(mainmodule, recv)
 		add_call(d)
