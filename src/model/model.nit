@@ -563,7 +563,7 @@ abstract class MNominal
 	# In this case, the method will abort.
 	fun data_class: MClass is abstract
 
-	# All subsets that has this class as their nearest non-subset ancestors.
+	# All subsets that has this class as their nearest non-subset ancestor.
 	var subsets: SimpleCollection[MSubset] = new Array[MSubset]
 
 	# Alias for `name`
