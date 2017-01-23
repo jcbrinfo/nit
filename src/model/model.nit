@@ -1397,11 +1397,11 @@ abstract class MType
 	# REQUIRE: `not self.need_anchor`
 	fun collect_mclassdefs(mmodule: MModule): Set[MClassDef] is abstract
 
-	# Compute all the classdefs of the applicable type subsets.
+	# List all classdefs of the type subsets that are applicable to direct instances of this type.
 	#
 	# The returned set contains:
 	#  * the subset definitions from `mmodule` and its imported modules
-	#  * the subset definitions of this type and its super-types
+	#  * the subset definitions directly linked to this type and its super-types
 	#
 	# This function is used mainly internally.
 	#
