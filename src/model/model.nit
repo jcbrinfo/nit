@@ -2167,6 +2167,8 @@ class MNullType
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
 
+	redef fun collect_subsets(mmodule) do return new HashSet[MSubset]
+
 	redef fun collect_subset_defs(mmodule) do return new HashSet[MClassDef]
 
 	redef fun collect_mnominals(mmodule) do return new HashSet[MNominal]
@@ -2194,6 +2196,8 @@ class MBottomType
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
+
+	redef fun collect_subsets(mmodule) do return new HashSet[MSubset]
 
 	redef fun collect_subset_defs(mmodule) do return new HashSet[MClassDef]
 
