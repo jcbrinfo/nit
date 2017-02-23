@@ -400,7 +400,7 @@ class SeparateCompiler
 			if not mclass.has_new_factory and (mclass.kind == abstract_kind or mclass.kind == interface_kind) then continue
 			if rta != null and not rta.live_classes.has(mclass) then continue
 
-			var mtype = mclass.intro.bound_mtype
+			var mtype = mclass.bottom_bound_mtype
 
 			# Resolve elements in the layout to get the final table
 			var meth_layout = meth_colorer.build_layout(mclass)
