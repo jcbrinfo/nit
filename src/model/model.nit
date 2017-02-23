@@ -1668,7 +1668,7 @@ class MGenericType
 	end
 
 	redef var c_name is lazy do
-		var res = mnominal.data_class.c_name
+		var res = mnominal.c_name
 		# Note: because the arity is known, a prefix notation is enough
 		for t in arguments do
 			res += "__"
