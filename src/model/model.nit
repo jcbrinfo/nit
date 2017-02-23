@@ -627,6 +627,18 @@ abstract class MNominal
 
 	private var get_mtype_cache = new HashMap[Array[MType], MGenericType]
 
+	# The most specific type corresponding to this class.
+	#
+	# The type of this class when all arguments are a bottom type
+	# (`MBottomType`). Used by compilers to grab property definitions that may
+	# apply to any combination of type arguments.
+	var bottom_bound_mtype: MClassType is lazy do
+		var args = new Array[MType].filled_with(
+			new MBottomType(model), self.arity
+		)
+		return get_mtype(args)
+	end
+
 	# All definitions of this class (introduction, refinements and subsets’ definitions)
 	var mclassdefs = new Array[MClassDef]
 
