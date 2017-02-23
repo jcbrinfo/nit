@@ -266,7 +266,8 @@ redef class ModelBuilder
 			for i in [0..mclass.arity[ do
 
 				if nclassdef.n_formaldefs.is_empty then
-					var bound = get_inherited_bound(mclass, i, subset_supertype)
+					var bound = get_inherited_bound(mclass, i, subset_supertype,
+							is_nominal_intro)
 					bounds.add(bound)
 					continue
 				end
@@ -330,8 +331,7 @@ redef class ModelBuilder
 						bounds.add(bound)
 						nfd.bound = bound
 					end
-				else if mclass.mclassdefs.is_empty and
-						subset_supertype == null then
+				else if is_nominal_intro and subset_supertype == null then
 					if objectclass == null then
 						error(nfd, "Error: formal parameter type `{pname}` unbounded but no `Object` class exists.")
 						return null
@@ -341,7 +341,8 @@ redef class ModelBuilder
 					bounds.add(bound)
 					nfd.bound = bound
 				else
-					var bound = get_inherited_bound(mclass, i, subset_supertype)
+					var bound = get_inherited_bound(mclass, i, subset_supertype,
+							is_nominal_intro)
 					bounds.add(bound)
 					nfd.bound = bound
 				end
@@ -355,17 +356,18 @@ redef class ModelBuilder
 	# Used by `get_bound_mtype` when no bound is specified in the signature of
 	# the class definition.
 	private fun get_inherited_bound(mnominal: MNominal, parameter_index: Int,
-			subset_supertype: nullable MGenericType): MType
+			subset_supertype: nullable MGenericType,
+			is_nominal_intro: Bool): MType
 	do
-		var bound: MType
-		if subset_supertype != null and
+		if not is_nominal_intro then
+			return mnominal.intro.bound_mtype.arguments[parameter_index]
+		else if subset_supertype != null and
 				not subset_supertype.arguments[parameter_index].need_anchor then
-			bound = subset_supertype.arguments[parameter_index]
+			return subset_supertype.arguments[parameter_index]
 		else
-			bound = mnominal.data_class.intro.bound_mtype.arguments[
+			return mnominal.data_class.intro.bound_mtype.arguments[
 					parameter_index]
 		end
-		return bound
 	end
 
 	# Visit the AST and return the lone supertype of the specified type subset.
