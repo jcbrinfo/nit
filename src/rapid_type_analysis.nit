@@ -368,12 +368,10 @@ class RapidTypeAnalysis
 		end
 
 		var mclass = mtype.mnominal
-		if mclass.kind.can_init then
-			if live_classes.has(mclass) then return
-			live_classes.add(mclass)
-		else
-			# In the case of subsets, type is not instanciated, but there is an
-			# implicit cast to it.
+		if live_classes.has(mclass) then return
+		live_classes.add(mclass)
+		if mclass isa MSubset then
+			# In the case of subsets, there is an implicit cast to it.
 			add_cast(mtype)
 		end
 
