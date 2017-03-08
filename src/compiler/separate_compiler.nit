@@ -733,8 +733,6 @@ class SeparateCompiler
 	end
 
 	# Globaly compile the type structure of a live type
-	#
-	# Skips type subsets.
 	fun compile_type_to_c(mtype: MType)
 	do
 		assert not mtype.need_anchor
