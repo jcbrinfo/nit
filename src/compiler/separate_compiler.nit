@@ -473,6 +473,7 @@ class SeparateCompiler
 		# VT and FT are stored with other unresolved types in the big resolution_tables
 		self.compute_resolution_tables(live_types)
 
+		res.add_all(subsets)
 		return res
 	end
 
