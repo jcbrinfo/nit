@@ -370,10 +370,6 @@ class RapidTypeAnalysis
 		var mclass = mtype.mnominal
 		if live_classes.has(mclass) then return
 		live_classes.add(mclass)
-		if mclass isa MSubset then
-			# In the case of subsets, there is an implicit cast to it.
-			add_cast(mtype)
-		end
 
 		for p in totry_methods do try_send(mtype, p)
 		for p in live_super_sends do try_super_send(mtype, p)
