@@ -1130,6 +1130,10 @@ abstract class MType
 	fun intersection(other: MType, mmodule: MModule,
 			anchor: nullable MClassType): MType
 	do
+		# TODO: Intersections between MNullType and nullables
+		# TODO: Flatten
+		# TODO: DNF
+
 		var type1 = self
 		var type2 = other
 
