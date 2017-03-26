@@ -1142,6 +1142,12 @@ abstract class MType
 		var type1 = self
 		var type2 = other
 
+		# Merge to the subtype, if applicable.
+		if type1.is_subtype(mmodule, anchor, type2) then
+			return type1
+		else if type2.is_subtype(mmodule, anchor, type1) then
+			return type2
+		end
 		return new MIntersectionType.with_operands(mmodule, type1, type2)
 	end
 
