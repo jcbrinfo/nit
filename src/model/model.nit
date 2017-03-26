@@ -1148,6 +1148,13 @@ abstract class MType
 		var type1 = self
 		var type2 = other
 
+		# If one type deny null, the intersection does.
+		if not type1.can_be_null(mmodule, anchor) then
+			type2 = type2.as_notnull
+		else if	not type2.can_be_null(mmodule, anchor) then
+			type1 = type1.as_notnull
+		end
+
 		# Merge to the subtype, if applicable.
 		if type1.is_subtype(mmodule, anchor, type2) then
 			return type1
