@@ -2,7 +2,7 @@ alt/base_adaptive_full_alt1.nit:60,10: Type Error: expected `C`, got `B`.
 alt/base_adaptive_full_alt1.nit:64,9: Type Error: expected `C`, got `B`.
 alt/base_adaptive_full_alt1.nit:81,10: Type Error: expected `C`, got `B`.
 alt/base_adaptive_full_alt1.nit:89,11: Type Error: expected `C`, got `B`.
-alt/base_adaptive_full_alt1.nit:96,10: Type Error: expected `C`, got `Object`.
+alt/base_adaptive_full_alt1.nit:96,10: Type Error: expected `C`, got `B`.
 alt/base_adaptive_full_alt1.nit:99,10: Type Error: expected `A`, got `nullable Object`.
 alt/base_adaptive_full_alt1.nit:100,10: Type Error: expected `B`, got `nullable Object`.
 alt/base_adaptive_full_alt1.nit:101,10: Type Error: expected `C`, got `nullable Object`.
