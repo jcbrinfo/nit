@@ -1194,6 +1194,124 @@ abstract class MType
 	end
 end
 
+# A type that represents an operation over a set of types.
+abstract class MTypeSet[E: MType]
+	super MType
+
+	# The module of reference.
+	#
+	# Used to populate `model`, find primitive types and internally build new
+	# types with the same operator.
+	#
+	# SEE: `apply_to`
+	var mmodule: MModule
+
+	# The embeded types.
+	#
+	# Must not be empty. Must not be edited.
+	var operands: Set[E]
+
+	# Cache of types according to operand sets.
+	#
+	# SEE: `cache`
+	private var general_cache = new HashMap[Set[MType], MType]
+
+	init do
+		assert operands.not_empty
+		general_cache[operands] = self
+	end
+
+	redef fun model do return mmodule.model
+
+	redef fun location do return operands.first.location
+	# TODO: Return a more accurate location.
+
+	# Apply the same operator over the specified types.
+	#
+	# May optimize the resulting expression and not return an instance of
+	# `SELF`.
+	fun apply_to(operands: Set[MType], mmodule: MModule,
+			anchor: nullable MClassType): MType is abstract
+
+	# Return the cached version of this operation over the specified set of operands.
+	#
+	# Intended to be used internally to cache results of methods like
+	# `as_notnull`, `lookup_fixed`, `resolve_for` and `undecorate`.
+	#
+	# SEE: `apply_to`
+	protected fun cache(operands: Set[MType]): MType
+	do
+		var result = general_cache.get_or_null(operands)
+		if result == null then
+			result = apply_to(operands, mmodule)
+			general_cache[operands] = result
+		end
+		return result
+	end
+
+	redef fun depth
+	do
+		var result = 0
+		for mtype in operands do
+			if mtype.depth > result then
+				result = mtype.depth
+			end
+		end
+		return result
+	end
+
+	redef var full_name is lazy do
+		var names = new Array[String].with_capacity(operands.length)
+		for mtype in operands do
+			names.add(mtype.full_name)
+		end
+		return names.join(separator)
+	end
+
+	redef fun is_legal_in(mmodule, anchor)
+	do
+		for mtype in operands do
+			if not mtype.is_legal_in(mmodule, anchor) then
+				return false
+			end
+		end
+		return true
+	end
+
+	redef fun is_ok
+	do
+		for mtype in operands do
+			if not mtype.is_ok then
+				return false
+			end
+		end
+		return true
+	end
+
+	redef var need_anchor is lazy do
+		for mtype in operands do
+			if mtype.need_anchor then
+				return true
+			end
+		end
+		return false
+	end
+
+	redef fun length
+	do
+		var result = 0
+		for mtype in operands do
+			result += mtype.length
+		end
+		return result
+	end
+
+	# The separator to use in `to_s` and `full_name`.
+	protected fun separator: String is abstract
+
+	redef var to_s is lazy do return operands.join(separator)
+end
+
 # A type based on a class.
 #
 # `MClassType` have properties (see `has_mproperty`).
