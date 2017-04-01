@@ -1356,6 +1356,11 @@ abstract class MTypeSet[E: MType]
 		return true
 	end
 
+	# The keyword of the operator that generates this kind of operation.
+	#
+	# Used for textual representations.
+	protected fun keyword: String is abstract
+
 	redef var need_anchor is lazy do
 		for mtype in operands do
 			if mtype.need_anchor then
@@ -1377,7 +1382,7 @@ abstract class MTypeSet[E: MType]
 	# The separator to use in `to_s` and `full_name`.
 	#
 	# `" and "` or `" or "`
-	protected fun separator: String is abstract
+	private fun separator: String do return " {keyword} "
 
 	redef var to_s is lazy do return operands.join(separator)
 end
@@ -1446,6 +1451,8 @@ class MIntersectionType
 		end
 		return cache(new_operands, mmodule)
 	end
+
+	redef fun keyword do return "and"
 
 	redef var undecorate is lazy do
 		var undecorated = new Set[MType]
@@ -1538,8 +1545,6 @@ class MIntersectionType
 	end
 
 	private var collect_mtypes_cache = new Map[MModule, Set[MClassType]]
-
-	redef fun separator do return " and "
 end
 
 # A type based on a class.
