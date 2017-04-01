@@ -81,6 +81,11 @@ class TestMType
 		assert b_and_a.is_subtype(mmodule, null, object_type)
 	end
 
+	fun test_intersection_c_name do
+		var a_and_b = a_type.intersection(b_type, mmodule)
+		assert a_and_b.c_name == "and2__module_foo__A__module_foo__B"
+	end
+
 	fun test_intersection_full_name do
 		var a_and_b = a_type.intersection(b_type, mmodule)
 		assert a_and_b.full_name == "(module_foo::A and module_foo::B)"
