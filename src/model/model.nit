@@ -1319,7 +1319,7 @@ abstract class MTypeSet[E: MType]
 		for mtype in operands do
 			names.add(mtype.full_name)
 		end
-		return names.join(separator)
+		return "({names.join(separator)})"
 	end
 
 	redef fun is_legal_in(mmodule, anchor)
@@ -1368,7 +1368,7 @@ abstract class MTypeSet[E: MType]
 	# The separator to use in `to_s` and `full_name`.
 	private fun separator: String do return " {keyword} "
 
-	redef var to_s is lazy do return operands.join(separator)
+	redef var to_s is lazy do return "({operands.join(separator)})"
 end
 
 # An intersection of multiple types.

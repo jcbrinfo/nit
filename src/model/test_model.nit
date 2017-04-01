@@ -81,6 +81,11 @@ class TestMType
 		assert b_and_a.is_subtype(mmodule, null, object_type)
 	end
 
+	fun test_intersection_full_name do
+		var a_and_b = a_type.intersection(b_type, mmodule)
+		assert a_and_b.full_name == "(module_foo::A and module_foo::B)"
+	end
+
 	fun test_intersection_nullable_not_null do
 		# Check that intersection with nullables are correctly computed in
 		# order to make `is_subtype` work.
@@ -104,5 +109,10 @@ class TestMType
 		# Are supertypes of D
 		assert d_type.is_subtype(mmodule, null, a_and_b)
 		assert d_type.is_subtype(mmodule, null, b_and_a)
+	end
+
+	fun test_intersection_to_s do
+		var a_and_b = a_type.intersection(b_type, mmodule)
+		assert a_and_b.to_s == "(A and B)"
 	end
 end
