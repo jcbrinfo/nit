@@ -36,9 +36,8 @@ class TestMType
 	private var d_type: MClassType is noinit
 
 	init do
-		model = new Model
-		var location = new Location(null, 1, 1, 1, 1)
-		mmodule = new MModule(model, null, "module_foo", location)
+		mmodule = create_dummy_mmodule
+		model = mmodule.model
 		object_type = create_class("Object", interface_kind,
 				new Array[MClassType])
 		a_type = create_class("A", concrete_kind, [object_type])
@@ -105,4 +104,10 @@ class TestMType
 		assert d_type.is_subtype(mmodule, null, a_and_b)
 		assert d_type.is_subtype(mmodule, null, b_and_a)
 	end
+end
+
+private fun create_dummy_mmodule: MModule do
+	return new MModule(
+		new Model, null, "module_dummy", new Location(null, 1, 1, 1, 1)
+	)
 end
