@@ -111,3 +111,15 @@ private fun create_dummy_mmodule: MModule do
 		new Model, null, "module_dummy", new Location(null, 1, 1, 1, 1)
 	)
 end
+
+private class MTypeStub
+	super MType
+
+	redef var c_name is noinit
+	redef var depth is noinit
+	redef var full_name is noinit
+	redef var is_ok is noinit
+	redef var length is noinit
+	redef var need_anchor is noinit
+	redef var to_s is noinit
+end
