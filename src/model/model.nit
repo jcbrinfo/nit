@@ -1123,6 +1123,28 @@ abstract class MType
 	# ENSURE: `not self.need_anchor implies result == true`
 	fun can_resolve_for(mtype: MType, anchor: nullable MClassType, mmodule: MModule): Bool is abstract
 
+	# Intersect `self` with `other`.
+	#
+	# The resulting type represents the subtypes that are common to both `self`
+	# and `other`. The contextual parameters (`mmodule` and `anchor`) are
+	# used to resolve types during comparisons in order to simplify the resulting
+	# type.
+	#
+	# REQUIRE: `anchor == null implies not self.need_anchor and not other.need_anchor`
+	# REQUIRE: `anchor != null implies self.can_resolve_for(anchor, null, mmodule) and other.can_resolve_for(anchor, null, mmodule)`
+	fun intersection(other: MType, mmodule: MModule,
+			anchor: nullable MClassType): MType
+	do
+		# TODO: Intersections between MNullType and nullables
+		# TODO: Flatten
+		# TODO: DNF
+
+		var type1 = self
+		var type2 = other
+
+		return new MIntersectionType.with_operands(mmodule, type1, type2)
+	end
+
 	# Return the nullable version of the type
 	# If the type is already nullable then self is returned
 	fun as_nullable: MType
@@ -1344,6 +1366,9 @@ end
 # An intersection of multiple types.
 #
 # Conceptually, the subtypes that are common to all the `operands`.
+#
+# WARNING: Don’t instantiate this class directly: use `MType::intersection`
+# instead. Else, you may end up with undefined behaviors.
 class MIntersectionType
 	super MTypeSet[MType]
 
