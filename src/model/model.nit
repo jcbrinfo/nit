@@ -1123,6 +1123,12 @@ abstract class MType
 	# ENSURE: `not self.need_anchor implies result == true`
 	fun can_resolve_for(mtype: MType, anchor: nullable MClassType, mmodule: MModule): Bool is abstract
 
+	# When resolved with `anchor`, does this type possibly allows `null`?
+	fun can_be_null(mmodule: MModule, anchor: nullable MClassType): Bool
+	do
+		return false
+	end
+
 	# Intersect `self` with `other`.
 	#
 	# The resulting type represents the subtypes that are common to both `self`
@@ -1462,6 +1468,16 @@ class MIntersectionType
 		return true
 	end
 
+	redef fun can_be_null(mmodule, anchor)
+	do
+		for mtype in operands do
+			if not mtype.can_be_null(mmodule, anchor) then
+				return false
+			end
+		end
+		return true
+	end
+
 	redef fun lookup_fixed(mmodule, resolved_receiver)
 	do
 		var resolved = new Set[MType]
@@ -1746,6 +1762,11 @@ abstract class MFormalType
 	super MType
 
 	redef var as_notnull = new MNotNullType(self) is lazy
+
+	redef fun can_be_null(mmodule, anchor)
+	do
+		return anchor_to(mmodule, anchor).can_be_null(mmodule, anchor)
+	end
 end
 
 # A virtual formal type.
@@ -2090,6 +2111,9 @@ class MNullableType
 	redef var c_name is lazy do return "nullable__{mtype.c_name}"
 
 	redef fun as_nullable do return self
+
+	redef fun can_be_null(mmodule, anchor) do return true
+
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
 	do
 		var res = super
@@ -2116,6 +2140,8 @@ class MNotNullType
 	redef var c_name is lazy do return "notnull__{mtype.c_name}"
 
 	redef fun as_notnull do return self
+
+	redef fun can_be_null(mmodule, anchor) do return false
 
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
 	do
@@ -2145,6 +2171,9 @@ class MNullType
 
 	redef var as_notnull: MBottomType = new MBottomType(model) is lazy
 	redef fun need_anchor do return false
+
+	redef fun can_be_null(mmodule, anchor) do return true
+
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual) do return self
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
 
