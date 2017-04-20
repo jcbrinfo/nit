@@ -507,12 +507,33 @@ class SeparateErasureCompilerVisitor
 
 		if mtype isa MIntersectionType then
 			add("{res} = 0;")
+			var test_not_null = (
+				not mtype.can_be_null(compiler.mainmodule, null) and
+				maybe_null(value)
+			)
+			if test_not_null then
+				add("if ({value} != null) \{")
+				value = new RuntimeVariable(
+					value.name,
+					value.mtype,
+					value.mcasttype.as_notnull(compiler.mainmodule)
+				)
+			end
 			for t in mtype.operands do
-				var sub_test = type_test(value, t, tag)
-				add("if ({sub_test}) \{")
+				# Because of the `test_not_null` case above, the `Object` case
+				# is already checked.
+				if not t.is_object then
+					var sub_test = type_test(value, t, tag)
+					add("if ({sub_test}) \{")
+				end
 			end
 			add("{res} = 1;")
 			for t in mtype.operands do
+				if not t.is_object then
+					add("\}")
+				end
+			end
+			if test_not_null then
 				add("\}")
 			end
 			return res
@@ -528,9 +549,6 @@ class SeparateErasureCompilerVisitor
 		if mtype isa MNullableType then
 			mtype = mtype.mtype
 			accept_null = "1"
-		end
-		if mtype isa MNotNullType then
-			mtype = mtype.mtype
 		end
 		if mtype isa MParameterType then
 			# Here we get the bound of the the formal type (eh, erasure...)

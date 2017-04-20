@@ -531,6 +531,33 @@ redef class MPropDef
 	end
 end
 
+redef class MTypeSet
+	redef fun infobox(v)
+	do
+		var res = new HInfoBox(v, to_s)
+		res.href = v.hrefto(self)
+		res.new_field("type").add linkto(v)
+		return res
+	end
+
+	redef fun linkto(v)
+	do
+		var res = new HTMLTag("span")
+		var first = true
+		res.append "("
+		for operand in operands do
+			if first then
+				first = false
+			else
+				res.append separator
+			end
+			res.add operand.linkto(v)
+		end
+		res.append ")"
+		return res
+	end
+end
+
 redef class MClassType
 	redef fun infobox(v)
 	do
@@ -578,19 +605,6 @@ redef class MNullableType
 	do
 		var res = new HTMLTag("span")
 		res.append("nullable ").add(mtype.linkto(v))
-		return res
-	end
-end
-
-redef class MNotNullType
-	redef fun infobox(v)
-	do
-		return mtype.infobox(v)
-	end
-	redef fun linkto(v)
-	do
-		var res = new HTMLTag("span")
-		res.append("not null ").add(mtype.linkto(v))
 		return res
 	end
 end

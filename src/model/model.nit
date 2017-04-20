@@ -1417,7 +1417,7 @@ abstract class MTypeSet[E: MType]
 	# The separator to use in `to_s` and `full_name`.
 	#
 	# `" and "` or `" or "`
-	private fun separator: String do return " {keyword} "
+	protected fun separator: String do return " {keyword} "
 
 	redef fun to_s do return "({operands.join(separator)})"
 end
