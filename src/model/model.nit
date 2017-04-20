@@ -1098,6 +1098,11 @@ abstract class MType
 	# In case of conflicts or inconsistencies in the model, the method returns a `MErrorType`.
 	fun lookup_fixed(mmodule: MModule, resolved_receiver: MType): MType do return self
 
+	# Does `self` represents the `Object` class?
+	#
+	# In other words, does `self` is the root of the non-null types?
+	fun is_object: Bool do return false
+
 	# Is the type a `MErrorType` or contains an `MErrorType`?
 	#
 	# `MErrorType` are used in result with conflict or inconsistencies.
@@ -1626,6 +1631,8 @@ class MClassType
 	redef fun resolve_for(mtype: MType, anchor: nullable MClassType, mmodule: MModule, cleanup_virtual: Bool): MClassType do return self
 
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
+
+	redef var is_object is lazy do return mclass.name == "Object"
 
 	redef fun collect_mclassdefs(mmodule)
 	do
