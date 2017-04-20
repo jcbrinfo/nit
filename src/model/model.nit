@@ -1308,7 +1308,8 @@ abstract class MTypeSet[E: MType]
 		return result
 	end
 
-	redef var c_name is lazy do
+	redef fun c_name
+	do
 		var buffer = new Buffer.from_text(keyword)
 		# Since the arity is not implicit, we must specify it to avoid
 		# ambiguities in case this typing expression is nested in another one.
@@ -1343,7 +1344,8 @@ abstract class MTypeSet[E: MType]
 		return result
 	end
 
-	redef var full_name is lazy do
+	redef fun full_name
+	do
 		var names = new Array[String].with_capacity(operands.length)
 		for mtype in operands do
 			names.add(mtype.full_name)
@@ -1417,7 +1419,7 @@ abstract class MTypeSet[E: MType]
 	# `" and "` or `" or "`
 	private fun separator: String do return " {keyword} "
 
-	redef var to_s is lazy do return "({operands.join(separator)})"
+	redef fun to_s do return "({operands.join(separator)})"
 end
 
 # An intersection of multiple types.
@@ -1489,6 +1491,22 @@ class MIntersectionType
 
 	private var as_notnull_cache = new Map[MModule, MType]
 
+	redef var c_name is lazy do
+		var mtype = undecorate_notnull
+		if mtype != null then
+			return "not_null__{undecorate_notnull.c_name}"
+		end
+		return super
+	end
+
+	redef var full_name is lazy do
+		var mtype = undecorate_notnull
+		if mtype != null then
+			return "not null {undecorate_notnull.full_name}"
+		end
+		return super
+	end
+
 	redef fun keyword do return "and"
 
 	redef var undecorate is lazy do
@@ -1497,6 +1515,25 @@ class MIntersectionType
 			undecorated.add(t.undecorate)
 		end
 		return new MIntersectionType(undecorated)
+	end
+
+	# If `self` is equivalent to a `not null` type, return the wrapped type.
+	#
+	# In other words, if `self` has exactly 2 operands, with one being
+	# `Object`, return the other operand. Else, return `null`.
+	#
+	# Used for textual representations.
+	private var undecorate_notnull: nullable MType is lazy do
+		if operands.length != 2 then return null
+		var i = operands.iterator
+		i.start
+		var first = i.item
+		i.next
+		var second = i.item
+		i.finish
+		if first.is_object then return second
+		if second.is_object then return first
+		return null
 	end
 
 	redef fun can_be_null(mmodule, anchor)
@@ -1553,6 +1590,14 @@ class MIntersectionType
 	end
 
 	private var collect_mtypes_cache = new Map[MModule, Set[MClassType]]
+
+	redef var to_s is lazy do
+		var mtype = undecorate_notnull
+		if mtype != null then
+			return "not null {mtype}"
+		end
+		return super
+	end
 end
 
 # A type based on a class.
