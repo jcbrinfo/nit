@@ -1458,8 +1458,8 @@ class MIntersectionType
 		var i = operands.iterator
 		var result = i.item
 		i.next
-		for constraint in i do
-			result = result.intersection(constraint, mmodule, anchor)
+		for operand in i do
+			result = result.intersection(operand, mmodule, anchor)
 		end
 		return result
 	end
