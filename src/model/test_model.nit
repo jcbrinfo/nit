@@ -154,6 +154,18 @@ class TestMIntersectionType
 		)
 	end
 
+	fun test_c_name_notnull do
+		var type_foo = new MTypeStub
+		type_foo.c_name = "{mmodule.c_name}__MyClass__FOO"
+		var not_null_foo = new MIntersectionType.with_operands(
+			mmodule, object_type, type_foo
+		)
+		assert_equals(
+			not_null_foo.full_name,
+			"not_null__{mmodule.c_name}__MyClass__FOO"
+		)
+	end
+
 	fun test_full_name do
 		var type_s = new MTypeStub
 		type_s.full_name = "{mmodule.full_name}::S"
@@ -168,6 +180,18 @@ class TestMIntersectionType
 		)
 	end
 
+	fun test_full_name_notnull do
+		var type_foo = new MTypeStub
+		type_foo.full_name = "{mmodule.full_name}::MyClass::FOO"
+		var not_null_foo = new MIntersectionType.with_operands(
+			mmodule, object_type, type_foo
+		)
+		assert_equals(
+			not_null_foo.full_name,
+			"not null {mmodule.full_name}::MyClass::FOO"
+		)
+	end
+
 	fun test_to_s do
 		var type_s = new MTypeStub
 		type_s.to_s = "S"
@@ -177,6 +201,15 @@ class TestMIntersectionType
 			mmodule, type_s, type_t
 		)
 		assert_equals(s_and_t.to_s, "(S and T)")
+	end
+
+	fun test_to_s_notnull do
+		var type_foo = new MTypeStub
+		type_foo.to_s = "FOO"
+		var not_null_foo = new MIntersectionType.with_operands(
+			mmodule, object_type, type_foo
+		)
+		assert_equals(not_null_foo.to_s, "not null FOO")
 	end
 end
 

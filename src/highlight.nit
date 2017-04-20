@@ -673,6 +673,28 @@ redef class MTypeSet
 	end
 end
 
+redef class MIntersectionType
+	redef fun infobox(v)
+	do
+		var undecorated = undecorate_notnull
+		if undecorated != null then
+			return undecorated.infobox(v)
+		end
+		super
+	end
+
+	redef fun linkto(v)
+	do
+		var undecorated = undecorate_notnull
+		if undecorated != null then
+			var res = new HTMLTag("span")
+			res.append("not null ").add(undecorated.linkto(v))
+			return res
+		end
+		super
+	end
+end
+
 redef class MClassType
 	redef fun infobox(v)
 	do
