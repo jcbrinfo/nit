@@ -247,7 +247,7 @@ private class TypeVisitor
 			# so return use `null` as a bottom type that will be merged easily (cf) `merge_types`
 			mtype = null
 		else
-			mtype = mtype.as_notnull
+			mtype = mtype.as_notnull(mmodule)
 		end
 
 		# Check for type adaptation
@@ -577,7 +577,7 @@ private class TypeVisitor
 						for t in mtypes do
 							if t != null and can_be_null(t) then break label
 						end
-						res = res.as_notnull
+						res = res.as_notnull(mmodule)
 					end label
 				end
 				return res
@@ -680,7 +680,7 @@ private class TypeVisitor
 
 		# if t1 <: t2 then t1-t2 = bottom
 		if is_subtype(type1, type2) then
-			return modelbuilder.model.null_type.as_notnull
+			return modelbuilder.model.null_type.as_notnull(mmodule)
 		end
 
 		# else if t1 <: nullable t2 then t1-t2 = nulltype
@@ -690,7 +690,7 @@ private class TypeVisitor
 
 		# else t2 can be null and type2 must accept null then null is excluded in t1
 		if can_be_null(type1) and (type2 isa MNullableType or type2 isa MNullType) then
-			return type1.as_notnull
+			return type1.as_notnull(mmodule)
 		end
 
 		return type1
@@ -1472,7 +1472,7 @@ redef class AOrElseExpr
 			self.mtype = t2
 			return
 		else if v.can_be_null(t1) then
-			t1 = t1.as_notnull
+			t1 = t1.as_notnull(v.mmodule)
 		end
 
 		var t = v.merge_types(self, [t1, t2])
@@ -1821,7 +1821,7 @@ redef class AAsNotnullExpr
 		end
 
 		if v.can_be_null(mtype) then
-			mtype = mtype.as_notnull
+			mtype = mtype.as_notnull(v.mmodule)
 		end
 
 		self.mtype = mtype

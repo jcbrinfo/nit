@@ -1927,7 +1927,7 @@ class SeparateCompilerVisitor
 			if t2.can_be_null(compiler.mainmodule) then
 				# The destination type cannot be null
 				tests.add("({value2} != NULL)")
-				t2 = t2.as_notnull
+				t2 = t2.as_notnull(compiler.mainmodule)
 			else if t2 isa MNullType then
 				# `value2` is known to be null, thus incompatible with a primitive
 				self.add("{res} = 0; /* incompatible types {t1} vs. {t2}*/")
@@ -1965,14 +1965,14 @@ class SeparateCompilerVisitor
 		var t1 = value1.mcasttype
 		if t1.can_be_null(compiler.mainmodule) then
 			test.add("{value1} != NULL")
-			t1 = t1.as_notnull
+			t1 = t1.as_notnull(compiler.mainmodule)
 		else
 			maybe_null = false
 		end
 		var t2 = value2.mcasttype
 		if t2.can_be_null(compiler.mainmodule) then
 			test.add("{value2} != NULL")
-			t2 = t2.as_notnull
+			t2 = t2.as_notnull(compiler.mainmodule)
 		else
 			maybe_null = false
 		end
