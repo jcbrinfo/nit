@@ -833,7 +833,7 @@ abstract class MType
 		# Now the case of direct null and nullable is over.
 
 		# If `sub` is a formal type, then it is accepted if its bound is accepted
-		while sub isa MFormalType do
+		while sub.is_formal do
 			#print "3.is {sub} a {sup}?"
 
 			# A unfixed formal type can only accept itself
@@ -1065,7 +1065,7 @@ abstract class MType
 	fun resolve_for(mtype: MType, anchor: nullable MClassType, mmodule: MModule, cleanup_virtual: Bool): MType is abstract
 
 	# Resolve formal type to its verbatim bound.
-	# If the type is not formal, just return self
+	# If `is_formal` is false, just return `self`.
 	#
 	# The result is returned exactly as declared in the "type" property (verbatim).
 	# So it could be another formal type.
@@ -1087,6 +1087,12 @@ abstract class MType
 	#
 	# In case of conflicts or inconsistencies in the model, the method returns a `MErrorType`.
 	fun lookup_fixed(mmodule: MModule, resolved_receiver: MType): MType do return self
+
+	# Does `self` is a formal type or a set-thoeric operation over a formal type?
+	#
+	# True if and only if `self isa MFormalType` or `self isa MTypeSet`, where
+	# `is_formal` is true for one of the operands.
+	fun is_formal: Bool do return false
 
 	# Does `self` represents the `Object` class?
 	#
@@ -1363,6 +1369,16 @@ abstract class MTypeSet[E: MType]
 		return "({names.join(separator)})"
 	end
 
+	redef fun is_formal
+	do
+		for mtype in operands do
+			if mtype.is_formal then
+				return true
+			end
+		end
+		return false
+	end
+
 	redef fun is_legal_in(mmodule, anchor)
 	do
 		for mtype in operands do
@@ -1404,6 +1420,15 @@ abstract class MTypeSet[E: MType]
 			result += mtype.length
 		end
 		return result
+	end
+
+	redef fun lookup_bound(mmodule, resolved_receiver)
+	do
+		var resolved = new Set[MType]
+		for mtype in operands do
+			resolved.add(mtype.lookup_bound(mmodule, resolved_receiver))
+		end
+		return cache(resolved, mmodule)
 	end
 
 	redef fun lookup_fixed(mmodule, resolved_receiver)
@@ -1877,6 +1902,8 @@ abstract class MFormalType
 	do
 		return anchor_to(mmodule, anchor).can_be_null(mmodule, anchor)
 	end
+
+	redef fun is_formal do return true
 end
 
 # A virtual formal type.
