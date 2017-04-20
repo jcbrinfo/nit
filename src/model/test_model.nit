@@ -106,6 +106,34 @@ class TestMType
 	end
 end
 
+class TestMIntersectionType
+	super TestSuite
+
+	private var mmodule: MModule = create_dummy_mmodule
+
+	fun test_intersection_full_name do
+		var a_type = new MTypeStub
+		a_type.full_name = "module_foo::A"
+		var b_type = new MTypeStub
+		b_type.full_name = "module_foo::B"
+		var a_and_b = new MIntersectionType.with_operands(
+			mmodule, a_type, b_type
+		)
+		assert a_and_b.full_name == "(module_foo::A and module_foo::B)"
+	end
+
+	fun test_intersection_to_s do
+		var a_type = new MTypeStub
+		a_type.to_s = "A"
+		var b_type = new MTypeStub
+		b_type.to_s = "B"
+		var a_and_b = new MIntersectionType.with_operands(
+			mmodule, a_type, b_type
+		)
+		assert a_and_b.to_s == "(A and B)"
+	end
+end
+
 private fun create_dummy_mmodule: MModule do
 	return new MModule(
 		new Model, null, "module_dummy", new Location(null, 1, 1, 1, 1)
