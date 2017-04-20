@@ -129,6 +129,9 @@ redef class Model
 
 		return res
 	end
+
+	# Cache of type intersections, according to their operands.
+	private var intersection_cache: Map[Set[MType], MType] = new Map[Set[MType], MType]
 end
 
 # An OrderedTree bound to MEntity.
@@ -336,9 +339,6 @@ redef class MModule
 		end
 		return res
 	end
-
-	# Cache of type intersections, according to their operands.
-	private var intersection_cache: Map[Set[MType], MType] = new Map[Set[MType], MType]
 end
 
 private class MClassDefSorter
@@ -1282,7 +1282,7 @@ abstract class MTypeSet[E: MType]
 
 	init do
 		assert operands.not_empty
-		by_operands_cache(mmodule)[operands] = self
+		by_operands_cache[operands] = self
 	end
 
 	redef fun model do return mmodule.model
@@ -1302,7 +1302,7 @@ abstract class MTypeSet[E: MType]
 	# `mmodule` is the module in which the cache resides.
 	#
 	# SEE: `cache`
-	protected fun by_operands_cache(mmodule: MModule): Map[Set[MType], MType] is abstract
+	protected fun by_operands_cache: Map[Set[MType], MType] is abstract
 
 	# Return the cached version of this operation over the specified set of operands.
 	#
@@ -1314,10 +1314,10 @@ abstract class MTypeSet[E: MType]
 	# SEE: `apply_to`
 	protected fun cache(operands: Set[MType], mmodule: MModule): MType
 	do
-		var result = by_operands_cache(mmodule).get_or_null(operands)
+		var result = by_operands_cache.get_or_null(operands)
 		if result == null then
 			result = apply_to(operands, mmodule)
-			by_operands_cache(mmodule)[operands] = result
+			by_operands_cache[operands] = result
 		end
 		return result
 	end
@@ -1469,7 +1469,7 @@ class MIntersectionType
 		return result
 	end
 
-	redef fun by_operands_cache(mmodule) do return mmodule.intersection_cache
+	redef fun by_operands_cache do return model.intersection_cache
 
 	redef var as_notnull is lazy do
 		var new_operands = new Set[MType]
