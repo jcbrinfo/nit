@@ -1330,6 +1330,17 @@ abstract class MTypeSet[E: MType]
 		return buffer.to_s
 	end
 
+	redef fun can_resolve_for(mtype, anchor, mmodule)
+	do
+		if not need_anchor then return true
+		for t in operands do
+			if not t.can_resolve_for(mtype, anchor, mmodule) then
+				return false
+			end
+		end
+		return true
+	end
+
 	redef fun depth
 	do
 		var result = 0
@@ -1390,6 +1401,24 @@ abstract class MTypeSet[E: MType]
 			result += mtype.length
 		end
 		return result
+	end
+
+	redef fun lookup_fixed(mmodule, resolved_receiver)
+	do
+		var resolved = new Set[MType]
+		for mtype in operands do
+			resolved.add(mtype.lookup_fixed(mmodule, resolved_receiver))
+		end
+		return cache(resolved, mmodule)
+	end
+
+	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
+	do
+		var resolved = new Set[MType]
+		for t in operands do
+			resolved.add(t.resolve_for(mtype, anchor, mmodule, cleanup_virtual))
+		end
+		return cache(resolved, mmodule)
 	end
 
 	# The separator to use in `to_s` and `full_name`.
@@ -1472,26 +1501,6 @@ class MIntersectionType
 		return new MIntersectionType(mmodule, undecorated)
 	end
 
-	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
-	do
-		var resolved = new Set[MType]
-		for t in operands do
-			resolved.add(t.resolve_for(mtype, anchor, mmodule, cleanup_virtual))
-		end
-		return cache(resolved, mmodule)
-	end
-
-	redef fun can_resolve_for(mtype, anchor, mmodule)
-	do
-		if not need_anchor then return true
-		for t in operands do
-			if not t.can_resolve_for(mtype, anchor, mmodule) then
-				return false
-			end
-		end
-		return true
-	end
-
 	redef fun can_be_null(mmodule, anchor)
 	do
 		for mtype in operands do
@@ -1500,15 +1509,6 @@ class MIntersectionType
 			end
 		end
 		return true
-	end
-
-	redef fun lookup_fixed(mmodule, resolved_receiver)
-	do
-		var resolved = new Set[MType]
-		for mtype in operands do
-			resolved.add(mtype.lookup_fixed(mmodule, resolved_receiver))
-		end
-		return cache(resolved, mmodule)
 	end
 
 	redef fun collect_mclassdefs(mmodule)
