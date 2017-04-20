@@ -1151,37 +1151,85 @@ abstract class MType
 	# The resulting type represents the subtypes that are common to both `self`
 	# and `other`. The contextual parameters (`mmodule` and `anchor`) are
 	# used to resolve types during comparisons in order to simplify the
-	# resulting type.
+	# resulting type. Whenever possible, respect the disjonctive normal form
+	# (DNF), that is having the unions at the root of the tree.
+	#
+	# Internally, delegate to the right `and_*` method on `other` depending on
+	# the class of `self`.
 	#
 	# REQUIRE: `anchor == null implies not self.need_anchor and not other.need_anchor`
 	# REQUIRE: `anchor != null implies self.can_resolve_for(anchor, null, mmodule) and other.can_resolve_for(anchor, null, mmodule)`
 	fun intersection(other: MType, mmodule: MModule,
+			anchor: nullable MClassType): MType is abstract
+
+	# Intersect `self` and `other` (default case).
+	#
+	# May be called by other `and_*` methods. The only remaining simplification
+	# opportunities at this point are given by the subtyping relationships.
+	# The redefinition in `MIntersectionType` also flatten the intersection
+	# tree.
+	protected fun and_any(other: MType, mmodule: MModule,
 			anchor: nullable MClassType): MType
 	do
-		# TODO: Intersections between MNullType and nullables
-		# TODO: DNF
-
-		var type1 = self
-		var type2 = other
-
-		# If one type deny null, the intersection does.
-		if not type1.can_be_null(mmodule, anchor) then
-			type2 = type2.as_notnull(mmodule)
-		else if	not type2.can_be_null(mmodule, anchor) then
-			type1 = type1.as_notnull(mmodule)
-		end
-
 		# Merge to the subtype, if applicable.
 		# TODO: Do something smarter when `anchor == null`.
-		if anchor != null or not (type1.need_anchor or type2.need_anchor) then
-			if type1.is_subtype(mmodule, anchor, type2) then
-				return type1
-			else if type2.is_subtype(mmodule, anchor, type1) then
-				return type2
+		if anchor != null or not (need_anchor or other.need_anchor) then
+			if is_subtype(mmodule, anchor, other) then
+				return self
+			else if other.is_subtype(mmodule, anchor, self) then
+				return other
 			end
 		end
-		return type1.cache_intersection(type2)
+		return cache_intersection(other)
 	end
+
+	# Intersect with the bottom type `other`.
+	#
+	# Except for the implementation in `MErrorType`, return `other`.
+	#
+	# SEE: `intersection`
+	protected fun and_bottom(other: MBottomType, mmodule: MModule,
+			anchor: nullable MClassType): MType
+	do
+		return other
+	end
+
+	# Intersect with the class type `other`.
+	#
+	# SEE: `intersection`
+	protected fun and_class(other: MClassType,
+			mmodule: MModule, anchor: nullable MClassType): MType is abstract
+
+	# Intersect with the error type `other`.
+	#
+	# Return `other`.
+	#
+	# SEE: `intersection`
+	protected fun and_error(other: MErrorType, mmodule: MModule,
+			anchor: nullable MClassType): MType
+	do
+		return other
+	end
+	# Intersect with the formal type `other`.
+	#
+	# SEE: `intersection`
+	protected fun and_formal(other: MFormalType,
+			mmodule: MModule, anchor: nullable MClassType): MType is abstract
+
+	# Intersect with the type intersection `other`.
+	#
+	# By default, a new instance of `MIntersectionType` (which adds `self` to
+	# the operands of `other`) is built.
+	#
+	# SEE: `intersection`
+	protected fun and_intersection(other: MIntersectionType,
+			mmodule: MModule, anchor: nullable MClassType): MType is abstract
+
+	# Intersect with the `null` type `other`.
+	#
+	# SEE: `intersection`
+	protected fun and_null(other: MNullType,
+			mmodule: MModule, anchor: nullable MClassType): MType is abstract
 
 	private fun cache_intersection(other: MType): MIntersectionType
 	do
@@ -1491,6 +1539,71 @@ class MIntersectionType
 
 	redef var hash is lazy do return operands.hash
 
+	redef fun and_any(other, mmodule, anchor)
+	do
+		var new_operands = new Set[MType]
+		# Filter out unnecessary constraints.
+		for operand in operands do
+			if other.is_subtype(mmodule, anchor, operand) then
+				# No need for `operand` since `other` is more precise.
+				continue
+			else if operand.is_subtype(mmodule, anchor, other) then
+				# `self` already has all the needed constraints.
+				return self
+			else
+				new_operands.add(operand)
+			end
+		end
+		if new_operands.is_empty then return other
+
+		# Build the new intersection by caching at each step.
+		var result = other
+		for operand in new_operands do
+			result = result.cache_intersection(operand)
+		end
+		return result
+	end
+
+	redef fun and_class(other, mmodule, anchor)
+	do
+		# We know that `other` can’t be nullable. So, clear nulls.
+		return as_notnull(mmodule).and_any(other, mmodule, anchor)
+	end
+
+	redef fun and_formal(other, mmodule, anchor)
+	do
+		if not other.can_be_null(mmodule, anchor) then
+			# Since `other` can’t be nullable, we should clear nulls.
+			return as_notnull(mmodule).and_any(other, mmodule, anchor)
+		end
+		return and_any(other, mmodule, anchor)
+	end
+
+	redef fun and_intersection(other, mmodule, anchor)
+	do
+		# Explode `other` and optimize each time we append an operand.
+		var result: MType = self
+		for t in other.operands do
+			result = result.intersection(t, mmodule, anchor)
+		end
+		return result
+	end
+
+	redef fun and_null(other, mmodule, anchor)
+	do
+		if not can_be_null(mmodule, anchor) then return self
+		return and_any(other, mmodule, anchor)
+	end
+
+	redef fun and_nullable(other, mmodule, anchor)
+	do
+		# Make sure we agree on « nullability ».
+		if not can_be_null(mmodule, anchor) then
+			return other.mtype.and_intersection(self, mmodule, anchor)
+		end
+		return and_any(other, mmodule, anchor)
+	end
+
 	redef fun apply_to(operands, mmodule, anchor)
 	do
 		var i = operands.iterator
@@ -1569,6 +1682,11 @@ class MIntersectionType
 			return "not null {undecorate_notnull.full_name}"
 		end
 		return super
+	end
+
+	redef fun intersection(other, mmodule, anchor)
+	do
+		return other.and_intersection(self, mmodule, anchor)
 	end
 
 	# If `self` is equivalent to a `not null` type, return the wrapped type.
@@ -1695,6 +1813,37 @@ class MClassType
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
 
 	redef var is_object is lazy do return mclass.name == "Object"
+
+	redef fun intersection(other, mmodule, anchor)
+	do
+		return other.and_class(self, mmodule, anchor)
+	end
+
+	redef fun and_class(other, mmodule, anchor)
+	do
+		return and_any(other, mmodule, anchor)
+	end
+
+	redef fun and_formal(other, mmodule, anchor)
+	do
+		return and_any(other, mmodule, anchor)
+	end
+
+	redef fun and_intersection(other, mmodule, anchor)
+	do
+		# `MIntersectionType` already has a good algorithm for that case.
+		return other.and_class(self, mmodule, anchor)
+	end
+
+	redef fun and_null(other, mmodule, anchor)
+	do
+		return model.bottom_type
+	end
+
+	redef fun and_nullable(other, mmodule, anchor)
+	do
+		return other.mtype.and_class(self, mmodule, anchor)
+	end
 
 	redef fun collect_mclassdefs(mmodule)
 	do
@@ -1886,6 +2035,40 @@ end
 abstract class MFormalType
 	super MType
 
+	redef fun and_class(other, mmodule, anchor)
+	do
+		return and_any(other, mmodule, anchor)
+	end
+
+	redef fun and_formal(other, mmodule, anchor)
+	do
+		return and_any(other, mmodule, anchor)
+	end
+
+	redef fun and_intersection(other, mmodule, anchor)
+	do
+		# `MIntersectionType` already has a good algorithm for that case.
+		return other.and_formal(self, mmodule, anchor)
+	end
+
+	redef fun and_null(other, mmodule, anchor)
+	do
+		if can_be_null(mmodule, anchor) then
+			return and_any(other, mmodule, anchor)
+		else
+			return model.bottom_type
+		end
+	end
+
+	redef fun and_nullable(other, mmodule, anchor)
+	do
+		if can_be_null(mmodule, anchor) then
+			return and_any(other, mmodule, anchor)
+		else
+			return other.mtype.and_formal(self, mmodule, anchor)
+		end
+	end
+
 	redef fun as_notnull(mmodule)
 	do
 		var result = as_notnull_cache
@@ -1901,6 +2084,11 @@ abstract class MFormalType
 	redef fun can_be_null(mmodule, anchor)
 	do
 		return anchor_to(mmodule, anchor).can_be_null(mmodule, anchor)
+	end
+
+	redef fun intersection(other, mmodule, anchor)
+	do
+		return other.and_formal(self, mmodule, anchor)
 	end
 
 	redef fun is_formal do return true
@@ -2290,9 +2478,42 @@ class MNullableType
 
 	redef var c_name is lazy do return "nullable__{mtype.c_name}"
 
+	redef fun and_class(other, mmodule, anchor)
+	do
+		return mtype.and_class(other, mmodule)
+	end
+
+	redef fun and_formal(other, mmodule, anchor)
+	do
+		if other.can_be_null(mmodule, anchor) then
+			return and_any(other, mmodule, anchor)
+		else
+			return mtype.and_formal(other, mmodule, anchor)
+		end
+	end
+
+	redef fun and_intersection(other, mmodule, anchor)
+	do
+		# `MIntersectionType` already has a good algorithm for that case.
+		return other.and_nullable(self, mmodule, anchor)
+	end
+
+	redef fun and_null(other, mmodule, anchor) do return other
+
+	redef fun and_nullable(other, mmodule, anchor)
+	do
+		# Respect the disjonctive normal form.
+		return mtype.intersection(other.mtype, mmodule, anchor).as_nullable
+	end
+
 	redef fun as_nullable do return self
 
 	redef fun can_be_null(mmodule, anchor) do return true
+
+	redef fun intersection(other, mmodule, anchor)
+	do
+		return other.and_nullable(self, mmodule, anchor)
+	end
 
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
 	do
@@ -2318,9 +2539,37 @@ class MNullType
 	redef fun to_s do return "null"
 	redef fun full_name do return "null"
 	redef fun c_name do return "null"
+
+	redef fun and_class(other, mmodule, anchor) do return model.bottom_type
+
+	redef fun and_formal(other, mmodule, anchor)
+	do
+		if other.can_be_null(mmodule, anchor) then
+			return and_any(other, mmodule, anchor)
+		else
+			return model.bottom_type
+		end
+	end
+
+	redef fun and_intersection(other, mmodule, anchor)
+	do
+		# `MIntersectionType` already has a good algorithm for that case.
+		return other.and_null(self, mmodule, anchor)
+	end
+
+	redef fun and_null(other, mmodule, anchor) do return self
+
+	redef fun and_nullable(other, mmodule, anchor) do return self
+
 	redef fun as_nullable do return self
 
 	redef fun as_notnull(mmodule): MBottomType do return model.bottom_type
+
+	redef fun intersection(other, mmodule, anchor)
+	do
+		return other.and_null(self, mmodule, anchor)
+	end
+
 	redef fun need_anchor do return false
 
 	redef fun can_be_null(mmodule, anchor) do return true
@@ -2348,7 +2597,24 @@ class MBottomType
 	redef fun to_s do return "bottom"
 	redef fun full_name do return "bottom"
 	redef fun c_name do return "bottom"
+
+	redef fun and_class(other, mmodule, anchor) do return self
+
+	redef fun and_formal(other, mmodule, anchor) do return self
+
+	redef fun and_intersection(other, mmodule, anchor) do return self
+
+	redef fun and_null(other, mmodule, anchor) do return self
+
+	redef fun and_nullable(other, mmodule, anchor) do return self
+
 	redef fun as_nullable do return model.null_type
+
+	redef fun intersection(other, mmodule, anchor)
+	do
+		return other.and_bottom(self, mmodule, anchor)
+	end
+
 	redef fun need_anchor do return false
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual) do return self
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
@@ -2377,6 +2643,23 @@ class MErrorType
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual) do return self
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
 	redef fun is_ok do return false
+
+	redef fun and_bottom(other, mmodule, anchor) do return self
+
+	redef fun and_class(other, mmodule, anchor) do return self
+
+	redef fun and_formal(other, mmodule, anchor) do return self
+
+	redef fun and_intersection(other, mmodule, anchor) do return self
+
+	redef fun and_null(other, mmodule, anchor) do return self
+
+	redef fun and_nullable(other, mmodule, anchor) do return self
+
+	redef fun intersection(other, mmodule, anchor)
+	do
+		return other.and_error(self, mmodule, anchor)
+	end
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
 
