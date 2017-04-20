@@ -117,7 +117,7 @@ redef class Model
 	var null_type = new MNullType(self)
 
 	# The only bottom type
-	var bottom_type: MBottomType = null_type.as_notnull
+	var bottom_type: MBottomType = new MBottomType(self)
 
 	# Build an ordered tree with from `concerns`
 	fun concerns_tree(mconcerns: Collection[MConcern]): ConcernsTree do
@@ -1170,9 +1170,9 @@ abstract class MType
 
 		# If one type deny null, the intersection does.
 		if not type1.can_be_null(mmodule, anchor) then
-			type2 = type2.as_notnull
+			type2 = type2.as_notnull(mmodule)
 		else if	not type2.can_be_null(mmodule, anchor) then
-			type1 = type1.as_notnull
+			type1 = type1.as_notnull(mmodule)
 		end
 
 		# Merge to the subtype, if applicable.
@@ -1225,11 +1225,13 @@ abstract class MType
 	end
 
 	# Returns the not null version of the type.
+	#
 	# That is `self` minus the `null` value.
+	# `mmodule` is used to look for `Object`.
 	#
 	# For most types, this return `self`.
 	# For formal types, this returns a special `MNotNullType`
-	fun as_notnull: MType do return self
+	fun as_notnull(mmodule: MModule): MType do return self
 
 	private var as_nullable_cache: nullable MType = null
 
@@ -1300,13 +1302,6 @@ end
 abstract class MTypeSet[E: MType]
 	super MType
 
-	# The context in which this type was created.
-	#
-	# Used to populate `model` and look for `Object`.
-	#
-	# TODO: Remove this attribute once `as_notnull` don’t need it.
-	var mmodule: MModule
-
 	# The operands of this operation.
 	#
 	# Must not be empty. Must not be edited.
@@ -1316,7 +1311,7 @@ abstract class MTypeSet[E: MType]
 		assert operands.not_empty
 	end
 
-	redef fun model do return mmodule.model
+	redef fun model do return operands.first.model
 
 	redef fun location do return operands.first.location
 	# TODO: Return a more accurate location.
@@ -1466,7 +1461,7 @@ class MIntersectionType
 
 	# Intersect the specified types.
 	init with_operands(mmodule: MModule, operands: MType...) do
-		init(mmodule, new HashSet[MType].from(operands))
+		init(new HashSet[MType].from(operands))
 	end
 
 	redef fun ==(other)
@@ -1490,7 +1485,8 @@ class MIntersectionType
 		return result
 	end
 
-	redef var as_notnull is lazy do
+	redef fun as_notnull(mmodule)
+	do
 		var new_operands = new Set[MType]
 		# Do we need to add `Object` to the operands?
 		var add_object = true
@@ -1824,7 +1820,17 @@ end
 abstract class MFormalType
 	super MType
 
-	redef var as_notnull = new MNotNullType(self) is lazy
+	redef fun as_notnull(mmodule)
+	do
+		var result = as_notnull_cache
+		if result == null then
+			result = new MIntersectionType.with_operands(self, mmodule.object_type)
+			as_notnull_cache = result
+		end
+		return result
+	end
+
+	private var as_notnull_cache: nullable MType = null
 
 	redef fun can_be_null(mmodule, anchor)
 	do
@@ -2145,7 +2151,7 @@ abstract class MProxyType
 	redef fun model do return self.mtype.model
 	redef fun need_anchor do return mtype.need_anchor
 	redef fun as_nullable do return mtype.as_nullable
-	redef fun as_notnull do return mtype.as_notnull
+	redef fun as_notnull(mmodule) do return mtype.as_notnull(mmodule)
 	redef fun undecorate do return mtype.undecorate
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
 	do
@@ -2273,7 +2279,7 @@ class MNullType
 	redef fun c_name do return "null"
 	redef fun as_nullable do return self
 
-	redef var as_notnull: MBottomType = new MBottomType(model) is lazy
+	redef fun as_notnull(mmodule): MBottomType do return model.bottom_type
 	redef fun need_anchor do return false
 
 	redef fun can_be_null(mmodule, anchor) do return true
@@ -2293,7 +2299,7 @@ end
 # This type is intended to be only used internally for type computation or analysis and should not be exposed to the user.
 # The bottom type can de used to denote things that are dead (no instance).
 #
-# Semantically it is the singleton `null.as_notnull`.
+# Semantically it is the singleton `null.as(not null)`.
 # Is also means that `self.as_nullable == null`.
 class MBottomType
 	super MType
@@ -2302,7 +2308,6 @@ class MBottomType
 	redef fun full_name do return "bottom"
 	redef fun c_name do return "bottom"
 	redef fun as_nullable do return model.null_type
-	redef fun as_notnull do return self
 	redef fun need_anchor do return false
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual) do return self
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
