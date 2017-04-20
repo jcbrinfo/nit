@@ -1523,7 +1523,7 @@ class MIntersectionType
 	# `Object`, return the other operand. Else, return `null`.
 	#
 	# Used for textual representations.
-	private var undecorate_notnull: nullable MType is lazy do
+	protected var undecorate_notnull: nullable MType is lazy do
 		if operands.length != 2 then return null
 		var i = operands.iterator
 		i.start

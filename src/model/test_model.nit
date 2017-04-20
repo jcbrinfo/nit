@@ -122,6 +122,18 @@ class TestMIntersectionType
 		assert a_and_b.c_name == "and2__module_foo__A__module_foo__B"
 	end
 
+	fun test_intersection_c_name_notnull do
+		var object_type = new MTypeStub
+		object_type.c_name = "module_foo__Object"
+		object_type.is_object = true
+		var foo_type = new MTypeStub
+		foo_type.c_name = "module_foo__MyClass__FOO"
+		var not_null_foo = new MIntersectionType.with_operands(
+			mmodule, object_type, foo_type
+		)
+		assert not_null_foo.full_name == "not_null__module_foo__MyClass__FOO"
+	end
+
 	fun test_intersection_full_name do
 		var a_type = new MTypeStub
 		a_type.full_name = "module_foo::A"
@@ -133,6 +145,18 @@ class TestMIntersectionType
 		assert a_and_b.full_name == "(module_foo::A and module_foo::B)"
 	end
 
+	fun test_intersection_full_name_notnull do
+		var object_type = new MTypeStub
+		object_type.full_name = "module_foo::Object"
+		object_type.is_object = true
+		var foo_type = new MTypeStub
+		foo_type.full_name = "module_foo::MyClass::FOO"
+		var not_null_foo = new MIntersectionType.with_operands(
+			mmodule, object_type, foo_type
+		)
+		assert not_null_foo.full_name == "not null module_foo::MyClass::FOO"
+	end
+
 	fun test_intersection_to_s do
 		var a_type = new MTypeStub
 		a_type.to_s = "A"
@@ -142,6 +166,18 @@ class TestMIntersectionType
 			mmodule, a_type, b_type
 		)
 		assert a_and_b.to_s == "(A and B)"
+	end
+
+	fun test_intersection_to_s_notnull do
+		var object_type = new MTypeStub
+		object_type.to_s = "Object"
+		object_type.is_object = true
+		var foo_type = new MTypeStub
+		foo_type.to_s = "FOO"
+		var not_null_foo = new MIntersectionType.with_operands(
+			mmodule, object_type, foo_type
+		)
+		assert not_null_foo.to_s == "not null FOO"
 	end
 end
 
@@ -157,6 +193,7 @@ private class MTypeStub
 	redef var c_name is noinit
 	redef var depth is noinit
 	redef var full_name is noinit
+	redef var is_object = false is writable
 	redef var is_ok is noinit
 	redef var length is noinit
 	redef var need_anchor is noinit
