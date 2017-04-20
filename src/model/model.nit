@@ -902,6 +902,53 @@ abstract class MType
 		return true
 	end
 
+	# Same as `is_subtype`, but gives a conservative answer when `anchor` is `null`.
+	#
+	# If `anchor` is `null`, considers that formal types are only subtypes of
+	# themselves.
+	#
+	# May call a `is_supertype_loose_*` method on `sup`.
+	private fun is_subtype_loose(mmodule: MModule, anchor: nullable MClassType,
+			sup: MType): Bool is abstract
+
+	# Is `self` always a supertype of the bottom/error type?
+	#
+	# SEE: `is_subtype_loose`
+	private fun is_supertype_loose_bottom: Bool do return true
+
+	# Is `self` always a supertype of the class type `sub`?
+	#
+	# By default, return `false`.
+	#
+	# SEE: `is_subtype_loose`
+	private fun is_supertype_loose_class(sub: MClassType): Bool do return false
+
+	# Is `self` always a supertype of the formal type `sub`?
+	#
+	# SEE: `is_subtype_loose`
+	private fun is_supertype_loose_formal(sub: MFormalType): Bool
+	do
+		return self == sub
+	end
+
+	# Is `self` always a supertype of the `null` type?
+	#
+	# By default, return `false`.
+	#
+	# SEE: `is_subtype_loose`
+	private fun is_supertype_loose_null: Bool do return false
+
+	# Is `self` always a supertype of the `nullable` type `sub`?
+	#
+	# By default, return `false`.
+	#
+	# SEE: `is_subtype_loose`
+	private fun is_supertype_loose_nullable(mmodule: MModule,
+			sub: MNullableType): Bool
+	do
+		return false
+	end
+
 	# The base class type on which self is based
 	#
 	# This base type is used to get property (an internally to perform
@@ -1689,6 +1736,15 @@ class MIntersectionType
 		return other.and_intersection(self, mmodule, anchor)
 	end
 
+	redef fun is_subtype_loose(mmodule, anchor, sup) do
+		for operand in operands do
+			if operand.is_subtype_loose(mmodule, anchor, sup) then
+				return true
+			end
+		end
+		return false
+	end
+
 	# If `self` is equivalent to a `not null` type, return the wrapped type.
 	#
 	# In other words, if `self` has exactly 2 operands, with one being
@@ -1813,6 +1869,16 @@ class MClassType
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
 
 	redef var is_object is lazy do return mclass.name == "Object"
+
+	redef fun is_subtype_loose(mmodule, anchor, sup) do
+		if anchor == null and (need_anchor or sup.need_anchor) then
+			return sup.is_supertype_loose_class(self)
+		else
+			return is_subtype(mmodule, anchor, sup)
+		end
+	end
+
+	redef fun is_supertype_loose_class(sub) do return self == sub or is_object
 
 	redef fun intersection(other, mmodule, anchor)
 	do
@@ -2092,6 +2158,14 @@ abstract class MFormalType
 	end
 
 	redef fun is_formal do return true
+
+	redef fun is_subtype_loose(mmodule, anchor, sup) do
+		if anchor == null then
+			return sup.is_supertype_loose_formal(self)
+		else
+			return is_subtype(mmodule, anchor, sup)
+		end
+	end
 end
 
 # A virtual formal type.
@@ -2515,6 +2589,26 @@ class MNullableType
 		return other.and_nullable(self, mmodule, anchor)
 	end
 
+	redef fun is_subtype_loose(mmodule, anchor, sup) do
+		if anchor == null and (need_anchor or sup.need_anchor) then
+			return sup.is_supertype_loose_nullable(mmodule, self)
+		else
+			return is_subtype(mmodule, anchor, sup)
+		end
+	end
+
+	redef fun is_supertype_loose_class(sub)
+	do
+		return mtype.is_supertype_loose_class(sub)
+	end
+
+	redef fun is_supertype_loose_null do return true
+
+	redef fun is_supertype_loose_nullable(mmodule, sub)
+	do
+		return sub.mtype.is_subtype_loose(mmodule, null, mtype)
+	end
+
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
 	do
 		var res = super
@@ -2569,6 +2663,16 @@ class MNullType
 	do
 		return other.and_null(self, mmodule, anchor)
 	end
+
+	redef fun is_subtype_loose(mmodule, anchor, sup) do
+		if anchor == null and sup.need_anchor then
+			return sup.is_supertype_loose_null
+		else
+			return is_subtype(mmodule, anchor, sup)
+		end
+	end
+
+	redef fun is_supertype_loose_null do return true
 
 	redef fun need_anchor do return false
 
