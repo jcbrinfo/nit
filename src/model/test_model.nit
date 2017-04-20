@@ -111,6 +111,17 @@ class TestMIntersectionType
 
 	private var mmodule: MModule = create_dummy_mmodule
 
+	fun test_intersection_c_name do
+		var a_type = new MTypeStub
+		a_type.c_name = "module_foo__A"
+		var b_type = new MTypeStub
+		b_type.c_name = "module_foo__B"
+		var a_and_b = new MIntersectionType.with_operands(
+			mmodule, a_type, b_type
+		)
+		assert a_and_b.c_name == "and2__module_foo__A__module_foo__B"
+	end
+
 	fun test_intersection_full_name do
 		var a_type = new MTypeStub
 		a_type.full_name = "module_foo::A"
