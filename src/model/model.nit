@@ -2157,6 +2157,16 @@ class MNullableType
 		self.to_s = "nullable {mtype}"
 	end
 
+	redef fun ==(other)
+	do
+		# If we don’t redefine `==`, we would need to cache all intersections
+		# in the `Model` object (in order to make fixed-point algorithms work).
+		if super then return true
+		return other isa MNullableType and other.mtype == mtype
+	end
+
+	redef fun hash do return mtype.hash
+
 	redef var to_s is noinit
 
 	redef var full_name is lazy do return "nullable {mtype.full_name}"
