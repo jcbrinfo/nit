@@ -1204,7 +1204,6 @@ abstract class MType
 	# Internally, delegate to the right `and_*` method on `other` depending on
 	# the class of `self`.
 	#
-	# REQUIRE: `anchor == null implies not self.need_anchor and not other.need_anchor`
 	# REQUIRE: `anchor != null implies self.can_resolve_for(anchor, null, mmodule) and other.can_resolve_for(anchor, null, mmodule)`
 	fun intersection(other: MType, mmodule: MModule,
 			anchor: nullable MClassType): MType is abstract
@@ -1218,15 +1217,8 @@ abstract class MType
 	protected fun and_any(other: MType, mmodule: MModule,
 			anchor: nullable MClassType): MType
 	do
-		# Merge to the subtype, if applicable.
-		# TODO: Do something smarter when `anchor == null`.
-		if anchor != null or not (need_anchor or other.need_anchor) then
-			if is_subtype(mmodule, anchor, other) then
-				return self
-			else if other.is_subtype(mmodule, anchor, self) then
-				return other
-			end
-		end
+		if is_subtype_loose(mmodule, anchor, other) then return self
+		if other.is_subtype_loose(mmodule, anchor, self) then return other
 		return cache_intersection(other)
 	end
 
@@ -1257,6 +1249,7 @@ abstract class MType
 	do
 		return other
 	end
+
 	# Intersect with the formal type `other`.
 	#
 	# SEE: `intersection`
@@ -1276,6 +1269,12 @@ abstract class MType
 	#
 	# SEE: `intersection`
 	protected fun and_null(other: MNullType,
+			mmodule: MModule, anchor: nullable MClassType): MType is abstract
+
+	# Intersect with the `nullable` type `other`.
+	#
+	# SEE: `intersection`
+	protected fun and_nullable(other: MNullableType,
 			mmodule: MModule, anchor: nullable MClassType): MType is abstract
 
 	private fun cache_intersection(other: MType): MIntersectionType
@@ -1591,10 +1590,10 @@ class MIntersectionType
 		var new_operands = new Set[MType]
 		# Filter out unnecessary constraints.
 		for operand in operands do
-			if other.is_subtype(mmodule, anchor, operand) then
+			if other.is_subtype_loose(mmodule, anchor, operand) then
 				# No need for `operand` since `other` is more precise.
 				continue
-			else if operand.is_subtype(mmodule, anchor, other) then
+			else if operand.is_subtype_loose(mmodule, anchor, other) then
 				# `self` already has all the needed constraints.
 				return self
 			else
