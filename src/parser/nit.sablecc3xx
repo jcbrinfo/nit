@@ -409,13 +409,18 @@ extern_code_body {-> extern_code_block} = no extern_code_block {-> extern_code_b
 
 /* TYPES *********************************************************************/
 type~nobra~nopar {-> type}
-	= {atom} [t]:type_atom~nobra~nopar {-> t.type }
-	| {inter} [t1]:type_atom~nobra~nopar kwand [t2]:type_atom~nobra~nopar {-> t1.type } /* TODO create real nodes */
-	| {union} [t1]:type_atom~nobra~nopar kwor [t2]:type_atom~nobra~nopar {-> t1.type }
+	= [t]:type_intersection~nobra~nopar {-> t.type }
+	| {union} [t1]:type~nobra~nopar kwor no [t2]:type_intersection~nobra~nopar {-> t1.type } /* TODO create real nodes */
 	;
+
+type_intersection~nobra~nopar {-> type}
+	= [t]:type_atom~nobra~nopar {-> t.type}
+	| {:intersection} type_intersection~nobra~nopar kwand :no type_atom~nobra~nopar
+	;
+
 type_atom~nobra~nopar {-> type}
-	= {simple} kwnullable? qclassid annotations_o~nopar {-> New type(kwnullable, qclassid, Null, [], Null, annotations_o~nopar.annotations)}
-!nobra	| {generic} kwnullable? qclassid obra no types [n2]:no cbra annotations_o~nopar {-> New type(kwnullable, qclassid, obra, [types.type], cbra, annotations_o~nopar.annotations)}
+	= {simple} kwnullable? qclassid annotations_o~nopar {-> New type.atom(kwnullable, qclassid, Null, [], Null, annotations_o~nopar.annotations)}
+!nobra	| {generic} kwnullable? qclassid obra no types [n2]:no cbra annotations_o~nopar {-> New type.atom(kwnullable, qclassid, obra, [types.type], cbra, annotations_o~nopar.annotations)}
 	;
 types {-> type*}
 	= type types_tail* {-> [type, types_tail.type]};
@@ -959,7 +964,10 @@ signature = opar? [params]:param* cpar? type?;
 param	= id type? dotdotdot? annotations?
 	;
 
-type	= kwnullable? [qid]:qclassid obra? [types]:type* cbra? annotations?;
+type
+	= {atom} kwnullable? [qid]:qclassid obra? [types]:type* cbra? annotations?
+	| {intersection} [type1]:type [op]:kwand [type2]:type
+	;
 
 label = kwlabel id?;
 

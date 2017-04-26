@@ -1770,6 +1770,15 @@ end
 # A static type. eg `nullable X[Y]`
 class AType
 	super Prod
+end
+
+# An atom in a type expression.
+#
+# In other words, a type that is not a compound of multiple types combined with
+# `or` or `and`.
+class AAtomType
+	super AType
+
 	# The `nullable` keyword
 	var n_kwnullable: nullable TKwnullable = null is writable
 
@@ -1784,6 +1793,30 @@ class AType
 
 	# The closing bracket
 	var n_cbra: nullable TCbra = null is writable
+end
+
+# A binary operation over types
+abstract class ABinopType
+	super AType
+
+	# The operator
+	var n_op: Token is writable, noinit
+
+	# The first operand
+	var n_type1: AType is writable, noinit
+
+	# The second operand
+	var n_type2: AType is writable, noinit
+
+	# The name of the operator (`"and"` or `"or"`)
+	fun operator: String is abstract
+end
+
+# An intersection between 2 types.
+class AIntersectionType
+	super ABinopType
+
+	redef fun operator do return "and"
 end
 
 # A label at the end of a block or in a break/continue statement. eg `label x`

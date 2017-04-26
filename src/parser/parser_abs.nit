@@ -662,7 +662,7 @@ class AParam
 	var n_dotdotdot: nullable TDotdotdot = null is writable
 	var n_annotations: nullable AAnnotations = null is writable
 end
-class AType
+class AAtomType
 	super AType
 	var n_kwnullable: nullable TKwnullable = null is writable
 	var n_qid: AQclassid is writable, noinit
@@ -670,6 +670,12 @@ class AType
 	var n_types: List[AType] = new List[AType]
 	var n_cbra: nullable TCbra = null is writable
 	var n_annotations: nullable AAnnotations = null is writable
+end
+class AIntersectionType
+	super AType
+	var n_type1: AType is writable, noinit
+	var n_op: TKwand is writable, noinit
+	var n_type2: AType is writable, noinit
 end
 class ALabel
 	super ALabel

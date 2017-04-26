@@ -2441,8 +2441,8 @@ redef class AParam
 		v.enter_visit(_n_annotations)
 	end
 end
-redef class AType
-	init init_atype (
+redef class AAtomType
+	init init_aatomtype (
 		n_kwnullable: nullable TKwnullable,
 		n_qid: nullable AQclassid,
 		n_obra: nullable TObra,
@@ -2524,6 +2524,61 @@ redef class AType
 		n_types.visit_all(v)
 		v.enter_visit(_n_cbra)
 		v.enter_visit(_n_annotations)
+	end
+end
+redef class AIntersectionType
+	init init_aintersectiontype (
+		n_type1: nullable AType,
+		n_op: nullable TKwand,
+		n_type2: nullable AType
+	)
+	do
+		_n_type1 = n_type1.as(not null)
+		n_type1.parent = self
+		_n_op = n_op.as(not null)
+		n_op.parent = self
+		_n_type2 = n_type2.as(not null)
+		n_type2.parent = self
+	end
+
+	redef fun replace_child(old_child: ANode, new_child: nullable ANode)
+	do
+		if _n_type1 == old_child then
+			n_type1 = new_child.as(AType)
+			return
+		end
+		if _n_op == old_child then
+			n_op = new_child.as(TKwand)
+			return
+		end
+		if _n_type2 == old_child then
+			n_type2 = new_child.as(AType)
+			return
+		end
+	end
+
+	redef fun n_type1=(node)
+	do
+		_n_type1 = node
+		node.parent = self
+	end
+	redef fun n_op=(node)
+	do
+		_n_op = node
+		node.parent = self
+	end
+	redef fun n_type2=(node)
+	do
+		_n_type2 = node
+		node.parent = self
+	end
+
+
+	redef fun visit_all(v: Visitor)
+	do
+		v.enter_visit(_n_type1)
+		v.enter_visit(_n_op)
+		v.enter_visit(_n_type2)
 	end
 end
 redef class ALabel
