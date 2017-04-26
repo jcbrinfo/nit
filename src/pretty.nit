@@ -796,6 +796,14 @@ redef class AAtomType
 	end
 end
 
+redef class ABinopType
+	super AAndOr
+
+	redef fun bin_expr1 do return n_type1
+	redef fun bin_expr2 do return n_type2
+	redef fun bin_op do return operator
+end
+
 # Properties
 
 redef class APropdef
@@ -1958,12 +1966,12 @@ end
 
 # Binops
 
-# Used to factorize work on Or, And, Implies and Binop expressions.
+# Used to factorize work on Or, And, Implies and Binop expressions/types.
 private class ABinOpHelper
-	super AExpr
+	super Prod
 
-	fun bin_expr1: AExpr is abstract
-	fun bin_expr2: AExpr is abstract
+	fun bin_expr1: Prod is abstract
+	fun bin_expr2: Prod is abstract
 
 	# Operator string
 	fun bin_op: String is abstract
@@ -1973,8 +1981,7 @@ private class ABinOpHelper
 
 		if not can_inline then
 			if (self isa ABinopExpr and bin_expr1 isa ABinopExpr) or
-			   (self isa AAndExpr and (bin_expr1 isa AAndExpr or bin_expr1 isa AOrExpr)) or
-			   (self isa AOrExpr and (bin_expr1 isa AAndExpr or bin_expr1 isa AOrExpr))
+			   (self isa AAndOr and bin_expr1 isa AAndOr)
 			then
 				bin_expr1.force_block = true
 			end
@@ -1997,8 +2004,15 @@ private class ABinOpHelper
 	end
 end
 
-redef class AAndExpr
+# A `and` or `or` operation.
+#
+# `AAndExpr`, `AOrExpr`, `AIntersectionType` or `AUnionType`.
+private class AAndOr
 	super ABinOpHelper
+end
+
+redef class AAndExpr
+	super AAndOr
 
 	redef fun bin_expr1 do return n_expr
 	redef fun bin_expr2 do return n_expr2
@@ -2006,7 +2020,7 @@ redef class AAndExpr
 end
 
 redef class AOrExpr
-	super ABinOpHelper
+	super AAndOr
 
 	redef fun bin_expr1 do return n_expr
 	redef fun bin_expr2 do return n_expr2
