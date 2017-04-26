@@ -409,6 +409,13 @@ redef class ModelBuilder
 				if t == null then continue # Error, thus skipped
 				check_visibility(a, t, mpropdef)
 			end
+		else if node isa ABinopType then
+			var a = node.n_type1
+			var t = a.mtype
+			if t != null then check_visibility(a, t, mpropdef)
+			a = node.n_type2
+			t = a.mtype
+			if t != null then check_visibility(a, t, mpropdef)
 		else if mtype isa MGenericType then
 			for t in mtype.arguments do check_visibility(node, t, mpropdef)
 		end
