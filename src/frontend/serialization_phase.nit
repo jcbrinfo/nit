@@ -460,22 +460,6 @@ redef class AAttrPropdef
 	private var serialize_name: String = name is lazy
 end
 
-redef class AType
-	private fun type_name: String
-	do
-		var name = n_qid.n_id.text
-
-		if n_kwnullable != null then name = "nullable {name}"
-
-		var types = n_types
-		if not types.is_empty then
-			var params = new Array[String]
-			for t in types do params.add(t.type_name)
-			return "{name}[{params.join(", ")}]"
-		else return name
-	end
-end
-
 redef class AModule
 	private fun deserializer_nclassdef: nullable AStdClassdef
 	do
