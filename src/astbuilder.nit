@@ -267,6 +267,14 @@ redef class AAtomType
 	end
 end
 
+redef class ABinopType
+	private init make
+	do
+		_n_type1 = new AAtomType.make
+		_n_type2 = new AAtomType.make
+	end
+end
+
 redef class AIntegerExpr
 	private init make(value: Int, t: MType)
 	do
