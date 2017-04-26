@@ -254,6 +254,10 @@ redef class AIfExpr
 end
 
 redef class AType
+	new make do return new AAtomType.make
+end
+
+redef class AAtomType
 	private init make
 	do
 		var n_id = new TClassid

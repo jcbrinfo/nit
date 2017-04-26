@@ -779,7 +779,7 @@ redef class AFormaldef
 	end
 end
 
-redef class AType
+redef class AAtomType
 	redef fun accept_pretty_printer(v) do
 		if n_kwnullable != null then
 			v.visit n_kwnullable

@@ -403,7 +403,7 @@ redef class ModelBuilder
 		end
 
 		# No error, try to go deeper in generic types
-		if node isa AType then
+		if node isa AAtomType then
 			for a in node.n_types do
 				var t = a.mtype
 				if t == null then continue # Error, thus skipped

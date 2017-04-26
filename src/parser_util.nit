@@ -134,7 +134,7 @@ redef class ToolContext
 		tree = (new Parser(lexer)).parse
 		eof = tree.n_eof
 		if not eof isa AError then
-			var ntype = tree.n_base.n_classdefs.first.n_propdefs.first.as(AMethPropdef).n_block.as(ABlockExpr).n_expr.first.as(AVardeclExpr).n_type.n_types.first
+			var ntype = tree.n_base.n_classdefs.first.n_propdefs.first.as(AMethPropdef).n_block.as(ABlockExpr).n_expr.first.as(AVardeclExpr).n_type.as(AAtomType).n_types.first
 			ntype.parent = null
 			return ntype
 		end
