@@ -64,7 +64,7 @@ private class ParallelizationPhase
 		var has_rvalue = nmethdef.n_signature.n_type != null
 		var vtype = ""
 		if has_rvalue then
-			vtype = "redef type E: " + nmethdef.n_signature.n_type.n_qid.n_id.text
+			vtype = "redef type E: " + nmethdef.n_signature.n_type.type_name
 		end
 
 		# create a return type
@@ -72,14 +72,13 @@ private class ParallelizationPhase
 		n_id.text = classname
 		var n_qid = new AQclassid
 		n_qid.n_id = n_id
-		var n_type = new AType
+		var n_type = new AAtomType
 		n_type.n_qid = n_qid
 		nmethdef.n_signature.n_type = n_type
 
 		var params = new Array[String]
 		for param in nmethdef.n_signature.n_params do
-			var typ = param.n_type.n_qid.n_id.text
-			if param.n_type.n_kwnullable != null then typ = "nullable {typ}"
+			var typ = param.n_type.type_name
 			params.add """
 var {{{param.n_id.text}}}: {{{typ}}}
 """
@@ -148,5 +147,24 @@ return thread
 		# Add the new class to the module
 		amod.n_classdefs.add(classdef)
 		classdef.validate
+	end
+end
+
+redef class AType
+	private fun type_name: String is abstract
+end
+
+redef class AAtomType
+	redef fun type_name do
+		var result = n_qid.n_id.text
+		if n_kwnullable != null then result = "nullable {result}"
+		return result
+	end
+end
+
+redef class ABinopType
+	redef fun type_name
+	do
+		return "{n_type1.type_name} {operator} {n_type2.type_name}"
 	end
 end
