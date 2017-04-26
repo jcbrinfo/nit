@@ -265,6 +265,16 @@ class ModelBuilder
 	# FIXME: the name "resolve_mtype" is awful
 	fun resolve_mtype_unchecked(mmodule: MModule, mclassdef: nullable MClassDef, ntype: AType, with_virtual: Bool): nullable MType
 	do
+		return ntype.resolve_mtype_unchecked(self, mmodule, mclassdef, with_virtual)
+	end
+
+	# Return the static type associated to the node `ntype` (type atom).
+	#
+	# SEE: `resolve_mtype_unchecked`
+	private fun resolve_mtype_unchecked_atom(mmodule: MModule,
+			mclassdef: nullable MClassDef, ntype: AAtomType,
+			with_virtual: Bool): nullable MType
+	do
 		var qid = ntype.n_qid
 		var name = qid.n_id.text
 		var res: MType
@@ -421,11 +431,17 @@ class ModelBuilder
 	fun resolve_mtype(mmodule: MModule, mclassdef: nullable MClassDef, ntype: AType): nullable MType
 	do
 		var mtype = ntype.mtype
+
+		# Avoid throwing the same error again and again.
+		if ntype.already_resolved then return mtype
+		ntype.already_resolved = true
+
 		if mtype == null then mtype = resolve_mtype_unchecked(mmodule, mclassdef, ntype, true)
 		if mtype == null then return null # Forward error
 
-		if ntype.checked_mtype then return mtype
-		if mtype isa MGenericType then
+		# If ntype is an intersection or union, we only get a `MGenericType` if
+		# it was an operand of the type expression.
+		if mtype isa MGenericType and ntype isa AAtomType then
 			var mclass = mtype.mclass
 			for i in [0..mclass.arity[ do
 				var intro = mclass.try_intro
@@ -505,6 +521,51 @@ redef class AType
 			res += v.yellow(":{mtype}")
 		end
 		return res
+	end
+
+	# Does this node was already visited by `ModelBuilder::resolve_mtype`?
+	private var already_resolved: Bool = false
+
+	# Implementation of `ModelBuilder::resolve_mtype_unchecked`.
+	#
+	# May delegate to `ModelBuilder::resolve_mtype_unchecked_atom`.
+	private fun resolve_mtype_unchecked(builder: ModelBuilder,
+			mmodule: MModule, mclassdef: nullable MClassDef,
+			with_virtual: Bool): nullable MType is abstract
+end
+
+redef class AAtomType
+
+	redef fun resolve_mtype_unchecked(builder, mmodule, mclassdef, with_virtual)
+	do
+		return builder.resolve_mtype_unchecked_atom(mmodule, mclassdef, self,
+				with_virtual)
+	end
+end
+
+redef class AIntersectionType
+
+	redef fun resolve_mtype_unchecked(builder, mmodule, mclassdef, with_virtual)
+	do
+		var type1
+		var type2
+		if with_virtual then
+			type1 = builder.resolve_mtype(mmodule, mclassdef, n_type1)
+			type2 = builder.resolve_mtype(mmodule, mclassdef, n_type2)
+		else
+			type1 = n_type1.resolve_mtype_unchecked(builder, mmodule,
+					mclassdef, with_virtual)
+			type2 = n_type2.resolve_mtype_unchecked(builder, mmodule,
+					mclassdef, with_virtual)
+		end
+
+		if type1 == null or type2 == null then
+			is_broken = true
+			return null
+		else
+			mtype = type1.intersection(type2, mmodule)
+			return mtype
+		end
 	end
 end
 
