@@ -373,6 +373,7 @@ private class TypeVisitor
 		var rettype = mpropdef.msignature.return_mtype
 		if not recv_is_self and rettype != null then
 			rettype = rettype.undecorate
+			# TODO: Type intersections…
 			if rettype isa MParameterType then
 				var erased_rettype = msignature.return_mtype
 				assert erased_rettype != null
