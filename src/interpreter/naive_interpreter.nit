@@ -1012,7 +1012,7 @@ redef class AMethPropdef
 		else if pname == "is_same_instance" then
 			return v.bool_instance(args[0].eq_is(args[1]))
 		else if pname == "class_inheritance_metamodel_json" then
-			return v.c_string_instance(v.mainmodule.flatten_mclass_hierarchy.to_thin_json)
+			return v.c_string_instance(v.mainmodule.flatten_mnominal_hierarchy.to_thin_json)
 		else if pname == "exit" then
 			exit(args[1].to_i)
 			abort
