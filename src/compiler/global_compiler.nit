@@ -90,7 +90,7 @@ class GlobalCompiler
 		self.header = new CodeWriter(file)
 		self.live_primitive_types = new Array[MClassType]
 		for t in runtime_type_analysis.live_types do
-			if t.is_c_primitive or t.mclass.name == "Pointer" then
+			if t.is_c_primitive or t.mnominal.mclass.name == "Pointer" then
 				self.live_primitive_types.add(t)
 			end
 		end
@@ -102,7 +102,7 @@ class GlobalCompiler
 
 		compiler.compile_header
 
-		if mainmodule.model.get_mclasses_by_name("Pointer") != null then
+		if mainmodule.model.get_mnominals_by_name("Pointer") != null then
 			runtime_type_analysis.live_types.add(mainmodule.pointer_type)
 		end
 		for t in runtime_type_analysis.live_types do
@@ -115,7 +115,7 @@ class GlobalCompiler
 		for t in runtime_type_analysis.live_types do
 			if not t.is_c_primitive then
 				compiler.generate_init_instance(t)
-				if t.mclass.kind == extern_kind then
+				if t.mnominal.mclass.kind == extern_kind then
 					compiler.generate_box_instance(t)
 				end
 			else
@@ -202,7 +202,7 @@ class GlobalCompiler
 		v.add_decl("struct {mtype.c_name} \{")
 		v.add_decl("int classid; /* must be {idname} */")
 
-		if mtype.mclass.name == "NativeArray" then
+		if mtype.mnominal.mclass.name == "NativeArray" then
 			# NativeArrays are just a instance header followed by an array of values
 			v.add_decl("int length;")
 			v.add_decl("{mtype.arguments.first.ctype} values[1];")
@@ -235,7 +235,7 @@ class GlobalCompiler
 		assert not mtype.is_c_primitive
 		var v = self.new_visitor
 
-		var is_native_array = mtype.mclass.name == "NativeArray"
+		var is_native_array = mtype.mnominal.mclass.name == "NativeArray"
 
 		var sig
 		if is_native_array then
@@ -333,8 +333,8 @@ class GlobalCompilerVisitor
 
 	redef fun unbox_extern(value, mtype)
 	do
-		if mtype isa MClassType and mtype.mclass.kind == extern_kind and
-		   mtype.mclass.name != "CString" then
+		if mtype isa MClassType and mtype.mnominal.mclass.kind == extern_kind and
+		   mtype.mnominal.mclass.name != "CString" then
 			var res = self.new_var_extern(mtype)
 			self.add "{res} = ((struct {mtype.c_name}*){value})->value; /* unboxing {value.mtype} */"
 			return res
@@ -345,8 +345,8 @@ class GlobalCompilerVisitor
 
 	redef fun box_extern(value, mtype)
 	do
-		if not mtype isa MClassType or mtype.mclass.kind != extern_kind or
-			mtype.mclass.name == "CString" then return value
+		if not mtype isa MClassType or mtype.mnominal.mclass.kind != extern_kind or
+			mtype.mnominal.mclass.name == "CString" then return value
 
 		var valtype = value.mtype.as(MClassType)
 		var res = self.new_var(mtype)
@@ -526,7 +526,7 @@ class GlobalCompilerVisitor
 
 	fun check_valid_reciever(recvtype: MClassType)
 	do
-		if self.compiler.runtime_type_analysis.live_types.has(recvtype) or recvtype.mclass.name == "Object" then return
+		if self.compiler.runtime_type_analysis.live_types.has(recvtype) or recvtype.mnominal.name == "Object" then return
 		print_error "{recvtype} is not a live type"
 		abort
 	end
@@ -893,7 +893,7 @@ class GlobalCompilerVisitor
 				s.add "({value1}->classid == {self.compiler.classid(t)} && ((struct {t.c_name}*){value1})->value == ((struct {t.c_name}*){value2})->value)"
 			end
 
-			if self.compiler.mainmodule.model.get_mclasses_by_name("Pointer") != null then
+			if self.compiler.mainmodule.model.get_mnominals_by_name("Pointer") != null then
 				var pointer_type = self.compiler.mainmodule.pointer_type
 				if value1.mcasttype.is_subtype(self.compiler.mainmodule, null, pointer_type) or
 					value2.mcasttype.is_subtype(self.compiler.mainmodule, null, pointer_type) then

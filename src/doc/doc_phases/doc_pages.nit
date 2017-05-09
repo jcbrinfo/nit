@@ -32,7 +32,7 @@ class MakePagePhase
 		for mmodule in doc.mmodules do
 			doc.add_page new MModulePage(mmodule)
 		end
-		for mclass in doc.mclasses do
+		for mclass in doc.mnominals do
 			doc.add_page new MClassPage(mclass)
 		end
 		for mproperty in doc.mproperties do
@@ -88,11 +88,11 @@ class MModulePage
 	redef type MENTITY: MModule
 end
 
-# A documentation page about a MClass.
+# A documentation page about a MNominal.
 class MClassPage
 	super MEntityPage
 
-	redef type MENTITY: MClass
+	redef type MENTITY: MNominal
 end
 
 # A documentation page about a MProperty.

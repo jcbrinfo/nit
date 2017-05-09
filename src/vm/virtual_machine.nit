@@ -65,10 +65,10 @@ class VirtualMachine super NaiveInterpreter
 
 		# `sub` or `sup` are formal or virtual types, resolve them to concrete types
 		if sub isa MFormalType then
-			sub = sub.resolve_for(anchor.mclass.mclass_type, anchor, mainmodule, false)
+			sub = sub.resolve_for(anchor.mnominal.mclass_type, anchor, mainmodule, false)
 		end
 		if sup isa MFormalType then
-			sup = sup.resolve_for(anchor.mclass.mclass_type, anchor, mainmodule, false)
+			sup = sup.resolve_for(anchor.mnominal.mclass_type, anchor, mainmodule, false)
 		end
 
 		var sup_accept_null = false
@@ -109,24 +109,24 @@ class VirtualMachine super NaiveInterpreter
 		assert sup isa MClassType
 
 		# and `sup` can be discovered inside a Generic type during the subtyping test
-		if not sub.mclass.loaded then load_class(sub.mclass)
+		if not sub.mnominal.mclass.loaded then load_class(sub.mnominal.mclass)
 
 		# If the target of the test is not-loaded yet, the subtyping-test will be false
-		if not sup.mclass.abstract_loaded then return false
+		if not sup.mnominal.mclass.abstract_loaded then return false
 
 		# For now, always use perfect hashing for subtyping test
-		var super_id = sup.mclass.vtable.id
-		var mask = sub.mclass.vtable.mask
+		var super_id = sup.mnominal.mclass.vtable.id
+		var mask = sub.mnominal.mclass.vtable.mask
 
-		var res = inter_is_subtype_ph(super_id, mask, sub.mclass.vtable.internal_vtable)
+		var res = inter_is_subtype_ph(super_id, mask, sub.mnominal.mclass.vtable.internal_vtable)
 		if res == false then return false
 		# sub and sup can be generic types, each argument of generics has to be tested
 
 		if not sup isa MGenericType then return true
-		var sub2 = sub.supertype_to(mainmodule, anchor, sup.mclass)
+		var sub2 = sub.supertype_to(mainmodule, anchor, sup.mnominal)
 
 		# Test each argument of a generic by recursive calls
-		for i in [0..sup.mclass.arity[ do
+		for i in [0..sup.mnominal.arity[ do
 			var sub_arg = sub2.arguments[i]
 			var sup_arg = sup.arguments[i]
 			var res2 = is_subtype(sub_arg, sup_arg)
@@ -164,22 +164,24 @@ class VirtualMachine super NaiveInterpreter
 	# Redef init_instance to simulate the loading of a class
 	redef fun init_instance(recv: Instance)
 	do
-		if not recv.mtype.as(MClassType).mclass.loaded then load_class(recv.mtype.as(MClassType).mclass)
+		var mclass = recv.mtype.as(MClassType).mnominal.mclass
+		if not mclass.loaded then load_class(mclass)
 
-		recv.vtable = recv.mtype.as(MClassType).mclass.vtable
+		recv.vtable = mclass.vtable
 
 		assert recv isa MutableInstance
 
-		recv.internal_attributes = init_internal_attributes(initialization_value, recv.mtype.as(MClassType).mclass.mattributes.length)
+		recv.internal_attributes = init_internal_attributes(initialization_value, mclass.mattributes.length)
 		super
 	end
 
 	# Associate a `PrimitiveInstance` to its `VTable`
 	redef fun init_instance_primitive(recv: Instance)
 	do
-		if not recv.mtype.as(MClassType).mclass.loaded then load_class(recv.mtype.as(MClassType).mclass)
+		var mclass = recv.mtype.as(MClassType).mnominal.mclass
+		if not mclass.loaded then load_class(mclass)
 
-		recv.vtable = recv.mtype.as(MClassType).mclass.vtable
+		recv.vtable = mclass.vtable
 	end
 
 	# Initialize the internal representation of an object (its attribute values)
@@ -202,13 +204,22 @@ class VirtualMachine super NaiveInterpreter
 	do
 		if mclass.loaded then return
 
-		# Recursively load superclasses
-		for parent in mclass.in_hierarchy(mainmodule).direct_greaters do load_class_indirect(parent)
+		load_supers(mclass)
 
 		if mclass.abstract_loaded then
 			mclass.allocate_vtable(self)
 		else
 			mclass.make_vt(self, true)
+		end
+	end
+
+	# Recursively load the superclasses of the specified class
+	#
+	# Use `load_class_indirect` to load the superclasses.
+	private fun load_supers(mclass: MClass)
+	do
+		for parent in mclass.in_hierarchy(mainmodule).direct_greaters do
+			load_class_indirect(mclass.check_super_mclass(parent))
 		end
 	end
 
@@ -220,7 +231,7 @@ class VirtualMachine super NaiveInterpreter
 		# It the class was already implicitly loaded
 		if mclass.abstract_loaded then return
 
-		for parent in mclass.in_hierarchy(mainmodule).direct_greaters do load_class_indirect(parent)
+		load_supers(mclass)
 
 		mclass.make_vt(self, false)
 	end
@@ -242,7 +253,7 @@ class VirtualMachine super NaiveInterpreter
 	# returns the most specific local method in the class corresponding to `vtable`
 	private fun method_dispatch(mproperty: MMethod, vtable: VTable, recv: Instance): MMethodDef
 	do
-		var position = recv.mtype.as(MClassType).mclass.get_position_methods(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.mclass.get_position_methods(mproperty.intro_mclassdef.mclass)
 		if position > 0 then
 			return method_dispatch_sst(vtable.internal_vtable, mproperty.offset + position)
 		else
@@ -285,7 +296,7 @@ class VirtualMachine super NaiveInterpreter
 		assert recv isa MutableInstance
 
 		var i: Instance
-		var position = recv.mtype.as(MClassType).mclass.get_position_attributes(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.mclass.get_position_attributes(mproperty.intro_mclassdef.mclass)
 		if position > 0 then
 			# if this attribute class has an unique position for this receiver, then use direct access
 			i = read_attribute_sst(recv.internal_attributes, position + mproperty.offset)
@@ -343,7 +354,7 @@ class VirtualMachine super NaiveInterpreter
 		assert recv isa MutableInstance
 
 		# Replace the old value of mproperty in recv
-		var position = recv.mtype.as(MClassType).mclass.get_position_attributes(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.mclass.get_position_attributes(mproperty.intro_mclassdef.mclass)
 		if position > -1 then
 			# if this attribute class has an unique position for this receiver, then use direct access
 			write_attribute_sst(recv.internal_attributes, position + mproperty.offset, value)
@@ -660,7 +671,9 @@ redef class MClass
 		var superclasses = new Array[MClass]
 
 		# Add all superclasses of `self`
-		superclasses.add_all(self.in_hierarchy(v.mainmodule).greaters)
+		for sup in in_hierarchy(v.mainmodule).greaters do
+			superclasses.add(check_super_mclass(sup))
+		end
 
 		var res = new Array[MClass]
 		if superclasses.length > 1 then
@@ -691,6 +704,7 @@ redef class MClass
 			var prefix = null
 			var max = -1
 			for cl in direct_parents do
+				cl = check_super_mclass(cl)
 				# If we never have visited this class
 				if not res.has(cl) then
 					var properties_length = cl.mmethods.length + cl.mattributes.length
@@ -710,6 +724,7 @@ redef class MClass
 
 				# Then we recurse on other classes
 				for cl in direct_parents do
+					cl = check_super_mclass(cl)
 					if cl != prefix then
 						res = new Array[MClass]
 						res = cl.dfs(v, res)
@@ -725,9 +740,10 @@ redef class MClass
 			res.push(self)
 		else
 			if direct_parents.length > 0 then
-				if prefix == null then prefix = direct_parents.first
+				var p = check_super_mclass(direct_parents.first)
 
-				res = direct_parents.first.dfs(v, res)
+				if prefix == null then prefix = p
+				res = p.dfs(v, res)
 			end
 		end
 
@@ -898,7 +914,7 @@ class MInitType
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
 
-	redef fun collect_mclasses(mmodule) do return new HashSet[MClass]
+	redef fun collect_mnominals(mmodule) do return new HashSet[MNominal]
 
 	redef fun collect_mtypes(mmodule) do return new HashSet[MClassType]
 end

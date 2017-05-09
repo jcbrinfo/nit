@@ -81,16 +81,19 @@ end
 class SeparateErasureCompiler
 	super SeparateCompiler
 
-	private var class_ids: Map[MClass, Int] is noinit
-	private var class_colors: Map[MClass, Int] is noinit
+	private var class_ids: Map[MNominal, Int] is noinit
+	private var class_colors: Map[MNominal, Int] is noinit
 	protected var vt_colors: Map[MVirtualTypeProp, Int] is noinit
 
 	init do
 
 		# Class coloring
-		var poset = mainmodule.flatten_mclass_hierarchy
-		var mclasses = new HashSet[MClass].from(poset)
-		var colorer = new POSetColorer[MClass]
+		var poset = mainmodule.flatten_mnominal_hierarchy
+		var mclasses = new HashSet[MClass]
+		for n in poset do
+			if n isa MClass then mclasses.add(n)
+		end
+		var colorer = new POSetColorer[MNominal]
 		colorer.colorize(poset)
 		class_ids = colorer.ids
 		class_colors = colorer.colors
@@ -108,7 +111,7 @@ class SeparateErasureCompiler
 		end
 
 		# vt coloration
-		var vt_colorer = new POSetBucketsColorer[MClass, MVirtualTypeProp](poset, colorer.conflicts)
+		var vt_colorer = new POSetBucketsColorer[MNominal, MVirtualTypeProp](poset, colorer.conflicts)
 		vt_colors = vt_colorer.colorize(vts)
 		vt_tables = build_vt_tables(mclasses)
 	end
@@ -118,13 +121,14 @@ class SeparateErasureCompiler
 		for mclass in mclasses do
 			var table = new Array[nullable MPropDef]
 			# first, fill table from parents by reverse linearization order
-			var parents = new Array[MClass]
-			if mainmodule.flatten_mclass_hierarchy.has(mclass) then
+			var parents = new Array[MNominal]
+			if mainmodule.flatten_mnominal_hierarchy.has(mclass) then
 				parents = mclass.in_hierarchy(mainmodule).greaters.to_a
 				self.mainmodule.linearize_mclasses(parents)
 			end
 			for parent in parents do
 				if parent == mclass then continue
+				parent = mclass.check_super_mclass(parent)
 				for mproperty in self.mainmodule.properties(parent) do
 					if not mproperty isa MVirtualTypeProp then continue
 					var color = vt_colors[mproperty]
@@ -166,11 +170,12 @@ class SeparateErasureCompiler
 		var tables = new HashMap[MClass, Array[nullable MClass]]
 		for mclass in mclasses do
 			var table = new Array[nullable MClass]
-			var supers = new Array[MClass]
-			if mainmodule.flatten_mclass_hierarchy.has(mclass) then
+			var supers = new Array[MNominal]
+			if mainmodule.flatten_mnominal_hierarchy.has(mclass) then
 				supers = mclass.in_hierarchy(mainmodule).greaters.to_a
 			end
 			for sup in supers do
+				sup = mclass.check_super_mclass(sup)
 				var color = class_colors[sup]
 				if table.length <= color then
 					for i in [table.length .. color[ do
@@ -263,7 +268,7 @@ class SeparateErasureCompiler
 		v.add_decl("\}")
 		v.add_decl("\};")
 
-		if mtype.is_c_primitive or mtype.mclass.name == "Pointer" then
+		if mtype.is_c_primitive or mtype.mnominal.mclass.name == "Pointer" then
 			#Build instance struct
 			self.header.add_decl("struct instance_{c_name} \{")
 			self.header.add_decl("const struct class *class;")
@@ -281,7 +286,7 @@ class SeparateErasureCompiler
 			v.add("return (val*)res;")
 			v.add("\}")
 
-			if mtype.mclass.name != "Pointer" then return
+			if mtype.mnominal.mclass.name != "Pointer" then return
 
 			v = new_visitor
 			self.provide_declaration("NEW_{c_name}", "{mtype.ctype} NEW_{c_name}();")
@@ -322,7 +327,7 @@ class SeparateErasureCompiler
 			v.add("return (val*){res};")
 			v.add("\}")
 			return
-		else if mtype.mclass.kind == extern_kind and mtype.mclass.name != "CString" then
+		else if mtype.mnominal.mclass.kind == extern_kind and mtype.mnominal.mclass.name != "CString" then
 			var pointer_type = mainmodule.pointer_type
 
 			self.provide_declaration("NEW_{c_name}", "{mtype.ctype} NEW_{c_name}();")
@@ -391,7 +396,7 @@ class SeparateErasureCompiler
 					bound = retrieve_vt_bound(mclass.intro.bound_mtype, bound.mtype)
 					is_null = 1
 				end
-				var vtclass = bound.as(MClassType).mclass
+				var vtclass = bound.as(MClassType).mnominal.mclass
 				v.require_declaration("class_{vtclass.c_name}")
 				v.add_decl("\{{is_null}, &class_{vtclass.c_name}\}, /* {vt} */")
 			end
@@ -495,8 +500,8 @@ class SeparateErasureCompilerVisitor
 
 	redef fun init_instance(mtype)
 	do
-		self.require_declaration("NEW_{mtype.mclass.c_name}")
-		return self.new_expr("NEW_{mtype.mclass.c_name}()", mtype)
+		self.require_declaration("NEW_{mtype.mnominal.mclass.c_name}")
+		return self.new_expr("NEW_{mtype.mnominal.mclass.c_name}()", mtype)
 	end
 
 	redef fun type_test(value, mtype, tag)
@@ -538,15 +543,15 @@ class SeparateErasureCompilerVisitor
 		if not value.mtype.is_c_primitive then
 			class_ptr = "{value}->class->"
 		else
-			var mclass = value.mtype.as(MClassType).mclass
+			var mclass = value.mtype.as(MClassType).mnominal.mclass
 			self.require_declaration("class_{mclass.c_name}")
 			class_ptr = "class_{mclass.c_name}."
 		end
 
 		if mtype isa MClassType then
-			self.require_declaration("class_{mtype.mclass.c_name}")
-			self.add("{cltype} = class_{mtype.mclass.c_name}.color;")
-			self.add("{idtype} = class_{mtype.mclass.c_name}.id;")
+			self.require_declaration("class_{mtype.mnominal.mclass.c_name}")
+			self.add("{cltype} = class_{mtype.mnominal.mclass.c_name}.color;")
+			self.add("{idtype} = class_{mtype.mnominal.mclass.c_name}.id;")
 			if compiler.modelbuilder.toolcontext.opt_typing_test_metrics.value then
 				self.compiler.count_type_test_resolved[tag] += 1
 				self.add("count_type_test_resolved_{tag}++;")
@@ -557,7 +562,7 @@ class SeparateErasureCompilerVisitor
 			if not recv.mtype.is_c_primitive then
 				recv_ptr = "{recv}->class->"
 			else
-				var mclass = recv.mtype.as(MClassType).mclass
+				var mclass = recv.mtype.as(MClassType).mnominal.mclass
 				self.require_declaration("class_{mclass.c_name}")
 				recv_ptr = "class_{mclass.c_name}."
 			end
@@ -602,8 +607,9 @@ class SeparateErasureCompilerVisitor
 
 	redef fun unbox_extern(value, mtype)
 	do
-		if mtype isa MClassType and mtype.mclass.kind == extern_kind and
-		   mtype.mclass.name != "CString" then
+		if mtype isa MClassType and
+				mtype.mnominal.mclass.kind == extern_kind and
+				mtype.mnominal.mclass.name != "CString" then
 			var pointer_type = compiler.mainmodule.pointer_type
 			var res = self.new_var_extern(mtype)
 			self.add "{res} = ((struct instance_{pointer_type.c_name}*){value})->value; /* unboxing {value.mtype} */"
@@ -615,8 +621,9 @@ class SeparateErasureCompilerVisitor
 
 	redef fun box_extern(value, mtype)
 	do
-		if mtype isa MClassType and mtype.mclass.kind == extern_kind and
-		   mtype.mclass.name != "CString" then
+		if mtype isa MClassType and
+				mtype.mnominal.mclass.kind == extern_kind and
+				mtype.mnominal.mclass.name != "CString" then
 			var valtype = compiler.mainmodule.pointer_type
 			var res = self.new_var(mtype)
 			if compiler.runtime_type_analysis != null and not compiler.runtime_type_analysis.live_types.has(value.mtype.as(MClassType)) then

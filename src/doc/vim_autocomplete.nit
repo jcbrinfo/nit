@@ -170,7 +170,7 @@ redef class MClassType
 		stream.write line_separator*2
 		stream.write "## Class hierarchy"
 
-		var direct_supers = [for s in mclass.in_hierarchy(mainmodule).direct_greaters do s.name]
+		var direct_supers = [for s in mnominal.in_hierarchy(mainmodule).direct_greaters do s.name]
 		if not direct_supers.is_empty then
 			alpha_comparator.sort direct_supers
 			stream.write line_separator
@@ -178,8 +178,8 @@ redef class MClassType
 			stream.write direct_supers.join(", ")
 		end
 
-		var supers = [for s in mclass.in_hierarchy(mainmodule).greaters do s.name]
-		supers.remove mclass.name
+		var supers = [for s in mnominal.in_hierarchy(mainmodule).greaters do s.name]
+		supers.remove mnominal.name
 		if not supers.is_empty then
 			alpha_comparator.sort supers
 			stream.write line_separator
@@ -187,7 +187,7 @@ redef class MClassType
 			stream.write supers.join(", ")
 		end
 
-		var direct_subs = [for s in mclass.in_hierarchy(mainmodule).direct_smallers do s.name]
+		var direct_subs = [for s in mnominal.in_hierarchy(mainmodule).direct_smallers do s.name]
 		if not direct_subs.is_empty then
 			alpha_comparator.sort direct_subs
 			stream.write line_separator
@@ -195,8 +195,8 @@ redef class MClassType
 			stream.write direct_subs.join(", ")
 		end
 
-		var subs = [for s in mclass.in_hierarchy(mainmodule).smallers do s.name]
-		subs.remove mclass.name
+		var subs = [for s in mnominal.in_hierarchy(mainmodule).smallers do s.name]
+		subs.remove mnominal.name
 		if not subs.is_empty then
 			alpha_comparator.sort subs
 			stream.write line_separator
@@ -208,16 +208,16 @@ redef class MClassType
 		stream.write line_separator*2
 		stream.write "## Properties"
 		stream.write line_separator
-		var props = mclass.collect_accessible_mproperties(model.protected_view).to_a
+		var props = mnominal.collect_accessible_mproperties(model.protected_view).to_a
 		alpha_comparator.sort props
 		for prop in props do
-			if mclass.name == "Object" or prop.intro.mclassdef.mclass.name != "Object" then
+			if mnominal.name == "Object" or prop.intro.mclassdef.mnominal.name != "Object" then
 				prop.write_synopsis(mainmodule, stream)
 			end
 		end
 	end
 
-	redef fun complete_mdoc do return mclass.intro.mdoc
+	redef fun complete_mdoc do return mnominal.intro.mdoc
 end
 
 private class AutocompletePhase
@@ -246,7 +246,7 @@ private class AutocompletePhase
 		# TODO list other modules from the Nit lib
 
 		# Get all known classes
-		for mclass in model.mclasses do
+		for mclass in model.mnominals do
 			if not mainmodule.is_visible(mclass.intro_mmodule, public_visibility) then continue
 			var mclass_intro = mclass.intro
 
@@ -302,7 +302,7 @@ redef class MModule
 	redef fun write_extra_doc(mainmodule, stream)
 	do
 		# Introduced classes
-		var class_intros = collect_intro_mclasses(model.protected_view).to_a
+		var class_intros = collect_intro_mnominals(model.protected_view).to_a
 		if class_intros.not_empty then
 			alpha_comparator.sort class_intros
 			stream.write line_separator*2

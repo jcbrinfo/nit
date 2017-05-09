@@ -190,11 +190,11 @@ class MNLC
 
 	redef fun collect(mainmodules) do
 		for mainmodule in mainmodules do
-			var live = new HashSet[MClass]
+			var live = new HashSet[MNominal]
 			var analysis = new RapidTypeAnalysis(modelbuilder, mainmodule)
 			analysis.run_analysis
 			for mtype in analysis.live_types do
-				live.add(mtype.mclass)
+				live.add(mtype.mnominal)
 			end
 			values[mainmodule] = live.length
 		end
@@ -371,7 +371,7 @@ redef class RapidTypeAnalysis
 	redef fun add_new(recv, mtype) do
 		super
 		tnli.values.inc(mtype)
-		cnli.values.inc(mtype.mclass)
+		cnli.values.inc(mtype.mnominal)
 	end
 
 	redef fun add_cast(mtype) do
@@ -380,7 +380,7 @@ redef class RapidTypeAnalysis
 
 		mtype = mtype.undecorate
 		if mtype isa MClassType then
-			cnlc.values.inc(mtype.mclass)
+			cnlc.values.inc(mtype.mnominal)
 		end
 	end
 end

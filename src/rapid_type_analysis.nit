@@ -71,7 +71,7 @@ class RapidTypeAnalysis
 	var live_open_types = new HashSet[MClassType]
 
 	# Live (instantiated) classes.
-	var live_classes = new HashSet[MClass]
+	var live_classes = new HashSet[MNominal]
 
 	# The pool of types used to perform type checks (isa and as).
 	var live_cast_types = new HashSet[MType]
@@ -102,7 +102,7 @@ class RapidTypeAnalysis
 		var anchor = callsite.anchor
 		if anchor != null then mtype = mtype.anchor_to(callsite.mmodule, anchor)
 		mtype = mtype.undecorate
-		if mtype isa MClassType then mtype = mtype.mclass.intro.bound_mtype
+		if mtype isa MClassType then mtype = mtype.mnominal.mclass.intro.bound_mtype
 		var mproperty = callsite.mproperty
 		var res = live_targets_cache[mtype, mproperty]
 		if res != null then return res
@@ -189,7 +189,7 @@ class RapidTypeAnalysis
 
 	private fun force_alive(classname: String)
 	do
-		var classes = self.modelbuilder.model.get_mclasses_by_name(classname)
+		var classes = self.modelbuilder.model.get_mnominals_by_name(classname)
 		if classes != null then for c in classes do self.add_new(c.mclass_type, c.mclass_type)
 	end
 
@@ -199,19 +199,19 @@ class RapidTypeAnalysis
 		var maintype = mainmodule.sys_type
 		if maintype == null then return # No entry point
 		add_new(maintype, maintype)
-		var initprop = mainmodule.try_get_primitive_method("init", maintype.mclass)
+		var initprop = mainmodule.try_get_primitive_method("init", maintype.mnominal)
 		if initprop != null then
 			add_send(maintype, initprop)
 		end
-		var mainprop = mainmodule.try_get_primitive_method("run", maintype.mclass) or else
-			mainmodule.try_get_primitive_method("main", maintype.mclass)
+		var mainprop = mainmodule.try_get_primitive_method("run", maintype.mnominal) or else
+			mainmodule.try_get_primitive_method("main", maintype.mnominal)
 		if mainprop != null then
 			add_send(maintype, mainprop)
 		end
 
 		var finalizable_type = mainmodule.finalizable_type
 		if finalizable_type != null then
-			var finalize_meth = mainmodule.try_get_primitive_method("finalize", finalizable_type.mclass)
+			var finalize_meth = mainmodule.try_get_primitive_method("finalize", finalizable_type.mnominal)
 			if finalize_meth != null then add_send(finalizable_type, finalize_meth)
 		end
 
@@ -246,7 +246,7 @@ class RapidTypeAnalysis
 				v.add_type(vararg)
 				var native = self.mainmodule.native_array_type(elttype)
 				v.add_type(native)
-				v.add_monomorphic_send(vararg, self.modelbuilder.force_get_primitive_method(node, "with_native", vararg.mclass, self.mainmodule))
+				v.add_monomorphic_send(vararg, self.modelbuilder.force_get_primitive_method(node, "with_native", vararg.mnominal, self.mainmodule))
 			end
 
 			# TODO? new_msignature
@@ -296,7 +296,7 @@ class RapidTypeAnalysis
 			if mmethoddef.is_intern or mmethoddef.is_extern then
 				# UGLY: We force the "instantation" of the concrete return type if any
 				var ret = msignature.return_mtype
-				if ret != null and ret isa MClassType and ret.mclass.kind != abstract_kind and ret.mclass.kind != interface_kind then
+				if ret != null and ret isa MClassType and ret.mnominal.kind != abstract_kind and ret.mnominal.kind != interface_kind then
 					v.add_type(ret)
 				end
 			end
@@ -363,7 +363,7 @@ class RapidTypeAnalysis
 			live_types.add(mtype)
 		end
 
-		var mclass = mtype.mclass
+		var mclass = mtype.mnominal
 		if live_classes.has(mclass) then return
 		live_classes.add(mclass)
 
@@ -400,7 +400,7 @@ class RapidTypeAnalysis
 
 	fun try_send(recv: MClassType, mproperty: MMethod)
 	do
-		recv = recv.mclass.intro.bound_mtype
+		recv = recv.mnominal.mclass.intro.bound_mtype
 		if not recv.has_mproperty(mainmodule, mproperty) then return
 		var d = mproperty.lookup_first_definition(mainmodule, recv)
 		add_call(d)
@@ -445,7 +445,7 @@ class RapidTypeAnalysis
 
 	fun try_super_send(recv: MClassType, mpropdef: MMethodDef)
 	do
-		recv = recv.mclass.intro.bound_mtype
+		recv = recv.mnominal.mclass.intro.bound_mtype
 		if not recv.collect_mclassdefs(mainmodule).has(mpropdef.mclassdef) then return
 		var d = mpropdef.lookup_next_definition(mainmodule, recv)
 		add_call(d)
@@ -507,7 +507,7 @@ class RapidTypeVisitor
 	do
 		var mtype = cleanup_type(recv)
 		assert mtype != null
-		return self.analysis.modelbuilder.force_get_primitive_method(self.current_node.as(not null), name, mtype.mclass, self.analysis.mainmodule)
+		return self.analysis.modelbuilder.force_get_primitive_method(self.current_node.as(not null), name, mtype.mnominal, self.analysis.mainmodule)
 	end
 
 	fun add_type(mtype: MClassType) do analysis.add_new(receiver, mtype)

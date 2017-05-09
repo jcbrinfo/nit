@@ -63,7 +63,7 @@ end
 
 redef class MClassType
 	redef fun is_visible_from(mmodule) do
-		return mmodule.is_visible(mclass.intro_mmodule, mclass.visibility)
+		return mmodule.is_visible(mnominal.intro_mmodule, mnominal.visibility)
 	end
 end
 
@@ -190,7 +190,7 @@ redef class Deserializer
 			if mtype isa MGenericType and
 			   mtype.is_subtype(m, null, serializable_type) and
 			   mtype.is_visible_from(mmodule) and
-			   mtype.mclass.kind == concrete_kind and
+			   mtype.mnominal.kind == concrete_kind and
 			   not compiled_types.has(mtype) then
 
 				compiled_types.add mtype

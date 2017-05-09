@@ -459,7 +459,7 @@ redef class MClassDef
 	do
 		var res = new HInfoBox(v, "class {mclass.name}")
 		res.href = v.hrefto(self)
-		if is_intro then
+		if is_nominal_intro then
 			res.new_field("class").text(mclass.name)
 		else
 			res.new_field("redef class").text(mclass.name)
@@ -474,7 +474,7 @@ redef class MClassDef
 			var c = res.new_dropdown("hier", "super-classes")
 			for x in in_hierarchy.greaters do
 				if x == self then continue
-				if not x.is_intro then continue
+				if not x.is_nominal_intro then continue
 				c.open("li").add x.linkto(v)
 			end
 		end
@@ -482,7 +482,7 @@ redef class MClassDef
 			var c = res.new_dropdown("hier", "sub-classes")
 			for x in in_hierarchy.smallers do
 				if x == self then continue
-				if not x.is_intro then continue
+				if not x.is_nominal_intro then continue
 				c.open("li").add x.linkto(v)
 			end
 		end
@@ -536,13 +536,13 @@ redef class MClassType
 	do
 		var res = new HInfoBox(v, to_s)
 		res.href = v.hrefto(self)
-		res.new_field("class").add mclass.intro.linkto(v)
+		res.new_field("class").add mnominal.intro.linkto(v)
 		add_doc_to_infobox(res)
 		return res
 	end
 	redef fun linkto(v)
 	do
-		return mclass.intro.linkto(v)
+		return mnominal.intro.linkto(v)
 	end
 end
 redef class MVirtualType

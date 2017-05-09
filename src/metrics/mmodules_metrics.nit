@@ -195,7 +195,7 @@ class MNBI
 
 	redef fun collect(mmodules) do
 		for mmodule in mmodules do
-			values[mmodule] = mmodule.intro_mclasses.length
+			values[mmodule] = mmodule.intro_mnominals.length
 		end
 	end
 end
@@ -213,7 +213,7 @@ class MNBR
 		for mmodule in mmodules do
 			var value = 0
 			for mclassdef in mmodule.mclassdefs do
-				if not mclassdef.is_intro then value += 1
+				if not mclassdef.is_nominal_intro then value += 1
 			end
 			values[mmodule] = value
 		end

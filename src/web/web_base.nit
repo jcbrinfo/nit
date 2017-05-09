@@ -320,7 +320,7 @@ redef class MPropDef
 end
 
 redef class MClassType
-	redef var web_url = mclass.web_url is lazy
+	redef var web_url = mnominal.web_url is lazy
 end
 
 redef class MNullableType

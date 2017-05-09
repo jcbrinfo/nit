@@ -113,22 +113,22 @@ end
 redef class MClassPage
 
 	# Direct parents classes to document.
-	var parents = new HashSet[MClass]
+	var parents = new HashSet[MNominal]
 
 	# Transitive ancestors classes to document.
 	#
 	# Does not contain the direct ancestors.
 	# See `parents` for that.
-	var ancestors = new HashSet[MClass]
+	var ancestors = new HashSet[MNominal]
 
 	# Direct children classes to document.
-	var children = new HashSet[MClass]
+	var children = new HashSet[MNominal]
 
 	# All descendants classes to document.
 	#
 	# Does not contain the direct children.
 	# See `children` for that.
-	var descendants = new HashSet[MClass]
+	var descendants = new HashSet[MNominal]
 
 	redef fun build_poset(v, doc) do
 		poset.add_node mentity
@@ -136,28 +136,28 @@ redef class MClassPage
 		var h = mentity.in_hierarchy(doc.mainmodule)
 		# parents
 		for mclass in h.direct_greaters do
-			if doc.mclasses.has(mclass) then parents.add mclass
+			if doc.mnominals.has(mclass) then parents.add mclass
 		end
 		# ancestors
 		for mclass in h.greaters do
 			if mclass == mentity then continue
-			if not doc.mclasses.has(mclass) then continue
+			if not doc.mnominals.has(mclass) then continue
 			if parents.has(mclass) then continue
 			ancestors.add mclass
 		end
 		# children
 		for mclass in h.direct_smallers do
-			if doc.mclasses.has(mclass) then children.add mclass
+			if doc.mnominals.has(mclass) then children.add mclass
 		end
 		# descendants
 		for mclass in h.smallers do
 			if mclass == mentity then continue
-			if not doc.mclasses.has(mclass) then continue
+			if not doc.mnominals.has(mclass) then continue
 			if children.has(mclass) then continue
 			descendants.add mclass
 		end
 		# poset
-		var mclasses = new HashSet[MClass]
+		var mclasses = new HashSet[MNominal]
 		mclasses.add_all ancestors
 		mclasses.add_all parents
 		mclasses.add_all children
@@ -166,7 +166,7 @@ redef class MClassPage
 		build_inheritance_poset(v, doc, mclasses)
 	end
 
-	private fun build_inheritance_poset(v: POSetPhase, doc: DocModel, mclasses: Set[MClass]): POSet[MClass] do
+	private fun build_inheritance_poset(v: POSetPhase, doc: DocModel, mclasses: Set[MNominal]): POSet[MNominal] do
 		for mclass in mclasses do
 			poset.add_node mclass
 			for oclass in mclasses do

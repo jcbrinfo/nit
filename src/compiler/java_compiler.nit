@@ -294,7 +294,7 @@ class JavaCompiler
 		# Collect all bas box class
 		# FIXME: this is not completely fine with a separate compilation scheme
 		for classname in ["Int", "Bool", "Byte", "Char", "Float"] do
-			var classes = mainmodule.model.get_mclasses_by_name(classname)
+			var classes = mainmodule.model.get_mnominals_by_name(classname)
 			if classes == null then continue
 			assert classes.length == 1 else print classes.join(", ")
 			box_kinds.add(classes.first.mclass_type)

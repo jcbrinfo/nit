@@ -205,7 +205,7 @@ redef class MClassDef
 	# * If redef contains the `redef` keyword and kind.
 	redef fun html_modifiers do
 		var res = new Array[String]
-		if not is_intro then
+		if not is_nominal_intro then
 			res.add "redef"
 		else
 			if mclass.visibility != public_visibility then
@@ -226,7 +226,7 @@ redef class MClassDef
 		tpl.add html_modifiers.join(" ")
 		tpl.add " "
 		tpl.add html_link
-		if is_intro then
+		if is_nominal_intro then
 			tpl.add html_signature
 		else
 			tpl.add html_short_signature
@@ -278,7 +278,7 @@ redef class MClassDef
 
 	redef fun css_classes do
 		var set = new HashSet[String]
-		if is_intro then set.add "intro"
+		if is_nominal_intro then set.add "intro"
 		for m in mclass.intro.modifiers do set.add m.to_cmangle
 		for m in modifiers do set.add m.to_cmangle
 		return set.to_a
@@ -288,7 +288,7 @@ redef class MClassDef
 	# List of all modifiers like redef, private etc.
 	var modifiers: Array[String] is lazy do
 		var res = new Array[String]
-		if not is_intro then
+		if not is_nominal_intro then
 			res.add "redef"
 		else
 			res.add mclass.visibility.to_s
@@ -514,7 +514,7 @@ redef class MType
 end
 
 redef class MClassType
-	redef fun html_link do return mclass.html_link
+	redef fun html_link do return mnominal.html_link
 	redef fun html_short_signature do return html_link
 	redef fun html_signature do return html_link
 end
@@ -539,7 +539,8 @@ redef class MGenericType
 	redef fun html_short_signature do
 		var lnk = html_link
 		var tpl = new Template
-		tpl.add new Link.with_title(lnk.href, mclass.name.html_escape, lnk.title)
+		tpl.add new Link.with_title(lnk.href, mnominal.name.html_escape,
+				lnk.title)
 		tpl.add "["
 		for i in [0..arguments.length[ do
 			tpl.add arguments[i].html_short_signature
@@ -552,7 +553,8 @@ redef class MGenericType
 	redef fun html_signature do
 		var lnk = html_link
 		var tpl = new Template
-		tpl.add new Link.with_title(lnk.href, mclass.name.html_escape, lnk.title)
+		tpl.add new Link.with_title(lnk.href, mnominal.mclass.name.html_escape,
+				lnk.title)
 		tpl.add "["
 		for i in [0..arguments.length[ do
 			tpl.add arguments[i].html_signature

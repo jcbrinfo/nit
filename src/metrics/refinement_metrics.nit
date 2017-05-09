@@ -44,7 +44,7 @@ do
 
 	print ""
 
-	var nbcla = model.mclasses.length
+	var nbcla = model.mnominals.length
 	var nbcladef = model.mclassdef_hierarchy.length
 	print "Number of classes: {nbcla}"
 
@@ -53,9 +53,9 @@ do
 	#  * refinex classes (vs. unrefined ones)
 	var kinds = new Counter[MClassKind]
 	var refined = 0
-	for c in model.mclasses do
+	for c in model.mnominals do
 		kinds.inc(c.kind)
-		if c.mclassdefs.length > 1 then
+		if c.defs.length > 1 then
 			refined += 1
 		end
 	end

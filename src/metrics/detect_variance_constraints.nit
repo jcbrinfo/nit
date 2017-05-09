@@ -93,7 +93,7 @@ class DetectVarianceConstraints
 	do
 		for m in mainmodule.in_importation.greaters do
 			for cd in m.mclassdefs do
-				if cd.is_intro then
+				if cd.is_class_intro then
 					pts.add_all(cd.mclass.mparameters)
 					var a = cd.mclass.arity
 					if a == 0 then
@@ -221,11 +221,11 @@ class DetectVarianceConstraints
 			new_contravar.clear
 
 			# Process the generic types in a covariant position
-			for c in covar_classes do for i in [0..c.mclass.arity[ do
+			for c in covar_classes do for i in [0..c.mnominal.arity[ do
 				# The type used in the argument
 				var ta = c.arguments[i].undecorate
 				# The associated formal parameter
-				var tp = c.mclass.mparameters[i]
+				var tp = c.mnominal.mparameters[i]
 
 				if not ta.need_anchor then
 					# Nothing to do
@@ -257,11 +257,11 @@ class DetectVarianceConstraints
 			end
 
 			# Process the generic types in a contravariant position
-			for c in contravar_classes do for i in [0..c.mclass.arity[ do
+			for c in contravar_classes do for i in [0..c.mnominal.arity[ do
 				# The type used in the argument
 				var ta = c.arguments[i].undecorate
 				# The associated formal parameter
-				var tp = c.mclass.mparameters[i]
+				var tp = c.mnominal.mparameters[i]
 
 				if not ta.need_anchor then
 					# Nothing to do

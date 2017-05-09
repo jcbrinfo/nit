@@ -285,7 +285,7 @@ redef class MGroupPage
 			sidebar.boxes.unshift new DocSideBox(doc_lnk, "")
 		end
 		# MClasses list
-		var mclasses = new HashSet[MClass]
+		var mclasses = new HashSet[MNominal]
 		mclasses.add_all intros
 		mclasses.add_all redefs
 		if mclasses.is_empty then return
@@ -300,7 +300,7 @@ redef class MGroupPage
 		sidebar.boxes.last.is_open = false
 	end
 
-	private fun tpl_sidebar_item(def: MClass): ListItem do
+	private fun tpl_sidebar_item(def: MNominal): ListItem do
 		var classes = def.intro.css_classes
 		if intros.has(def) then
 			classes.add "intro"
@@ -327,9 +327,9 @@ redef class MModulePage
 	redef fun init_sidebar(v, doc) do
 		# TODO filter here?
 		super
-		var mclasses = new HashSet[MClass]
-		mclasses.add_all mentity.collect_intro_mclasses(v.doc)
-		mclasses.add_all mentity.collect_redef_mclasses(v.doc)
+		var mclasses = new HashSet[MNominal]
+		mclasses.add_all mentity.collect_intro_mnominals(v.doc)
+		mclasses.add_all mentity.collect_redef_mnominals(v.doc)
 		if mclasses.is_empty then return
 		var list = new UnorderedList
 		list.css_classes.add "list-unstyled list-labeled"
@@ -343,7 +343,7 @@ redef class MModulePage
 		sidebar.boxes.last.is_open = false
 	end
 
-	private fun tpl_sidebar_item(def: MClass): ListItem do
+	private fun tpl_sidebar_item(def: MNominal): ListItem do
 		var classes = def.intro.css_classes
 		if def.intro_mmodule == self.mentity then
 			classes.add "intro"
@@ -426,7 +426,7 @@ redef class MClassPage
 	# FIXME this method is used to translate a mprop into a mpropdefs for
 	# section linking. A better page structure should avoid this...
 	private fun select_mpropdef(mprop: MProperty): MPropDef do
-		for mclassdef in mentity.mclassdefs do
+		for mclassdef in mentity.defs do
 			for mpropdef in mclassdef.mpropdefs do
 				if mpropdef.mproperty == mprop then return mpropdef
 			end
@@ -570,7 +570,8 @@ redef class DefinitionArticle
 			html_subtitle = title
 			html_toc_title = "in {mentity.html_name}"
 			html_source_link = v.html_source_link(mentity.location)
-			if page isa MEntityPage and mentity.is_intro and mentity.mmodule != page.mentity then
+			if page isa MEntityPage and mentity.is_nominal_intro and
+					mentity.mmodule != page.mentity then
 				is_short_comment = true
 			end
 			if page isa MModulePage then is_toc_hidden = true

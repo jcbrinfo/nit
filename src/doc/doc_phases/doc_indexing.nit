@@ -36,7 +36,7 @@ class IndexingPhase
 		for mmodule in doc.mmodules do
 			add_result_for(mmodule.name, mmodule.full_name, mmodule.nitdoc_url)
 		end
-		for mclass in doc.mclasses do
+		for mclass in doc.mnominals do
 			add_result_for(mclass.name, mclass.full_name, mclass.nitdoc_url)
 		end
 		for mproperty in doc.mproperties do

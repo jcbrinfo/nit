@@ -72,8 +72,8 @@ private class MendelMetricsPhase
 		var model = toolcontext.modelbuilder.model
 		var model_view = model.protected_view
 
-		var mclasses = new HashSet[MClass]
-		for mclass in model_view.mclasses do
+		var mclasses = new HashSet[MNominal]
+		for mclass in model_view.mnominals do
 			if mclass.is_interface then continue
 			mclasses.add(mclass)
 		end
@@ -182,7 +182,7 @@ class CNVI
 			var parents = mclass.in_hierarchy(mainmodule).direct_greaters
 			if parents.length > 0 then
 				cbms.clear
-				cbms.collect(new HashSet[MClass].from(parents))
+				cbms.collect(new HashSet[MNominal].from(parents))
 				# compute class novelty index
 				var locc = mclass.collect_accessible_mproperties(model_view).length
 				values[mclass] = locc.to_f / cbms.avg
@@ -257,11 +257,11 @@ class MNVS
 	end
 end
 
-redef class MClass
+redef class MNominal
 	# the set of redefition that call to super
 	fun extended_mproperties(view: ModelView): Set[MProperty] do
 		var set = new HashSet[MProperty]
-		for mclassdef in mclassdefs do
+		for mclassdef in defs do
 			for mpropdef in mclassdef.mpropdefs do
 				if not view.accept_mentity(mpropdef) then continue
 				if not mpropdef.has_supercall then continue
@@ -274,7 +274,7 @@ redef class MClass
 	# the set of redefition that do not call to super
 	fun overriden_mproperties(view: ModelView): Set[MProperty] do
 		var set = new HashSet[MProperty]
-		for mclassdef in mclassdefs do
+		for mclassdef in defs do
 			for mpropdef in mclassdef.mpropdefs do
 				if not view.accept_mentity(mpropdef) then continue
 				if mpropdef.has_supercall then continue

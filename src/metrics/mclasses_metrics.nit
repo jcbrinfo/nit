@@ -93,7 +93,7 @@ end
 # A metric about MClass
 abstract class MClassMetric
 	super Metric
-	redef type ELM: MClass
+	redef type ELM: MNominal
 
 	# Main module used for class linearization
 	var mainmodule: MModule

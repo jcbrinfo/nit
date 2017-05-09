@@ -73,7 +73,7 @@
 # Arguments in the `CLASSTYPE` are named following the `parameter_names`
 # attribute of the `MClassDef` that introduces the class. A class definition
 # introduces a class if and only if it has this class as `MCLASS` and
-# has `is_intro` set to `true`.
+# has `is_class_intro` set to `true`.
 #
 # `MClassDef`
 #
@@ -701,7 +701,7 @@ class NeoModel
 		node.labels.add "MType"
 		if mtype isa MClassType then
 			node.labels.add "MClassType"
-			node.out_edges.add(new NeoEdge(node, "CLASS", to_node(mtype.mclass)))
+			node.out_edges.add(new NeoEdge(node, "CLASS", to_node(mtype.mnominal)))
 			for arg in mtype.arguments do
 				node.out_edges.add(new NeoEdge(node, "ARGUMENT", to_node(arg)))
 			end

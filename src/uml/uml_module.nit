@@ -108,7 +108,7 @@ redef class MClassDef
 			t.add "\\l"
 		end
 		t.add "\}\""
-		if is_intro then
+		if is_nominal_intro then
 			t.add "color=\"{intro_colour}\""
 		else
 			t.add "color=\"{redef_colour}\""

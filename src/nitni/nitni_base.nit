@@ -94,6 +94,7 @@ end
 redef class MClassType
 	redef fun cname
 	do
+		var mclass = mnominal.mclass
 		var name = mclass.name
 		if name == "Bool" then return "int"
 		if name == "Char" then return "uint32_t"
@@ -115,6 +116,7 @@ redef class MClassType
 	end
 
 	redef fun cname_blind do
+		var mclass = mnominal.mclass
 		var name = mclass.name
 		if name == "Bool" then return "int"
 		if name == "Char" then return "uint32_t"
@@ -131,11 +133,14 @@ redef class MClassType
 		return super
 	end
 
-	redef fun mangled_cname do return mclass.name
+	redef fun mangled_cname do return mnominal.name
 
-	redef fun is_cprimitive do return mclass.kind == extern_kind or
-			(once ["Bool", "Char", "Float", "Int", "CString",
+	redef fun is_cprimitive do
+		var mclass = mnominal.mclass
+		return mclass.kind == extern_kind or
+			(once ["Bool", "Char", "Float", "Int", "NativeString",
 			       "Byte", "Int8", "Int16", "UInt16", "Int32", "UInt32"]).has(mclass.name)
+	end
 end
 
 redef class MNullableType

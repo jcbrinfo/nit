@@ -49,10 +49,10 @@ end
 redef class MGroupPage
 
 	# Introduced classes in `mentity` that should appear in this page.
-	var intros = new HashSet[MClass]
+	var intros = new HashSet[MNominal]
 
 	# Refined classes in `mentity` that should appear in this page.
-	var redefs = new HashSet[MClass]
+	var redefs = new HashSet[MNominal]
 
 	redef fun build_concerns(v) do
 		var doc = v.doc
@@ -60,11 +60,11 @@ redef class MGroupPage
 		for mmodule in mentity.mmodules do
 			if doc.mmodules.has(mmodule) then mmodules.add mmodule
 			# collect mclasses
-			for mclass in mmodule.intro_mclasses do
-				if doc.mclasses.has(mclass) then intros.add mclass
+			for mclass in mmodule.intro_mnominals do
+				if doc.mnominals.has(mclass) then intros.add mclass
 			end
-			for mclass in mmodule.collect_redef_mclasses(v.doc) do
-				if doc.mclasses.has(mclass) then redefs.add mclass
+			for mclass in mmodule.collect_redef_mnominals(v.doc) do
+				if doc.mnominals.has(mclass) then redefs.add mclass
 			end
 		end
 		concerns = doc.model.concerns_tree(mmodules)
@@ -73,8 +73,8 @@ end
 
 redef class MModulePage
 
-	# MClasses defined in `mentity` to display in this page.
-	var mclasses = new HashSet[MClass]
+	# `MNominal`s defined in `mentity` to display in this page.
+	var mnominals = new HashSet[MNominal]
 
 	# MClassDefs located in `mentity` to display in this page.
 	var mclassdefs = new HashSet[MClassDef]
@@ -88,11 +88,11 @@ redef class MModulePage
 		# extract mclasses in mmodule
 		for mclassdef in mclassdefs do
 			var mclass = mclassdef.mclass
-			if doc.mclasses.has(mclass) then mclasses.add mclass
+			if doc.mnominals.has(mclass) then mnominals.add mclass
 		end
 		# extract concerns
 		var mods = new HashSet[MModule]
-		for mclass in mclasses do
+		for mclass in mnominals do
 			var mod = mclass.intro_mmodule
 			if doc.mmodules.has(mod) then mods.add mod
 		end
@@ -111,7 +111,7 @@ redef class MClassPage
 	redef fun build_concerns(v) do
 		var doc = v.doc
 		# collect mclassdefs
-		for mclassdef in mentity.mclassdefs do
+		for mclassdef in mentity.defs do
 			if doc.mclassdefs.has(mclassdef) then mclassdefs.add mclassdef
 		end
 		# collect mpropdefs

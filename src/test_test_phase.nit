@@ -33,7 +33,7 @@ do
 	var model = modelbuilder.model
 	print "I have {model.mpackages.length} packages"
 	print "I have {model.mmodules.length} modules"
-	var mclasses = mainmodule.flatten_mclass_hierarchy
+	var mclasses = mainmodule.flatten_mnominal_hierarchy
 	print "I have {mclasses.length} classes"
 
 	var m_cpt = 0

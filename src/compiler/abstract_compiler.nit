@@ -799,7 +799,7 @@ extern void nitni_global_ref_decr( struct nitni_ref *ref );
 		var finalizable_type = mainmodule.finalizable_type
 		if finalizable_type == null then return
 
-		var finalize_meth = mainmodule.try_get_primitive_method("finalize", finalizable_type.mclass)
+		var finalize_meth = mainmodule.try_get_primitive_method("finalize", finalizable_type.mnominal)
 
 		if finalize_meth == null then
 			modelbuilder.toolcontext.error(null, "Error: the `Finalizable` class does not declare the `finalize` method.")
@@ -963,12 +963,12 @@ extern void nitni_global_ref_decr( struct nitni_ref *ref );
 			var mainmodule = v.compiler.mainmodule
 			var glob_sys = v.init_instance(main_type)
 			v.add("glob_sys = {glob_sys};")
-			var main_init = mainmodule.try_get_primitive_method("init", main_type.mclass)
+			var main_init = mainmodule.try_get_primitive_method("init", main_type.mnominal)
 			if main_init != null then
 				v.send(main_init, [glob_sys])
 			end
-			var main_method = mainmodule.try_get_primitive_method("run", main_type.mclass) or else
-				mainmodule.try_get_primitive_method("main", main_type.mclass)
+			var main_method = mainmodule.try_get_primitive_method("run", main_type.mnominal) or else
+				mainmodule.try_get_primitive_method("main", main_type.mnominal)
 			if main_method != null then
 				v.send(main_method, [glob_sys])
 			end
@@ -1250,7 +1250,7 @@ abstract class AbstractCompilerVisitor
 	fun get_property(name: String, recv: MType): MMethod
 	do
 		assert recv isa MClassType
-		return self.compiler.modelbuilder.force_get_primitive_method(self.current_node, name, recv.mclass, self.compiler.mainmodule)
+		return self.compiler.modelbuilder.force_get_primitive_method(self.current_node, name, recv.mnominal, self.compiler.mainmodule)
 	end
 
 	fun compile_callsite(callsite: CallSite, arguments: Array[RuntimeVariable]): nullable RuntimeVariable
@@ -1590,7 +1590,7 @@ abstract class AbstractCompilerVisitor
 	do
 		var recv
 		var ctype = mtype.ctype
-		assert mtype.mclass.name != "NativeArray"
+		assert mtype.mnominal.mclass.name != "NativeArray"
 		if not mtype.is_c_primitive then
 			recv = init_instance(mtype)
 		else if ctype == "char*" then
@@ -2094,6 +2094,7 @@ end
 redef class MClassType
 
 	redef var ctype is lazy do
+		var mclass = mnominal.mclass
 		if mclass.name == "Int" then
 			return "long"
 		else if mclass.name == "Bool" then
@@ -2127,7 +2128,7 @@ redef class MClassType
 
 	redef fun ctype_extern: String
 	do
-		if mclass.kind == extern_kind then
+		if mnominal.mclass.kind == extern_kind then
 			return "void*"
 		else
 			return ctype
@@ -2136,6 +2137,7 @@ redef class MClassType
 
 	redef fun ctypename: String
 	do
+		var mclass = mnominal.mclass
 		if mclass.name == "Int" then
 			return "l"
 		else if mclass.name == "Bool" then
@@ -4032,7 +4034,7 @@ redef class ANewExpr
 		var mtype = self.recvtype
 		assert mtype != null
 
-		if mtype.mclass.name == "NativeArray" then
+		if mtype.mnominal.mclass.name == "NativeArray" then
 			assert self.n_args.n_exprs.length == 1
 			var l = v.expr(self.n_args.n_exprs.first, null)
 			assert mtype isa MGenericType
@@ -4155,15 +4157,16 @@ redef class Array[E]
 end
 
 redef class MModule
-	# All `MProperty` associated to all `MClassDef` of `mclass`
+	# All `MProperty`s associated to all `MClassDef`s of `mclass` (including subsets)
 	fun properties(mclass: MClass): Set[MProperty] do
 		if not self.properties_cache.has_key(mclass) then
 			var properties = new HashSet[MProperty]
-			var parents = new Array[MClass]
-			if self.flatten_mclass_hierarchy.has(mclass) then
+			var parents = new Array[MNominal]
+			if self.flatten_mnominal_hierarchy.has(mclass) then
 				parents.add_all(mclass.in_hierarchy(self).direct_greaters)
 			end
 			for parent in parents do
+				assert parent isa MClass
 				properties.add_all(self.properties(parent))
 			end
 			for mclassdef in mclass.mclassdefs do

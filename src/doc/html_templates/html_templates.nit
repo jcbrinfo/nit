@@ -398,7 +398,7 @@ redef class IndexArticle
 		addn "<div class='container-fluid'>"
 		addn " <div class='row'>"
 		render_list("Modules", mmodules)
-		render_list("Classes", mclasses)
+		render_list("Classes", mnominals)
 		render_list("Properties", mprops)
 		addn "</div>"
 		addn "</div>"
