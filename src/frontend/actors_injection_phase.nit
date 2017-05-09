@@ -33,7 +33,11 @@ redef class ModelBuilder
 		if mod == null then return
 		var mclass = nclassdef.mclass
 		if mclass == null then return
-		if mclass.intro_mmodule != mod then
+		if not mclass isa MClass then
+			# TODO: Should we allow on subsets?
+			error(at, "`actor` can only be used on regular classes.")
+			return
+		else if mclass.intro_mmodule != mod then
 			error(at, "`actor` can only be used at introductions.")
 			return
 		end
@@ -46,7 +50,7 @@ redef class ModelBuilder
 		var actor_class = new MClass(mod, injected_name + mclass.name, l, null, concrete_kind, public_visibility)
 		var actor_class_definition = new MClassDef(mod, actor_class.mclass_type, l)
 		actor_class_definition.set_supertypes([mod.object_type])
-		var proxy_classes = mclass.model.get_mclasses_by_name("Proxy")
+		var proxy_classes = mclass.model.get_mnominals_by_name("Proxy")
 		assert proxy_classes != null
 		var proxy_class = proxy_classes.first
 		actor_class_definition.supertypes.add(proxy_class.mclass_type)
@@ -62,7 +66,7 @@ redef class ModelBuilder
 
 		# Get context information
 		var mclass = nclassdef.mclass
-		if mclass == null then return
+		if not mclass isa MClass then return # TODO: Should we allow on subsets?
 		var mclass_def = nclassdef.mclassdef
 		if mclass_def == null then return
 
@@ -71,7 +75,7 @@ redef class ModelBuilder
 		var actor_mclass_def = actor_mclass.mclassdefs.first
 
 		# Adds an `async` attribute in the worker class which is the actor class
-		if mclass_def.is_intro then
+		if mclass_def.is_nominal_intro then
 			var async = new MMethod(mclass_def, "async", mclass.location, public_visibility)
 			var async_def = new MMethodDef(mclass_def, async, mclass.location)
 			async_def.msignature = new MSignature(new Array[MParameter], actor_mclass.mclass_type)
@@ -94,7 +98,7 @@ redef class ModelBuilder
 				var parameters = signature.mparameters
 				var s_return_type = signature.return_mtype
 				if s_return_type != null then
-					var future_mclasses = mclass_def.model.get_mclasses_by_name("Future")
+					var future_mclasses = mclass_def.model.get_mnominals_by_name("Future")
 					assert future_mclasses != null
 					var future_mclass = future_mclasses.first
 					var return_type = future_mclass.get_mtype([s_return_type])
