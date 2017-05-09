@@ -1727,7 +1727,7 @@ class MGenericType
 			mtype = self
 		end
 		if not mtype.is_ok then return false
-		return mtype.is_subtype(mmodule, null, mtype.mclass.intro.bound_mtype)
+		return mtype.is_subtype(mmodule, null, mtype.mnominal.intro.bound_mtype)
 	end
 
 	redef fun depth
