@@ -518,7 +518,7 @@ redef class ModelBuilder
 				# it is an extern class, but not a Pointer
 				if pointerclass == null then
 					error(nclassdef, "Error: `Pointer` must be defined first.")
-					return
+					return supertypes
 				end
 				if specpointer then supertypes.add pointerclass.mclass_type
 			else if specobject then
@@ -527,7 +527,6 @@ redef class ModelBuilder
 					supertypes.add objectclass.mclass_type
 				else if kind != interface_kind then
 					error(nclassdef, "Error: `Object` must be an {interface_kind}.")
-					return
 				end
 			end
 		end
