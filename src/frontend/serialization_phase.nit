@@ -412,14 +412,14 @@ do
 				if mtype == null then continue
 				if mtype isa MNullableType then mtype = mtype.mtype
 
-				if mtype isa MClassType and mtype.mclass.arity > 0 and
-				   mtype.mclass.kind == concrete_kind and not mtype.need_anchor then
+				if mtype isa MClassType and mtype.mnominal.arity > 0 and
+				   mtype.mnominal.kind == concrete_kind and not mtype.need_anchor then
 
 					# Check is a `Serializable`
 					var mmodule = nmodule.mmodule
 					if mmodule == null then continue
 
-					var greaters = mtype.mclass.in_hierarchy(mmodule).greaters
+					var greaters = mtype.mnominal.in_hierarchy(mmodule).greaters
 					var is_serializable = false
 					for sup in greaters do if sup.name == "Serializable" then
 						is_serializable = true
