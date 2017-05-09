@@ -951,7 +951,7 @@ class MClassDef
 	# All property introductions and redefinitions (not inheritance) in `self` by its associated property.
 	var mpropdefs_by_property = new HashMap[MProperty, MPropDef]
 
-	redef fun mdoc_or_fallback do return mdoc or else mclass.mdoc_or_fallback
+	redef fun mdoc_or_fallback do return mdoc or else mnominal.mdoc_or_fallback
 end
 
 # A global static type
@@ -1638,7 +1638,7 @@ class MClassType
 	private var collect_mnominals_cache = new HashMap[MModule, Set[MNominal]]
 	private var collect_mtypes_cache = new HashMap[MModule, Set[MClassType]]
 
-	redef fun mdoc_or_fallback do return mclass.mdoc_or_fallback
+	redef fun mdoc_or_fallback do return mnominal.mdoc_or_fallback
 end
 
 # A type based on a generic class.
