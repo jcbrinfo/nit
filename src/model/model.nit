@@ -1338,7 +1338,7 @@ abstract class MType
 	# REQUIRE: `not self.need_anchor`
 	fun collect_mclassdefs(mmodule: MModule): Set[MClassDef] is abstract
 
-	# List type subsets that are applicable to direct instances of this type.
+	# List class subsets that are applicable to direct instances of this type.
 	#
 	# The returned set contains:
 	#  * the subset from `mmodule` and its imported modules
@@ -1370,6 +1370,15 @@ abstract class MType
 	#
 	# REQUIRE: `not self.need_anchor`
 	fun collect_mtypes(mmodule: MModule): Set[MClassType] is abstract
+
+	# List type subsets that are applicable to direct instances of this type.
+	#
+	# The returned set contains:
+	#  * the subset from `mmodule` and its imported modules
+	#  * the subset directly linked to this type and its super-types
+	#
+	# REQUIRE: `not self.need_anchor`
+	fun collect_subset_types(mmodule: MModule): Set[MClassType] is abstract
 
 	# Is the property in self for a given module
 	# This method does not filter visibility or whatever
@@ -1470,6 +1479,16 @@ class MClassType
 		return res
 	end
 
+	redef fun collect_subset_types(mmodule)
+	do
+		assert not self.need_anchor
+		var cache = self.collect_subset_types_cache
+		if not cache.has_key(mmodule) then
+			self.collect_things(mmodule)
+		end
+		return cache[mmodule]
+	end
+
 	private var collect_mnominals_last_module: nullable MModule = null
 	private var collect_mnominals_last_module_cache: Set[MNominal] is noinit
 
@@ -1529,14 +1548,24 @@ class MClassType
 		# `is_subtype` calls the `collect_*` methods.
 		var subsets = new HashSet[MSubset]
 		var subset_defs = new HashSet[MClassDef]
+		var subset_types = new HashSet[MClassType]
 		for msubset in subset_candidates do
+			# Check that the bounds of the subset allow the arguments of `self`.
 			var subset_type = msubset.intro.bound_mtype
 			var supertype = subset_type.as_data_type
 			if not self.is_subtype(mmodule, null, supertype) then
 				continue
 			end
+
+			# Precise the bounds of the found subset according to the arguments
+			# of `self`.
+			# TODO: Assumes single-inheritance
+			supertype = supertype_to(mmodule, null, msubset.data_class)
+			subset_type = msubset.get_mtype(supertype.arguments)
+
 			#print "  subset {msubset}"
 			subsets.add(msubset)
+			subset_types.add(subset_type)
 			for mclassdef in msubset.mclassdefs do
 				if not mmodule.in_importation <= mclassdef.mmodule then continue
 				#print "    def {mclassdef}"
@@ -1545,11 +1574,13 @@ class MClassType
 		end
 		collect_subsets_cache[mmodule] = subsets
 		collect_subset_defs_cache[mmodule] = subset_defs
+		collect_subset_types_cache[mmodule] = subset_types
 	end
 
 	private var collect_mclassdefs_cache = new HashMap[MModule, Set[MClassDef]]
 	private var collect_subsets_cache = new HashMap[MModule, Set[MSubset]]
 	private var collect_subset_defs_cache = new HashMap[MModule, Set[MClassDef]]
+	private var collect_subset_types_cache = new HashMap[MModule, Set[MClassType]]
 	private var collect_mnominals_cache = new HashMap[MModule, Set[MNominal]]
 	private var collect_mtypes_cache = new HashMap[MModule, Set[MClassType]]
 
