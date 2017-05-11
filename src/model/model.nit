@@ -2593,12 +2593,12 @@ abstract class MProperty
 		var res = new Array[MPROPDEF]
 		for pd1 in candidates do
 			var cd1 = pd1.mclassdef
-			var c1 = cd1.data_class
+			var c1 = cd1.mnominal
 			var keep = true
 			for pd2 in candidates do
 				if pd2 == pd1 then continue # do not compare with self!
 				var cd2 = pd2.mclassdef
-				var c2 = cd2.data_class
+				var c2 = cd2.mnominal
 				if c2.mclass_type == c1.mclass_type then
 					if cd2.mmodule.in_importation < cd1.mmodule then
 						# cd2 refines cd1; therefore we skip pd1
