@@ -790,7 +790,7 @@ class SeparateCompiler
 		var utype = mtype.undecorate
 		if utype isa MClassType then
 			var isa_method = utype.mnominal.isa_method
-			if isa_method == null then
+			if isa_method == null or not is_cast_live then
 				v.add_decl("\{ -1, NULL, \},")
 			else
 				# Because of the limitations of C, we unfortunately have to
