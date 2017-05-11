@@ -228,7 +228,7 @@ class RapidTypeAnalysis
 		force_alive("Int32")
 		force_alive("UInt32")
 
-		while not todo.is_empty do
+		while todo.not_empty do
 			var mmethoddef = todo.shift
 			var mmeth = mmethoddef.mproperty
 			var msignature = mmethoddef.msignature
@@ -310,7 +310,7 @@ class RapidTypeAnalysis
 		#print "open MType {live_open_types.length}: {live_open_types.join(", ")}"
 		var todo_types = new List[MClassType]
 		todo_types.add_all(live_types)
-		while not todo_types.is_empty do
+		while todo_types.not_empty do
 			var t = todo_types.shift
 			for ot in live_open_types do
 				#print "{ot}/{t} ?"
