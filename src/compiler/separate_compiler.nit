@@ -411,10 +411,24 @@ class SeparateCompiler
 					meth_table.add null
 				else if e isa MMethod then
 					# Standard method call of `e`
-					meth_table.add e.lookup_first_definition(mainmodule, mtype)
+					if mtype.may_have_mproperty(mainmodule, e) then
+						meth_table.add e.lookup_first_definition(mainmodule, mtype)
+					else
+						# Because of generic classes (combined with subsets),
+						# there are cases where a subclass does not inherit all
+						# (implicit) properties of its superclasses.
+						meth_table.add null
+					end
 				else if e isa MMethodDef then
 					# Super-call in the methoddef `e`
-					meth_table.add e.lookup_next_definition(mainmodule, mtype)
+					if mtype.may_have_mproperty(mainmodule, e.mproperty) then
+						meth_table.add e.lookup_next_definition(mainmodule, mtype)
+					else
+						# Because of generic classes (combined with subsets),
+						# there are cases where a subclass does not inherit all
+						# (implicit) property definitions of its superclasses.
+						meth_table.add null
+					end
 				else
 					abort
 				end
