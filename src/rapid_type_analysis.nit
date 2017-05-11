@@ -225,117 +225,120 @@ class RapidTypeAnalysis
 		force_alive("UInt32")
 
 		while todo.not_empty do
-			var mmethoddef = todo.shift
-			var mmeth = mmethoddef.mproperty
-			var msignature = mmethoddef.msignature
-			if msignature == null then continue # Skip broken method
+			#print "todo {todo.length}: {todo.join(", ")}"
+			while todo.not_empty do
+				var mmethoddef = todo.shift
+				var mmeth = mmethoddef.mproperty
+				var msignature = mmethoddef.msignature
+				if msignature == null then continue # Skip broken method
 
-			#print "# visit {mmethoddef}"
-			var v = new RapidTypeVisitor(self, mmethoddef.mclassdef.bound_mtype, mmethoddef)
+				#print "# visit {mmethoddef}"
+				var v = new RapidTypeVisitor(self, mmethoddef.mclassdef.bound_mtype, mmethoddef)
 
-			var vararg_rank = msignature.vararg_rank
-			if vararg_rank > -1 then
-				var node = self.modelbuilder.mpropdef2node(mmethoddef)
-				var elttype = msignature.mparameters[vararg_rank].mtype
-				#elttype = elttype.anchor_to(self.mainmodule, v.receiver)
-				var vararg = self.mainmodule.array_type(elttype)
-				v.add_type(vararg)
-				var native = self.mainmodule.native_array_type(elttype)
-				v.add_type(native)
-				v.add_monomorphic_send(vararg, self.modelbuilder.force_get_primitive_method(node, "with_native", vararg.mnominal, self.mainmodule))
-			end
+				var vararg_rank = msignature.vararg_rank
+				if vararg_rank > -1 then
+					var node = self.modelbuilder.mpropdef2node(mmethoddef)
+					var elttype = msignature.mparameters[vararg_rank].mtype
+					#elttype = elttype.anchor_to(self.mainmodule, v.receiver)
+					var vararg = self.mainmodule.array_type(elttype)
+					v.add_type(vararg)
+					var native = self.mainmodule.native_array_type(elttype)
+					v.add_type(native)
+					v.add_monomorphic_send(vararg, self.modelbuilder.force_get_primitive_method(node, "with_native", vararg.mnominal, self.mainmodule))
+				end
 
-			# TODO? new_msignature
-			var sig = msignature
-			var osig = mmeth.intro.msignature.as(not null)
-			for i in [0..sig.arity[ do
-				var origtype = osig.mparameters[i].mtype
-				if not origtype.need_anchor then continue # skip non covariant stuff
-				var paramtype = sig.mparameters[i].mtype
-				add_cast(paramtype)
-			end
+				# TODO? new_msignature
+				var sig = msignature
+				var osig = mmeth.intro.msignature.as(not null)
+				for i in [0..sig.arity[ do
+					var origtype = osig.mparameters[i].mtype
+					if not origtype.need_anchor then continue # skip non covariant stuff
+					var paramtype = sig.mparameters[i].mtype
+					add_cast(paramtype)
+				end
 
-			if mmethoddef.is_abstract then continue
+				if mmethoddef.is_abstract then continue
 
-			var npropdef = modelbuilder.mpropdef2node(mmethoddef)
+				var npropdef = modelbuilder.mpropdef2node(mmethoddef)
 
-			if npropdef isa AClassdef then
-				if mmethoddef.mproperty.is_root_init then
-					if not mmethoddef.is_intro then
-						self.add_super_send(v.receiver, mmethoddef)
+				if npropdef isa AClassdef then
+					if mmethoddef.mproperty.is_root_init then
+						if not mmethoddef.is_intro then
+							self.add_super_send(v.receiver, mmethoddef)
+						end
+					else
+						npropdef.debug "cannot RTA {mmethoddef}"
+						abort
 					end
-				else
-					npropdef.debug "cannot RTA {mmethoddef}"
+					continue
+				else if mmethoddef.constant_value != null then
+					# Make the return type live
+					v.add_type(msignature.return_mtype.as(MClassType))
+					continue
+				else if npropdef == null then
 					abort
 				end
-				continue
-			else if mmethoddef.constant_value != null then
-				# Make the return type live
-				v.add_type(msignature.return_mtype.as(MClassType))
-				continue
-			else if npropdef == null then
-				abort
-			end
 
-			if npropdef isa AMethPropdef then
-				var auto_super_inits = npropdef.auto_super_inits
-				if auto_super_inits != null then
-					for auto_super_init in auto_super_inits do
-						v.add_callsite(auto_super_init)
+				if npropdef isa AMethPropdef then
+					var auto_super_inits = npropdef.auto_super_inits
+					if auto_super_inits != null then
+						for auto_super_init in auto_super_inits do
+							v.add_callsite(auto_super_init)
+						end
+					end
+					if npropdef.auto_super_call then
+						self.add_super_send(v.receiver, mmethoddef)
 					end
 				end
-				if npropdef.auto_super_call then
-					self.add_super_send(v.receiver, mmethoddef)
+
+				if mmethoddef.is_intern or mmethoddef.is_extern then
+					# UGLY: We force the "instantation" of the concrete return type if any
+					var ret = msignature.return_mtype
+					if ret != null and ret isa MClassType and ret.mnominal.kind != abstract_kind and ret.mnominal.kind != interface_kind then
+						v.add_type(ret)
+					end
+				end
+
+				v.enter_visit(npropdef)
+			end
+
+			#print "MMethod {live_methods.length}: {live_methods.join(", ")}"
+			#print "MMethodDef {live_methoddefs.length}: {live_methoddefs.join(", ")}"
+
+			#print "open MType {live_open_types.length}: {live_open_types.join(", ")}"
+			var todo_types = new List[MClassType]
+			todo_types.add_all(live_types)
+			while todo_types.not_empty do
+				var t = todo_types.shift
+				for ot in live_open_types do
+					#print "{ot}/{t} ?"
+					if not ot.can_resolve_for(t, t, mainmodule) then continue
+					var rt = ot.anchor_to(mainmodule, t)
+					if live_types.has(rt) then continue
+					if not rt.is_legal_in(mainmodule) then continue
+					if not check_depth(rt) then continue
+					#print "{ot}/{t} -> {rt}"
+					add_live_type(rt)
+					# unshift means a deep-first visit.
+					# So that the `check_depth` limit is reached sooner.
+					todo_types.unshift(rt)
 				end
 			end
+			#print "MType {live_types.length}: {live_types.join(", ")}"
 
-			if mmethoddef.is_intern or mmethoddef.is_extern then
-				# UGLY: We force the "instantation" of the concrete return type if any
-				var ret = msignature.return_mtype
-				if ret != null and ret isa MClassType and ret.mnominal.kind != abstract_kind and ret.mnominal.kind != interface_kind then
-					v.add_type(ret)
+			#print "open cast MType {live_open_cast_types.length}: {live_open_cast_types.join(", ")}"
+			for ot in live_open_cast_types do
+				#print "live_open_cast_type: {ot}"
+				for t in live_types do
+					if not ot.can_resolve_for(t, t, mainmodule) then continue
+					var rt = ot.anchor_to(mainmodule, t)
+					if not rt.is_legal_in(mainmodule) then continue
+					add_cast_closed(rt)
+					#print "  {ot}/{t} -> {rt}"
 				end
 			end
-
-			v.enter_visit(npropdef)
+			#print "cast MType {live_cast_types.length}: {live_cast_types.join(", ")}"
 		end
-
-		#print "MMethod {live_methods.length}: {live_methods.join(", ")}"
-		#print "MMethodDef {live_methoddefs.length}: {live_methoddefs.join(", ")}"
-
-		#print "open MType {live_open_types.length}: {live_open_types.join(", ")}"
-		var todo_types = new List[MClassType]
-		todo_types.add_all(live_types)
-		while todo_types.not_empty do
-			var t = todo_types.shift
-			for ot in live_open_types do
-				#print "{ot}/{t} ?"
-				if not ot.can_resolve_for(t, t, mainmodule) then continue
-				var rt = ot.anchor_to(mainmodule, t)
-				if live_types.has(rt) then continue
-				if not rt.is_legal_in(mainmodule) then continue
-				if not check_depth(rt) then continue
-				#print "{ot}/{t} -> {rt}"
-				add_live_type(rt)
-				# unshift means a deep-first visit.
-				# So that the `check_depth` limit is reached sooner.
-				todo_types.unshift(rt)
-			end
-		end
-		#print "MType {live_types.length}: {live_types.join(", ")}"
-
-		#print "open cast MType {live_open_cast_types.length}: {live_open_cast_types.join(", ")}"
-		for ot in live_open_cast_types do
-			#print "live_open_cast_type: {ot}"
-			for t in live_types do
-				if not ot.can_resolve_for(t, t, mainmodule) then continue
-				var rt = ot.anchor_to(mainmodule, t)
-				if not rt.is_legal_in(mainmodule) then continue
-				add_cast_closed(rt)
-				#print "  {ot}/{t} -> {rt}"
-			end
-		end
-		#print "cast MType {live_cast_types.length}: {live_cast_types.join(", ")}"
 	end
 
 	private fun check_depth(mtype: MClassType): Bool
