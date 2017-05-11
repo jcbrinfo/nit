@@ -24,3 +24,5 @@ redef class Summable[E]
 end
 
 assert not new Array[Int] isa Summable[Int]
+var foo = [3, 2, 1, 0].as(Summable[Numeric])
+print(foo.sum(0))
