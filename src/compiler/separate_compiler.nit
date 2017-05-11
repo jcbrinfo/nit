@@ -443,6 +443,9 @@ class SeparateCompiler
 		end
 		for mtype in live_cast_types do
 			if mtype.is_subset then
+				# Subsets’ IDs and colors are treated separately.
+				# Note: `subsets` and `res` are merged at the end of this
+				# function.
 				subsets.add(mtype)
 			else
 				res.add(mtype)
