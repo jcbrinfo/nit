@@ -560,17 +560,13 @@ class SeparateCompiler
 
 		var layouts = new HashMap[MNominal, Array[nullable MType]]
 		for c in runtime_type_analysis.live_classes do
-			# No need to build a vtable for a subset: its vtable is integrated
-			# in the base type’s
-			if c isa MClass then
-				layouts[c] = colorer.build_layout(c)
-			end
+			layouts[c] = colorer.build_layout(c)
 		end
 
 		# Build the table for each live type
 		for t in mtypes do
 			# A live type use the layout of its class
-			var c = t.mnominal.data_class
+			var c = t.mnominal
 			var layout = layouts[c]
 			var table = new Array[nullable MType].with_capacity(layout.length)
 			type_tables[t] = table
