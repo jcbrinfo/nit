@@ -578,14 +578,14 @@ class SeparateCompiler
 	end
 
 	# resolution_tables is used to perform a type resolution at runtime in O(1)
-	private fun compute_resolution_tables(mtypes: Set[MType]) do
+	private fun compute_resolution_tables(live_types: Set[MClassType]) do
 		# During the visit of the body of classes, live_unresolved_types are collected
 		# and associated to
 		# Collect all live_unresolved_types (visited in the body of classes)
 
 		# Determinate fo each livetype what are its possible requested anchored types
 		var mtype2unresolved = new HashMap[MNominal, Set[MType]]
-		for mtype in self.runtime_type_analysis.live_types do
+		for mtype in live_types do
 			var mclass = mtype.mnominal
 			var set = mtype2unresolved.get_or_null(mclass)
 			if set == null then
@@ -608,7 +608,7 @@ class SeparateCompiler
 		var colorer = new BucketsColorer[MNominal, MType]
 
 		opentype_colors = colorer.colorize(mtype2unresolved)
-		resolution_tables = self.build_resolution_tables(self.runtime_type_analysis.live_types, mtype2unresolved)
+		resolution_tables = self.build_resolution_tables(live_types, mtype2unresolved)
 
 		# Compile a C constant for each collected unresolved type.
 		# Either to a color, or to -1 if the unresolved type is dead (no live receiver can require it)
