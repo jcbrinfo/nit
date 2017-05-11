@@ -549,7 +549,7 @@ class SeparateCompiler
 		var colorer = new POSetGroupColorer[MNominal, MType](class_conflict_graph, bucklets)
 		type_colors = colorer.colors
 
-		var layouts = new HashMap[MClass, Array[nullable MType]]
+		var layouts = new HashMap[MNominal, Array[nullable MType]]
 		for c in runtime_type_analysis.live_classes do
 			# No need to build a vtable for a subset: its vtable is integrated
 			# in the base type’s
@@ -586,9 +586,9 @@ class SeparateCompiler
 		# Collect all live_unresolved_types (visited in the body of classes)
 
 		# Determinate fo each livetype what are its possible requested anchored types
-		var mtype2unresolved = new HashMap[MClass, Set[MType]]
+		var mtype2unresolved = new HashMap[MNominal, Set[MType]]
 		for mtype in self.runtime_type_analysis.live_types do
-			var mclass = mtype.mnominal.data_class
+			var mclass = mtype.mnominal
 			var set = mtype2unresolved.get_or_null(mclass)
 			if set == null then
 				set = new HashSet[MType]
@@ -602,7 +602,7 @@ class SeparateCompiler
 		end
 
 		# Compute the table layout with the prefered method
-		var colorer = new BucketsColorer[MClass, MType]
+		var colorer = new BucketsColorer[MNominal, MType]
 
 		opentype_colors = colorer.colorize(mtype2unresolved)
 		resolution_tables = self.build_resolution_tables(self.runtime_type_analysis.live_types, mtype2unresolved)
@@ -630,10 +630,10 @@ class SeparateCompiler
 		#print ""
 	end
 
-	fun build_resolution_tables(elements: Set[MClassType], map: Map[MClass, Set[MType]]): Map[MClassType, Array[nullable MType]] do
+	fun build_resolution_tables(elements: Set[MClassType], map: Map[MNominal, Set[MType]]): Map[MClassType, Array[nullable MType]] do
 		var tables = new HashMap[MClassType, Array[nullable MType]]
 		for mclasstype in elements do
-			var mtypes = map[mclasstype.mnominal.data_class]
+			var mtypes = map[mclasstype.mnominal]
 			var table = new Array[nullable MType]
 			for mtype in mtypes do
 				var color = opentype_colors[mtype]
