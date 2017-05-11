@@ -597,6 +597,11 @@ class SeparateCompiler
 					set.add_all(self.live_unresolved_types[cd])
 				end
 			end
+			for cd in mtype.collect_subset_defs(self.mainmodule) do
+				if self.live_unresolved_types.has_key(cd) then
+					set.add_all(self.live_unresolved_types[cd])
+				end
+			end
 		end
 
 		# Compute the table layout with the prefered method
