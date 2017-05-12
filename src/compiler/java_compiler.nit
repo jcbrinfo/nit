@@ -309,8 +309,10 @@ class JavaCompiler
 	# This is a global phase because we need to know all the program to build
 	# attributes, fill vft and type table.
 	fun compile_mclasses_to_java do
-		for mclass in mainmodule.model.mclasses do
-			mclass.compile_to_java(new_visitor("{mclass.rt_name}.java"))
+		for mclass in mainmodule.model.mnominals do
+			if mclass isa MClass then
+				mclass.compile_to_java(new_visitor("{mclass.rt_name}.java"))
+			end
 		end
 	end
 
@@ -339,12 +341,12 @@ class JavaCompiler
 		if main_type != null then
 			var mainmodule = v.compiler.mainmodule
 			var glob_sys = v.init_instance(main_type)
-			var main_init = mainmodule.try_get_primitive_method("init", main_type.mclass)
+			var main_init = mainmodule.try_get_primitive_method("init", main_type.mnominal)
 			if main_init != null then
 				v.send(main_init, [glob_sys])
 			end
-			var main_method = mainmodule.try_get_primitive_method("run", main_type.mclass) or else
-				mainmodule.try_get_primitive_method("main", main_type.mclass)
+			var main_method = mainmodule.try_get_primitive_method("run", main_type.mnominal) or else
+				mainmodule.try_get_primitive_method("main", main_type.mnominal)
 			if main_method != null then
 				v.send(main_method, [glob_sys])
 			end
@@ -835,7 +837,7 @@ class JavaCompilerVisitor
 		if value.mtype isa MNullType then
 			return new_expr("new RTVal(null, null)", compiler.mainmodule.model.null_type)
 		end
-		var mbox = value.mtype.as(MClassType).mclass
+		var mbox = value.mtype.as(MClassType).mnominal
 		return new_expr("new RTVal({mbox.rt_name}.get{mbox.rt_name}(), {value})", obj_type)
 	end
 
@@ -861,8 +863,8 @@ class JavaCompilerVisitor
 	private fun can_be_primitive(value: RuntimeVariable): Bool do
 		var t = value.mcasttype.undecorate
 		if not t isa MClassType then return false
-		var k = t.mclass.kind
-		return k == interface_kind or t.is_java_primitive
+		var k = t.mnominal.data_class.kind
+		return k == interface_kind or t.as_data_type.is_java_primitive
 	end
 
 	#  Generate a polymorphic subtype test
@@ -878,7 +880,7 @@ class JavaCompilerVisitor
 			add("\} else \{")
 		end
 		if mtype isa MNullableType then mtype = mtype.mtype
-		var mclass = mtype.as(MClassType).mclass
+		var mclass = mtype.as(MClassType).mnominal
 		add("{res} = {value}.rtclass.supers.get(\"{mclass.jname}\") == {mclass.rt_name}.get{mclass.rt_name}();")
 		if maybenull then
 			add("\}")
@@ -945,7 +947,7 @@ class JavaCompilerVisitor
 
 	# Generate a alloc-instance + init-attributes
 	fun init_instance(mtype: MClassType): RuntimeVariable do
-		var rt_name = mtype.mclass.rt_name
+		var rt_name = mtype.mnominal.rt_name
 		var res = new_expr("new RTVal({rt_name}.get{rt_name}())", mtype)
 		generate_init_attr(self, res, mtype)
 		return res
@@ -978,7 +980,7 @@ class JavaCompilerVisitor
 			# else if value1.mtype.is_tagged then
 				# add("{res} = ({value2} != NULL) && ({autobox(value2, value1.mtype)} == {value1});")
 			else
-				var rt_name = value1.mtype.as(MClassType).mclass.rt_name
+				var rt_name = value1.mtype.as(MClassType).mnominal.rt_name
 				add("{res} = ({value2} != null) && ({value2}.rtclass == {rt_name}.get{rt_name}());")
 				add("if ({res}) \{")
 				add("{res} = ({self.autobox(value2, value1.mtype)} == {value1});")
@@ -1057,9 +1059,9 @@ class JavaCompilerVisitor
 			test.add("{value1}.rtclass == {value2}.rtclass")
 			var s = new Array[String]
 			for b in compiler.box_kinds do
-				var rt_name = b.mclass.rt_name
+				var rt_name = b.mnominal.rt_name
 				s.add "({value1}.rtclass == {rt_name}.get{rt_name}()) && ({value1}.value.equals({value2}.value))"
-				if b.mclass.name == "Float" then
+				if b.mnominal.data_class.name == "Float" then
 					s.add "({value1}.rtclass == RTClass_kernel_Float.getRTClass_kernel_Float() && {value1}.rtclass == {value2}.rtclass && Math.abs((double)({value1}.value)) == 0.0 && Math.abs((double)({value2}.value)) == 0.0)"
 				end
 			end
@@ -1308,6 +1310,7 @@ end
 redef class MClassType
 
 	redef var java_type is lazy do
+		var mclass = mnominal.data_class
 		if mclass.name == "Int" then
 			return "int"
 		else if mclass.name == "Bool" then
@@ -1327,11 +1330,13 @@ redef class MClassType
 	end
 end
 
-redef class MClass
+redef class MNominal
 
 	# Runtime name
 	private fun rt_name: String do return "RTClass_{intro_mmodule.jname}_{jname}"
+end
 
+redef class MClass
 	# Generate a Java RTClass for a Nit MClass
 	fun compile_to_java(v: JavaCompilerVisitor) do
 		v.add("public class {rt_name} extends RTClass \{")
@@ -1388,6 +1393,11 @@ redef class MClass
 	end
 end
 
+redef class MSubset
+	redef fun jname do return data_class.jname
+	redef fun rt_name do return data_class.rt_name
+end
+
 # Used as a common type between MMethod and MMethodDef for `table_send`
 private interface TableCallable
 end
@@ -1401,7 +1411,7 @@ redef class MMethodDef
 
 	# Runtime name
 	private fun rt_name: String do
-		return "RTMethod_{mclassdef.mmodule.jname}_{mclassdef.mclass.jname}_{mproperty.jname}"
+		return "RTMethod_{mclassdef.mmodule.jname}_{mclassdef.data_class.jname}_{mproperty.jname}"
 	end
 
 	# Generate a Java RTMethod for `self`
@@ -1556,7 +1566,7 @@ redef class AMethPropdef
 	# Compile an intern method using Java primitives
 	fun compile_intern_to_java(v: JavaCompilerVisitor, mpropdef: MMethodDef, arguments: Array[RuntimeVariable]): Bool do
 		var pname = mpropdef.mproperty.name
-		var cname = mpropdef.mclassdef.mclass.name
+		var cname = mpropdef.mclassdef.data_class.name
 		var ret = mpropdef.msignature.as(not null).return_mtype
 		if cname == "Int" then
 			if pname == "output" then
@@ -1816,7 +1826,7 @@ redef class AMethPropdef
 		else if pname == "sys" then
 			# TODO singleton
 			var main_type = v.compiler.mainmodule.sys_type.as(not null)
-			var sys = main_type.mclass
+			var sys = main_type.mnominal
 			v.ret(v.new_expr("new RTVal({sys.rt_name}.get{sys.rt_name}())", main_type))
 			return true
 		else if pname == "object_id" then
@@ -1944,7 +1954,7 @@ redef class ANewExpr
 		var mtype = self.recvtype
 		assert mtype != null
 
-		if mtype.mclass.name == "NativeArray" then
+		if mtype.mnominal.name == "NativeArray" then
 			# TODO handle native arrays
 			v.info("NOT YET IMPLEMENTED new NativeArray")
 		end
