@@ -38,6 +38,14 @@ private class ExternClassesTypingPhaseAst
 		var code_block = nclassdef.n_extern_code_block
 		if code_block == null then return
 
+		var mclass = nclassdef.mclass
+		if mclass != null and mclass.kind != extern_kind then
+			toolcontext.error(nclassdef.location,
+				"FFI Error: only extern classes can declare an extern type."
+			)
+			return
+		end
+
 		if nclassdef.n_kwredef != null then
 			# A redef cannot specify a different extern type
 			toolcontext.error(nclassdef.location, "FFI Error: only the introduction of a class can declare an extern type.")
@@ -70,6 +78,8 @@ private class ExternClassesTypingPhaseModel
 
 		var mclassdef = nclassdef.mclassdef
 		if mclassdef == null then return
+		# TODO: If `MSubset` is reverted into a `MClassKind`, use `mnominal`
+		# TODO: and, in `compute_ftype`, add a special case for `subset_kind`.
 		var mclass = mclassdef.data_class
 
 		# We only need to do this once per class
