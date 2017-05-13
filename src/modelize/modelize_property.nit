@@ -660,11 +660,19 @@ redef class APropdef
 					end
 				end
 			end
-		else
-			if not need_redef then
+		else if not need_redef then
 				modelbuilder.error(self, "Error: no property `{mclassdef.mnominal}::{mprop.name}` is inherited. Remove the `redef` keyword to define a new property.")
 				return false
-			end
+		else if mclassdef.is_subset_def and
+				mprop.intro_mclassdef.mnominal != mclassdef.mnominal then
+			var intro = mprop.intro_mclassdef
+			modelbuilder.error(self,
+				"Error: a property `{mprop}` is already defined in class " +
+				"`{intro.mnominal}` at line " +
+				"{intro.mprop2npropdef[mprop].location.line_start}. " +
+				"Yet, a type subset can not override an inherited property."
+			)
+			return false
 		end
 		return true
 	end
