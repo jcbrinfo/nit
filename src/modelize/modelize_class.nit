@@ -170,12 +170,39 @@ redef class ModelBuilder
 			return
 		end
 
+		# In the case of a subset definition, the declared supertype or the base
+		# class.
+		var subset_supertype: nullable MClassType = null
+		var data_class: nullable MClass
+		# Do we have to set `data_class` as the base class?
+		var set_base_class = false
+		if mclass isa MSubset then
+			var is_nominal_intro = mclass.mclassdefs.is_empty
+			subset_supertype = get_subset_supertype(nmodule, nclassdef,
+					is_nominal_intro)
+			if subset_supertype == null then
+				if is_nominal_intro then mclass.is_broken = true
+				return
+			end
+			data_class = subset_supertype.mnominal.as(MClass)
+			if is_nominal_intro then
+				mclass.data_class = data_class
+				set_base_class = true
+			end
+		else
+			assert mclass isa MClass
+			data_class = mclass
+		end
+		# FIXME: Workaround
+		assert mclass isa MNominal
+
 		var bound_mtype = get_bound_mtype(nmodule, nclassdef, subset_supertype)
 		if bound_mtype == null then return
 
 		var mclassdef = new MClassDef(mmodule, bound_mtype, nclassdef.location)
 		nclassdef.mclassdef = mclassdef
 		self.mclassdef2nclassdef[mclassdef] = nclassdef
+		if set_base_class then mclassdef.set_supertypes([data_class.mclass_type])
 
 		if nclassdef isa AStdClassdef then
 			var ndoc = nclassdef.n_doc
@@ -261,7 +288,68 @@ redef class ModelBuilder
 		return mclass.get_mtype(bounds)
 	end
 
-	# Visit the AST and set the super-types of the `MClassDef` objects
+	# Visit the AST and return the lone supertype of the specified type subset.
+	#
+	# For the introducing definition, bounds that are specified in the `super`
+	# declaration are included in the returned type (so that `build_a_mclassdef`
+	# can include them in the `bound_mtype`).
+	#
+	# In case of error, return `null`.
+	private fun get_subset_supertype(nmodule: AModule, nclassdef: AClassdef,
+		is_nominal_intro: Bool): nullable MClassType
+	do
+		var mclass = nclassdef.mclass.as(not null)
+		var supertypes = list_supertypes(nmodule, nclassdef, is_nominal_intro)
+
+		if is_nominal_intro then
+			# A subset can only have one direct supertype.
+			if supertypes.length != 1 then
+				if supertypes.is_empty then
+					var mmodule = nmodule.mmodule.as(not null)
+					var objectclass = try_get_mnominal_by_name(nmodule, mmodule,
+							"Object")
+
+					if objectclass == null then
+						# No base class is specified and `Object` is not defined.
+						error(nclassdef,
+							"Error: {mclass.kind} `{mclass.name}` must have " +
+							"a base class."
+						)
+					end
+					# Else, `list_supertypes` failed and we already have an
+					# error message.
+				else
+					error(nclassdef,
+						"Error: {mclass.kind} `{mclass.name}` has multiple " +
+						"base classes."
+					)
+				end
+				return null
+			end
+		else if supertypes.is_empty then
+			# All definitions have the same base class.
+			return mclass.data_class.mclass_type
+		else
+			error(nclassdef,
+				"Error: Only the introducing definition of " +
+				"{mclass.kind} `{mclass.name}` may specify a base class."
+			)
+		end
+
+		var supertype = supertypes.first
+		if not supertype.mnominal isa MClass then
+			# `list_supertypes` already raised an error about
+			# specializations rules.
+			return null
+		end
+		return supertype
+	end
+
+	# Visit the AST and set the supertypes of the `MClassDef` objects.
+	#
+	# Do nothing for a type subset definition because the creation of the
+	# `MClassDef` itself requires to look at supertypes. In that case,
+	# `build_a_mclassdef` is in charge of setting the supertype.
 	private fun collect_a_mclassdef_inheritance(nmodule: AModule, nclassdef: AClassdef)
 	do
 		var mmodule = nmodule.mmodule
@@ -273,6 +361,8 @@ redef class ModelBuilder
 		var mclassdef = nclassdef.mclassdef
 		if mclassdef == null then return
 
+		# The base class of a class subset is set by `build_a_mclassdef`.
+		if mclassdef.is_subset_def then return
 		var supertypes = list_supertypes(nmodule, nclassdef,
 				mclassdef.is_nominal_intro)
 		mclassdef.set_supertypes(supertypes)
@@ -307,7 +397,8 @@ redef class ModelBuilder
 			for nsc in nclassdef.n_superclasses do
 				specobject = false
 				var ntype = nsc.n_type
-				var mtype = resolve_mtype_unchecked(mmodule, mclassdef, ntype, false)
+				var mtype = resolve_mtype_unchecked2(mmodule, mclass, mclassdef,
+						ntype, false)
 				if mtype == null then continue # Skip because of error
 				if not mtype isa MClassType then
 					error(ntype, "Error: supertypes cannot be a formal type.")
