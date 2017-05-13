@@ -827,6 +827,14 @@ redef class AMethPropdef
 			end
 		end
 
+		# Check if the class kind allows to define/override the method.
+		if is_init then
+			if not is_new and
+					not check_can_init(modelbuilder, mclassdef, name_node) then
+				return
+			end
+		end
+
 		var look_like_a_root_init = look_like_a_root_init(modelbuilder, mclassdef)
 		var mprop: nullable MMethod = null
 		if not is_init or n_kwredef != null then mprop = modelbuilder.try_get_mproperty_by_name(name_node, mclassdef, name).as(nullable MMethod)
@@ -1106,6 +1114,23 @@ redef class AMethPropdef
 		var ret_type = n_signature.ret_type
 		if ret_type != null and ret_type == n_intro.n_signature.ret_type then
 			modelbuilder.advice(n_signature.n_type, "useless-signature", "Warning: useless return type repetition for redefined method `{mpropdef.name}`")
+		end
+	end
+
+	# Check if we can define a constructor for the specified class definition.
+	#
+	# `name_node` points to the name of the constructor (the `init` keyword).
+	private fun check_can_init(modelbuilder: ModelBuilder, mclassdef: MClassDef,
+			name_node: ANode): Bool
+	do
+		var mclass = mclassdef.mnominal
+		var kind = mclass.kind
+		if kind.can_init then
+			return true
+		else
+			modelbuilder.error(name_node,
+					"Error: {kind} `{mclass}` can not have a constructor.")
+			return false
 		end
 	end
 end
