@@ -526,6 +526,12 @@ redef class AType
 		end
 		return res
 	end
+
+	# Unlink the `MType` to this node.
+	#
+	# This is only needed in extreme cases to invalidate the cache of the
+	# `ModelBuilder::resolve_mtype*` family of methods.
+	fun clear_mtype do mtype = null
 end
 
 redef class AVisibility
