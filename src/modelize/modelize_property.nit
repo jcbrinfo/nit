@@ -1002,6 +1002,8 @@ redef class AMethPropdef
 		if atautoinit != null then
 			if not mpropdef.is_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be set on redefinitions.")
+			else if mclassdef.is_subset_def then
+				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be used in subsets.")
 			else if not mclassdef.is_class_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be used in class refinements.")
 			else
