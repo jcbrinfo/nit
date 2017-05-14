@@ -1378,6 +1378,9 @@ class AMethPropdef
 	# The `new` keyword, if any
 	var n_kwnew: nullable TKwnew = null is writable
 
+	# The `isa` keyword, if any
+	var n_kwisa: nullable TKwisa = null is writable
+
 	# The name of the method, if any
 	var n_methid: nullable AMethid = null is writable
 
