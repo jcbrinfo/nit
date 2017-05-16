@@ -1338,6 +1338,26 @@ abstract class MType
 	# REQUIRE: `not self.need_anchor`
 	fun collect_mclassdefs(mmodule: MModule): Set[MClassDef] is abstract
 
+	# List type subsets that are applicable to direct instances of this type.
+	#
+	# The returned set contains:
+	#  * the subset from `mmodule` and its imported modules
+	#  * the subset directly linked to this type and its super-types
+	#
+	# REQUIRE: `not self.need_anchor`
+	fun collect_subsets(mmodule: MModule): Set[MSubset] is abstract
+
+	# List all classdefs of the type subsets that are applicable to direct instances of this type.
+	#
+	# The returned set contains:
+	#  * the subset definitions from `mmodule` and its imported modules
+	#  * the subset definitions directly linked to this type and its super-types
+	#
+	# This function is used mainly internally.
+	#
+	# REQUIRE: `not self.need_anchor`
+	fun collect_subset_defs(mmodule: MModule): Set[MClassDef] is abstract
+
 	# Compute all the super-classes.
 	# This function is used mainly internally.
 	#
@@ -1416,6 +1436,26 @@ class MClassType
 		return cache[mmodule]
 	end
 
+	redef fun collect_subsets(mmodule)
+	do
+		assert not self.need_anchor
+		var cache = self.collect_subsets_cache
+		if not cache.has_key(mmodule) then
+			self.collect_things(mmodule)
+		end
+		return cache[mmodule]
+	end
+
+	redef fun collect_subset_defs(mmodule)
+	do
+		assert not self.need_anchor
+		var cache = self.collect_subset_defs_cache
+		if not cache.has_key(mmodule) then
+			self.collect_things(mmodule)
+		end
+		return cache[mmodule]
+	end
+
 	redef fun collect_mnominals(mmodule)
 	do
 		if collect_mnominals_last_module == mmodule then return collect_mnominals_last_module_cache
@@ -1449,13 +1489,17 @@ class MClassType
 		var res = new HashSet[MClassDef]
 		var seen = new HashSet[MNominal]
 		var types = new HashSet[MClassType]
+
+		# subsets on `self` and its supertypes, without checking parameter
+		# bounds.
+		var subset_candidates = new HashSet[MSubset]
+
 		seen.add(self.mnominal)
 		var todo = [self.mnominal]
 		while not todo.is_empty do
 			var mclass = todo.pop
 			#print "process {mclass}"
 			for mclassdef in mclass.mclassdefs do
-				if mclassdef.mnominal != mclass then continue
 				if not mmodule.in_importation <= mclassdef.mmodule then continue
 				#print "  process {mclassdef}"
 				res.add(mclassdef)
@@ -1468,13 +1512,44 @@ class MClassType
 					todo.add(superclass)
 				end
 			end
+			for msubset in mclass.subsets do
+				#print "  candidate subset {msubset}"
+				subset_candidates.add(msubset)
+			end
 		end
 		collect_mclassdefs_cache[mmodule] = res
+		collect_subsets_cache[mmodule] = subset_candidates
 		collect_mnominals_cache[mmodule] = seen
 		collect_mtypes_cache[mmodule] = types
+
+		# Filter out unappliable subsets (according to bounds of the type
+		# parameters). Else, `may_have_mproperty` and `MProperty::lookup_*`
+		# would contradict each other.
+		# Note : We need to fill the caches before doing this because
+		# `is_subtype` calls the `collect_*` methods.
+		var subsets = new HashSet[MSubset]
+		var subset_defs = new HashSet[MClassDef]
+		for msubset in subset_candidates do
+			var subset_type = msubset.intro.bound_mtype
+			var supertype = subset_type.as_data_type
+			if not self.is_subtype(mmodule, null, supertype) then
+				continue
+			end
+			#print "  subset {msubset}"
+			subsets.add(msubset)
+			for mclassdef in msubset.mclassdefs do
+				if not mmodule.in_importation <= mclassdef.mmodule then continue
+				#print "    def {mclassdef}"
+				subset_defs.add(mclassdef)
+			end
+		end
+		collect_subsets_cache[mmodule] = subsets
+		collect_subset_defs_cache[mmodule] = subset_defs
 	end
 
 	private var collect_mclassdefs_cache = new HashMap[MModule, Set[MClassDef]]
+	private var collect_subsets_cache = new HashMap[MModule, Set[MSubset]]
+	private var collect_subset_defs_cache = new HashMap[MModule, Set[MClassDef]]
 	private var collect_mnominals_cache = new HashMap[MModule, Set[MNominal]]
 	private var collect_mtypes_cache = new HashMap[MModule, Set[MClassType]]
 
@@ -1903,6 +1978,18 @@ abstract class MProxyType
 		return self.mtype.collect_mclassdefs(mmodule)
 	end
 
+	redef fun collect_subsets(mmodule)
+	do
+		assert not self.need_anchor
+		return self.mtype.collect_subsets(mmodule)
+	end
+
+	redef fun collect_subset_defs(mmodule)
+	do
+		assert not self.need_anchor
+		return self.mtype.collect_subset_defs(mmodule)
+	end
+
 	redef fun collect_mnominals(mmodule)
 	do
 		assert not self.need_anchor
@@ -1994,6 +2081,10 @@ class MNullType
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
 
+	redef fun collect_subsets(mmodule) do return new HashSet[MSubset]
+
+	redef fun collect_subset_defs(mmodule) do return new HashSet[MClassDef]
+
 	redef fun collect_mnominals(mmodule) do return new HashSet[MNominal]
 
 	redef fun collect_mtypes(mmodule) do return new HashSet[MClassType]
@@ -2019,6 +2110,10 @@ class MBottomType
 	redef fun can_resolve_for(mtype, anchor, mmodule) do return true
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
+
+	redef fun collect_subsets(mmodule) do return new HashSet[MSubset]
+
+	redef fun collect_subset_defs(mmodule) do return new HashSet[MClassDef]
 
 	redef fun collect_mnominals(mmodule) do return new HashSet[MNominal]
 
