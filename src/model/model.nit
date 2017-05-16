@@ -664,7 +664,7 @@ class MClassDef
 	var mmodule: MModule
 
 	# The associated `MClass`
-	var data_class: MClass is noinit
+	var data_class: MClass is lazy do return mnominal.data_class
 
 	# The associated `MNominal`
 	#
@@ -695,7 +695,6 @@ class MClassDef
 	init
 	do
 		self.mnominal = bound_mtype.mnominal
-		self.data_class = self.mnominal.data_class
 		mmodule.mclassdefs.add(self)
 		mnominal.mclassdefs.add(self)
 		if mnominal.intro_mmodule == mmodule then
