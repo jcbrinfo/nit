@@ -73,7 +73,7 @@ private class ExternClassesTypingPhaseModel
 		var mclass = mclassdef.mclass
 
 		# We only need to do this once per class
-		if not mclassdef.is_intro then return
+		if not mclassdef.is_class_intro then return
 
 		if mclass.kind != extern_kind then return
 

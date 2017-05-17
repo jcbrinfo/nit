@@ -271,7 +271,7 @@ redef class ModelBuilder
 			end
 		end
 
-		if mclassdef.is_intro and objectclass != null then
+		if mclassdef.is_class_intro and objectclass != null then
 			if mclass.kind == extern_kind and mclass.name != "Pointer" then
 				# it is an extern class, but not a Pointer
 				if pointerclass == null then

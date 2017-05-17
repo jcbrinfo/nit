@@ -73,7 +73,7 @@
 # Arguments in the `CLASSTYPE` are named following the `parameter_names`
 # attribute of the `MClassDef` that introduces the class. A class definition
 # introduces a class if and only if it has this class as `MCLASS` and
-# has `is_intro` set to `true`.
+# has `is_class_intro` set to `true`.
 #
 # `MClassDef`
 #

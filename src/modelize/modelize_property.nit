@@ -138,8 +138,8 @@ redef class ModelBuilder
 	do
 		var mclassdef = nclassdef.mclassdef.as(not null)
 
-		# Are we a refinement
-		if not mclassdef.is_intro then return
+		# Are we a refinement (or a subset definition)?
+		if not mclassdef.is_class_intro then return
 
 		# Look for the init in Object, or create it
 		if mclassdef.mclass.name == "Object" and the_root_init_mmethod == null then
@@ -508,7 +508,7 @@ redef class MClassDef
 	# Build the virtual type `SELF` only for introduction `MClassDef`
 	fun build_self_type(modelbuilder: ModelBuilder, nclassdef: AClassdef)
 	do
-		if not is_intro then return
+		if not is_class_intro then return
 
 		var name = "SELF"
 		var mprop = modelbuilder.try_get_mproperty_by_name(nclassdef, self, name)
@@ -990,7 +990,7 @@ redef class AMethPropdef
 		if atautoinit != null then
 			if not mpropdef.is_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be set on redefinitions.")
-			else if not mclassdef.is_intro then
+			else if not mclassdef.is_class_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be used in class refinements.")
 			else
 				self.is_autoinit = true
@@ -1279,7 +1279,7 @@ redef class AAttrPropdef
 			return
 		end
 
-		if not mclassdef.is_intro and not has_value and not noinit then
+		if not mclassdef.is_class_intro and not has_value and not noinit then
 			modelbuilder.advice(self, "attr-in-refinement", "Warning: attributes in refinement need a value or `noautoinit`.")
 		end
 
@@ -1329,7 +1329,7 @@ redef class AAttrPropdef
 				modelbuilder.error(atautoinit, "Error: `autoinit` attributes cannot have an initial value.")
 			else if not mwritepropdef.is_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` attributes cannot be set on redefinitions.")
-			else if not mclassdef.is_intro then
+			else if not mclassdef.is_class_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` attributes cannot be used in class refinements.")
 			else if atabstract == null then
 				modelbuilder.warning(atautoinit, "useless-autoinit", "Warning: superfluous `autoinit` on attribute.")

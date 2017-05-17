@@ -93,7 +93,7 @@ class DetectVarianceConstraints
 	do
 		for m in mainmodule.in_importation.greaters do
 			for cd in m.mclassdefs do
-				if cd.is_intro then
+				if cd.is_class_intro then
 					pts.add_all(cd.mclass.mparameters)
 					var a = cd.mclass.arity
 					if a == 0 then

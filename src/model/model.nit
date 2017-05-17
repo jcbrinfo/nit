@@ -775,6 +775,7 @@ class MClassDef
 	var in_hierarchy: nullable POSetElement[MClassDef] = null
 
 	# Is the definition the one that introduced `mclass`?
+	fun is_class_intro: Bool do return isset mclass._intro and mclass.intro == self
 
 	# Is the definition the one that introduced `mnominal`?
 	fun is_nominal_intro: Bool do return isset mnominal._intro and mnominal.intro == self
