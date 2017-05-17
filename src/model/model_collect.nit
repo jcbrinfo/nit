@@ -256,7 +256,7 @@ redef class MModule
 	fun collect_intro_mclassdefs(view: ModelView): Set[MClassDef] do
 		var res = new HashSet[MClassDef]
 		for mclassdef in mclassdefs do
-			if not mclassdef.is_intro then continue
+			if not mclassdef.is_nominal_intro then continue
 			if not view.accept_mentity(mclassdef) then continue
 			res.add mclassdef
 		end
@@ -267,7 +267,7 @@ redef class MModule
 	fun collect_redef_mclassdefs(view: ModelView): Set[MClassDef] do
 		var res = new HashSet[MClassDef]
 		for mclassdef in mclassdefs do
-			if mclassdef.is_intro then continue
+			if mclassdef.is_nominal_intro then continue
 			if not view.accept_mentity(mclassdef) then continue
 			res.add mclassdef
 		end
@@ -289,7 +289,7 @@ redef class MModule
 		var mclasses = new HashSet[MNominal]
 		for mclassdef in mclassdefs do
 			if not view.accept_mentity(mclassdef) then continue
-			if not mclassdef.is_intro then mclasses.add(mclassdef.mclass)
+			if not mclassdef.is_nominal_intro then mclasses.add(mclassdef.mnominal)
 		end
 		return mclasses
 	end
@@ -632,7 +632,7 @@ redef class MClassDef
 
 	redef fun collect_modifiers do
 		var res = super
-		if not is_intro then
+		if not is_nominal_intro then
 			res.add "redef"
 		else
 			res.add mnominal.visibility.to_s

@@ -220,12 +220,12 @@ redef class ModelBuilder
 				var mdoc = ndoc.to_mdoc
 				mclassdef.mdoc = mdoc
 				mdoc.original_mentity = mclassdef
-			else if mclassdef.is_intro and mclass.visibility >= public_visibility then
+			else if mclassdef.is_nominal_intro and mclass.visibility >= public_visibility then
 				advice(nclassdef, "missing-doc", "Documentation warning: Undocumented public class `{mclass}`")
 			end
 		end
 
-		if mclassdef.is_intro then
+		if mclassdef.is_nominal_intro then
 			self.toolcontext.info("{mclassdef} introduces new {mclass.kind} {mclass.full_name}", 3)
 		else
 			self.toolcontext.info("{mclassdef} refines {mclass.kind} {mclass.full_name}", 3)

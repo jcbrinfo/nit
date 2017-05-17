@@ -570,7 +570,8 @@ redef class DefinitionArticle
 			html_subtitle = title
 			html_toc_title = "in {mentity.html_name}"
 			html_source_link = v.html_source_link(mentity.location)
-			if page isa MEntityPage and mentity.is_intro and mentity.mmodule != page.mentity then
+			if page isa MEntityPage and mentity.is_nominal_intro and
+					mentity.mmodule != page.mentity then
 				is_short_comment = true
 			end
 			if page isa MModulePage then is_toc_hidden = true

@@ -210,7 +210,7 @@ class MNBR
 		for mmodule in mmodules do
 			var value = 0
 			for mclassdef in mmodule.mclassdefs do
-				if not mclassdef.is_intro then value += 1
+				if not mclassdef.is_nominal_intro then value += 1
 			end
 			values[mmodule] = value
 		end

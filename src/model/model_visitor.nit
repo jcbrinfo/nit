@@ -180,7 +180,7 @@ redef class MModule
 	# On class importation, nothing is visited (the `MNominal` and the `MClassDef` are visited in imported modules).
 	redef fun visit_all(v) do
 		for x in mclassdefs do
-			if x.is_intro then v.enter_visit(x.mclass)
+			if x.is_nominal_intro then v.enter_visit(x.mnominal)
 			v.enter_visit(x)
 		end
 	end

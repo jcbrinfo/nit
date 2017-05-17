@@ -694,7 +694,7 @@ class MClassDef
 	# The full-name of the nominal is used for refinement.
 	# Example: "my_module$intro_module::MyClass"
 	redef var full_name is lazy do
-		if is_intro then
+		if is_nominal_intro then
 			# public gives 'p$A'
 			# private gives 'p::m$A'
 			return "{mmodule.namespace_for(mnominal.visibility)}${mnominal.name}"
@@ -712,7 +712,7 @@ class MClassDef
 	end
 
 	redef var c_name is lazy do
-		if is_intro then
+		if is_nominal_intro then
 			return "{mmodule.c_namespace_for(mnominal.visibility)}___{mnominal.c_name}"
 		else if mnominal.intro_mmodule.mpackage == mmodule.mpackage and mnominal.visibility > private_visibility then
 			return "{mmodule.c_name}___{mnominal.name.to_cmangle}"
@@ -775,7 +775,9 @@ class MClassDef
 	var in_hierarchy: nullable POSetElement[MClassDef] = null
 
 	# Is the definition the one that introduced `mclass`?
-	fun is_intro: Bool do return isset mclass._intro and mclass.intro == self
+
+	# Is the definition the one that introduced `mnominal`?
+	fun is_nominal_intro: Bool do return isset mnominal._intro and mnominal.intro == self
 
 	# All properties introduced by the classdef
 	var intro_mproperties = new Array[MProperty]
@@ -2125,7 +2127,7 @@ abstract class MProperty
 	#
 	# Example: `my_package::MyClass::My_method`
 	redef var full_name is lazy do
-		if intro_mclassdef.is_intro then
+		if intro_mclassdef.is_nominal_intro then
 			return "{intro_mclassdef.mmodule.namespace_for(visibility)}::{intro_mclassdef.mnominal.name}::{name}"
 		else
 			return "{intro_mclassdef.mmodule.full_name}::{intro_mclassdef.mnominal.name}::{name}"

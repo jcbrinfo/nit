@@ -94,12 +94,12 @@ do
 		end
 		buf.append("<dt>introduced classes</dt>\n")
 		for x in mmodule.mclassdefs do
-			if not x.is_intro then continue
+			if not x.is_nominal_intro then continue
 			buf.append("<dd>{linkto(x.mnominal)} by {linkto(x)}</dd>\n")
 		end
 		buf.append("<dt>refined classes</dt>\n")
 		for x in mmodule.mclassdefs do
-			if x.is_intro then continue
+			if x.is_nominal_intro then continue
 			buf.append("<dd>{linkto(x.mnominal)} by {linkto(x)}</dd>\n")
 		end
 		buf.append("</dl>\n")

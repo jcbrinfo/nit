@@ -882,7 +882,7 @@ redef class AMethPropdef
 		var mmodule = mclassdef.mmodule
 		var nsig = self.n_signature
 
-		if mpropdef.mproperty.is_root_init and not mclassdef.is_intro then
+		if mpropdef.mproperty.is_root_init and not mclassdef.is_nominal_intro then
 			var root_init = mclassdef.mnominal.root_init
 			if root_init != null then
 				# Inherit the initializers by refinement

@@ -174,7 +174,7 @@ end
 redef class MClassDef
 	redef fun core_serialize_to(v) do
 		super
-		v.serialize_attribute("is_intro", is_intro)
+		v.serialize_attribute("is_intro", is_nominal_intro)
 		v.serialize_attribute("mparameters", mnominal.mparameters)
 		if v isa FullJsonSerializer then
 			var view = private_view

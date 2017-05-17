@@ -574,7 +574,7 @@ redef class MClassDef
 	do
 		var res = new HInfoBox(v, "class {mnominal.name}")
 		res.href = v.hrefto(self)
-		if is_intro then
+		if is_nominal_intro then
 			res.new_field("class").text(mnominal.name)
 		else
 			res.new_field("redef class").text(mnominal.name)
@@ -589,7 +589,7 @@ redef class MClassDef
 			var c = res.new_dropdown("hier", "super-classes")
 			for x in in_hierarchy.greaters do
 				if x == self then continue
-				if not x.is_intro then continue
+				if not x.is_nominal_intro then continue
 				c.open("li").add x.linkto(v)
 			end
 		end
@@ -597,7 +597,7 @@ redef class MClassDef
 			var c = res.new_dropdown("hier", "sub-classes")
 			for x in in_hierarchy.smallers do
 				if x == self then continue
-				if not x.is_intro then continue
+				if not x.is_nominal_intro then continue
 				c.open("li").add x.linkto(v)
 			end
 		end
