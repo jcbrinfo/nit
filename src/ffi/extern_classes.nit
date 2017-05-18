@@ -81,12 +81,16 @@ private class ExternClassesTypingPhaseModel
 	end
 end
 
+redef class MNominal
+	# Extern type associated to this class according to specialisation
+	fun ftype: nullable ForeignType is abstract
+end
+
 redef class MClass
 	private var ftype_cache: nullable ForeignType = null
 	private var ftype_computed = false
 
-	# Extern type associated to this class according to specialisation
-	fun ftype: nullable ForeignType do return ftype_cache
+	redef fun ftype do return ftype_cache
 
 	redef fun ctype do return ftype_cache.ctype
 

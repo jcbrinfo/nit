@@ -497,7 +497,13 @@ redef class MNominal
 	#
 	# TODO: Where to put this information is not clear because unlike other
 	# informations, the initialisers are stable in a same class.
-	var root_init: nullable MMethodDef = null
+	fun root_init: nullable MMethodDef is abstract
+end
+
+redef class MClass
+	redef var root_init = null
+end
+
 end
 
 redef class MClassDef
