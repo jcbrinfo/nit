@@ -128,6 +128,7 @@ class SeparateErasureCompiler
 			end
 			for parent in parents do
 				if parent == mclass then continue
+				parent = mclass.check_super_mclass(parent)
 				for mproperty in self.mainmodule.properties(parent) do
 					if not mproperty isa MVirtualTypeProp then continue
 					var color = vt_colors[mproperty]
@@ -174,6 +175,7 @@ class SeparateErasureCompiler
 				supers = mclass.in_hierarchy(mainmodule).greaters.to_a
 			end
 			for sup in supers do
+				sup = mclass.check_super_mclass(sup)
 				var color = class_colors[sup]
 				if table.length <= color then
 					for i in [table.length .. color[ do

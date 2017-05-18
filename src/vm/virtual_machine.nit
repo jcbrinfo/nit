@@ -214,7 +214,7 @@ class VirtualMachine super NaiveInterpreter
 	private fun load_supers(mclass: MClass)
 	do
 		for parent in mclass.in_hierarchy(mainmodule).direct_greaters do
-			load_class_indirect(parent)
+			load_class_indirect(mclass.check_super_mclass(parent))
 		end
 	end
 
@@ -666,7 +666,9 @@ redef class MClass
 		var superclasses = new Array[MClass]
 
 		# Add all superclasses of `self`
-		superclasses.add_all(self.in_hierarchy(v.mainmodule).greaters)
+		for sup in in_hierarchy(v.mainmodule).greaters do
+			superclasses.add(check_super_mclass(sup))
+		end
 
 		var res = new Array[MClass]
 		if superclasses.length > 1 then
@@ -697,6 +699,7 @@ redef class MClass
 			var prefix = null
 			var max = -1
 			for cl in direct_parents do
+				cl = check_super_mclass(cl)
 				# If we never have visited this class
 				if not res.has(cl) then
 					var properties_length = cl.mmethods.length + cl.mattributes.length
@@ -716,6 +719,7 @@ redef class MClass
 
 				# Then we recurse on other classes
 				for cl in direct_parents do
+					cl = check_super_mclass(cl)
 					if cl != prefix then
 						res = new Array[MClass]
 						res = cl.dfs(v, res)
@@ -731,9 +735,10 @@ redef class MClass
 			res.push(self)
 		else
 			if direct_parents.length > 0 then
-				if prefix == null then prefix = direct_parents.first
+				var p = check_super_mclass(direct_parents.first)
 
-				res = direct_parents.first.dfs(v, res)
+				if prefix == null then prefix = p
+				res = p.dfs(v, res)
 			end
 		end
 

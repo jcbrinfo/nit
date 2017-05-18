@@ -111,6 +111,7 @@ redef class MClass
 
 			# look in super classes
 			for s in in_hierarchy(intro_mmodule).direct_greaters do
+				s = check_super_mclass(s)
 				var super_ftype = s.compute_ftype(v)
 				if super_ftype != null then
 					if ftype_b == null then

@@ -323,7 +323,13 @@ redef class MModule
 			print_error msg
 			#exit(1)
 		end
-		return cla.first
+		var result = cla.first
+		if not result isa MClass then
+			print_error("Fatal Error: class {name} in {self} is not primitive")
+			exit(1)
+			abort
+		end
+		return result
 	end
 
 	# Try to get the primitive method named `name` on the type `recv`
@@ -621,6 +627,21 @@ class MClass
 	redef var is_abstract is lazy do return kind == abstract_kind
 
 	redef fun mdoc_or_fallback do return intro.mdoc_or_fallback
+
+	# Ensure that the specified superclass is a `MClass`
+	#
+	# In case of error, write a meaningful message. In case of success, return
+	# `sup`.
+	fun check_super_mclass(sup: MNominal): MClass
+	do
+		assert sup isa MClass else
+			print_error(
+				"Fatal Error: unexpected `{sup.kind} {sup}` as " +
+				"superclass of `{kind} {to_s}`."
+			)
+		end
+		return sup
+	end
 end
 
 

@@ -4170,6 +4170,7 @@ redef class MModule
 				parents.add_all(mclass.in_hierarchy(self).direct_greaters)
 			end
 			for parent in parents do
+				assert parent isa MClass
 				properties.add_all(self.properties(parent))
 			end
 			for mclassdef in mclass.mclassdefs do
