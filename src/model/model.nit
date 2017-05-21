@@ -391,7 +391,7 @@ end
 # *is the method `foo` exists in the class `Bar` in the current module?*
 #
 # During some global analysis, the module considered may be the main module of the program.
-class MClass
+abstract class MNominal
 	super MEntity
 
 	# The module that introduce the class
@@ -479,7 +479,7 @@ class MClass
 	# The kind of the class (interface, abstract class, etc.)
 	#
 	# In Nit, the kind of a class cannot evolve in refinements.
-	var kind: MClassKind
+	fun kind: MClassKind is abstract
 
 	# The visibility of the class
 	#
@@ -495,6 +495,11 @@ class MClass
 	end
 
 	redef fun model do return intro_mmodule.model
+
+	# The main `MClass` associated to this nominal.
+	#
+	# For `MClass`es, returns `self`.
+	fun mclass: MClass is abstract
 
 	# All class definitions (introduction and refinements)
 	var mclassdefs = new Array[MClassDef]
@@ -564,16 +569,16 @@ class MClass
 	var has_new_factory = false is writable
 
 	# Is `self` a standard or abstract class kind?
-	var is_class: Bool is lazy do return kind == concrete_kind or kind == abstract_kind
+	fun is_class: Bool is abstract
 
 	# Is `self` an interface kind?
-	var is_interface: Bool is lazy do return kind == interface_kind
+	fun is_interface: Bool is abstract
 
 	# Is `self` an enum kind?
-	var is_enum: Bool is lazy do return kind == enum_kind
+	fun is_enum: Bool is abstract
 
 	# Is `self` and abstract class?
-	var is_abstract: Bool is lazy do return kind == abstract_kind
+	fun is_abstract: Bool is abstract
 
 	redef fun mdoc_or_fallback
 	do
@@ -581,6 +586,31 @@ class MClass
 		# recursion.
 		return intro.mdoc
 	end
+end
+
+# A named class
+#
+# A `MNominal` that is strongly linked to its instances (contrary to a `MSubset`).
+class MClass
+	super MNominal
+	autoinit(intro_mmodule, name, location, setup_parameter_names, kind, visibility)
+
+	redef var kind: MClassKind
+
+	redef init
+	do
+		super
+		intro_mmodule.intro_mclasses.add(self)
+	end
+
+	redef fun mclass do return self
+
+	redef var is_class is lazy do return kind == concrete_kind or kind == abstract_kind
+	redef var is_interface is lazy do return kind == interface_kind
+	redef var is_enum is lazy do return kind == enum_kind
+	redef var is_abstract is lazy do return kind == abstract_kind
+
+	redef fun mdoc_or_fallback do return intro.mdoc_or_fallback
 end
 
 
