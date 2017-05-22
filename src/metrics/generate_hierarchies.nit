@@ -69,7 +69,7 @@ do
 	buf.append("digraph \{\n")
 	buf.append("node [shape=box];\n")
 	buf.append("rankdir=BT;\n")
-	var hierarchy = mmodule.flatten_mclass_hierarchy
+	var hierarchy = mmodule.flatten_mnominal_hierarchy
 	for mclass in hierarchy do
 		buf.append("\"{mclass}\" [label=\"{mclass}\"];\n")
 		for s in hierarchy[mclass].direct_greaters do

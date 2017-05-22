@@ -175,14 +175,14 @@ redef class MClassDef
 	redef fun core_serialize_to(v) do
 		super
 		v.serialize_attribute("is_intro", is_intro)
-		v.serialize_attribute("mparameters", mclass.mparameters)
+		v.serialize_attribute("mparameters", mnominal.mparameters)
 		if v isa FullJsonSerializer then
 			var view = private_view
 			v.serialize_attribute("mmodule", to_mentity_ref(mmodule))
-			v.serialize_attribute("mclass", to_mentity_ref(mclass))
+			v.serialize_attribute("mclass", to_mentity_ref(mnominal))
 			v.serialize_attribute("mpropdefs", to_mentity_refs(sort_entities(mpropdefs)))
 			v.serialize_attribute("intro_mproperties", to_mentity_refs(sort_entities(intro_mproperties)))
-			v.serialize_attribute("intro", to_mentity_ref(mclass.intro))
+			v.serialize_attribute("intro", to_mentity_ref(mnominal.intro))
 			v.serialize_attribute("mpackage", to_mentity_ref(mmodule.mpackage))
 			v.serialize_attribute("intro_mpropdefs", to_mentity_refs(sort_entities(collect_intro_mpropdefs(view))))
 			v.serialize_attribute("redef_mpropdefs", to_mentity_refs(sort_entities(collect_redef_mpropdefs(view))))

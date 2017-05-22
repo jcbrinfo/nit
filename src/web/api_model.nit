@@ -56,7 +56,7 @@ class APIList
 		else if k == "module" then
 			for mentity in config.view.mmodules do mentities.add mentity
 		else if k == "class" then
-			for mentity in config.view.mclasses do mentities.add mentity
+			for mentity in config.view.mnominals do mentities.add mentity
 		else if k == "classdef" then
 			for mentity in config.view.mclassdefs do mentities.add mentity
 		else if k == "property" then
@@ -231,7 +231,7 @@ class APIEntityUML
 		var mentity = mentity_from_uri(req, res)
 		if mentity == null then return
 		var dot
-		if mentity isa MClassDef then mentity = mentity.mclass
+		if mentity isa MClassDef then mentity = mentity.mnominal
 		if mentity isa MClass then
 			var uml = new UMLModel(config.view, config.mainmodule)
 			dot = uml.generate_class_uml.write_to_string

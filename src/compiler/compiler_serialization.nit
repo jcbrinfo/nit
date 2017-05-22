@@ -31,7 +31,7 @@ redef class ModelBuilder
 		end
 
 		if uses_json_serialization_read then
-			write_poset_to_file(compiler, "nit_class_inheritance_metamodel", compiler.mainmodule.flatten_mclass_hierarchy)
+			write_poset_to_file(compiler, "nit_class_inheritance_metamodel", compiler.mainmodule.flatten_mnominal_hierarchy)
 		end
 
 		super

@@ -35,6 +35,6 @@ private class PosetMetricsPhase
 		print "## Classdef hierarchy"
 		model.mclassdef_hierarchy.print_metrics
 		print "## Class hierarchy"
-		mainmodule.flatten_mclass_hierarchy.print_metrics
+		mainmodule.flatten_mnominal_hierarchy.print_metrics
 	end
 end

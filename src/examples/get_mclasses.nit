@@ -51,7 +51,7 @@ for arg in args do
 		# Iterate on all classes of the model to find one that matches the qualified name.
 		# Because we are efficient, we iterate only on the classes with the same short name.
 		var short_name = qid.n_id.text
-		var classes = model.get_mclasses_by_name(short_name)
+		var classes = model.get_mnominals_by_name(short_name)
 		var found = false
 		if classes != null then for c in classes do
 			if qid.accept(c) then

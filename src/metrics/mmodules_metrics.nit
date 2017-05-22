@@ -192,7 +192,7 @@ class MNBI
 
 	redef fun collect(mmodules) do
 		for mmodule in mmodules do
-			values[mmodule] = mmodule.intro_mclasses.length
+			values[mmodule] = mmodule.intro_mnominals.length
 		end
 	end
 end

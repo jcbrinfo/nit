@@ -76,16 +76,16 @@ redef class MClassDef
 		var name = self.name.escape_to_dot
 		var t = new Template
 		t.add "{mmodule.name.escape_to_dot}{name} [\n\tlabel = \"\{"
-		if mclass.kind == abstract_kind then
+		if mnominal.kind == abstract_kind then
 			t.add "abstract\\n{name}"
-		else if mclass.kind == interface_kind then
+		else if mnominal.kind == interface_kind then
 			t.add "interface\\n{name}"
 		else
 			t.add "{name}"
 		end
-		if mclass.arity > 0 then
+		if mnominal.arity > 0 then
 			t.add "["
-			var mparameters = mclass.mparameters
+			var mparameters = mnominal.mparameters
 			t.add mparameters.first.name
 			for i in [1 .. mparameters.length[ do
 				t.add ", "
@@ -108,7 +108,7 @@ redef class MClassDef
 			t.add "\\l"
 		end
 		t.add "\}\""
-		if is_intro then
+		if is_nominal_intro then
 			t.add "color=\"{intro_colour}\""
 		else
 			t.add "color=\"{redef_colour}\""
@@ -118,7 +118,7 @@ redef class MClassDef
 		for i in supers do
 			if i.mmodule != mmodule then continue
 			t.add "{i.mmodule}{i.name} -> {mmodule}{name} [dir=back"
-			if i.mclass.kind == interface_kind then
+			if i.mnominal.kind == interface_kind then
 				t.add " arrowtail=open style=dashed"
 			else
 				t.add " arrowtail=empty"

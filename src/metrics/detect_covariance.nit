@@ -50,7 +50,7 @@ private class DetectCovariancePhase
 	fun cpt_total_classes: Counter[String] do return once new Counter[String]
 
 	fun cpt_explanations: Counter[String] do return once new Counter[String]
-	fun cpt_classes: Counter[MClass] do return once new Counter[MClass]
+	fun cpt_classes: Counter[MNominal] do return once new Counter[MNominal]
 	fun cpt_pattern: Counter[String] do return once new Counter[String]
 	fun cpt_nodes: Counter[String] do return once new Counter[String]
 	fun cpt_modules: Counter[String] do return once new Counter[String]
@@ -138,9 +138,9 @@ private class DetectCovariancePhase
 			cpt_subtype_kinds.inc("generic type")
 		else if not sub isa MClassType then
 			cpt_subtype_kinds.inc("formal type")
-		else if sub.mclass.kind == enum_kind then
+		else if sub.mnominal.kind == enum_kind then
 			cpt_subtype_kinds.inc("primitive type")
-		else if sub.mclass.name == "Object" then
+		else if sub.mnominal.name == "Object" then
 			cpt_subtype_kinds.inc("object")
 		else
 			cpt_subtype_kinds.inc("non-generic type")
@@ -148,7 +148,7 @@ private class DetectCovariancePhase
 
 		# Class of the subtype
 		if sub isa MClassType then
-			cpt_total_classes.inc(sub.mclass.to_s)
+			cpt_total_classes.inc(sub.mnominal.to_s)
 		else
 			cpt_total_classes.inc(sub.to_s)
 		end
@@ -205,7 +205,7 @@ private class DetectCovariancePhase
 		## ONLY covariance remains here
 
 		cpt_modules.inc(mmodule.mgroup.mpackage.name)
-		cpt_classes.inc(sub.mclass)
+		cpt_classes.inc(sub.mnominal)
 
 		# Track if `cpt_explanations` is already decided (used to fallback on unknown)
 		var caseknown = false
@@ -272,7 +272,7 @@ private class DetectCovariancePhase
 			cpt_cast_pattern.inc("lateral cast to generic")
 		else if not sub.is_subtype_invar(mmodule, anchor, sup) then
 			assert sup isa MGenericType
-			if sup.mclass != sub.mclass then
+			if sup.mnominal != sub.mnominal then
 				cpt_cast_pattern.inc("covariant downcast to a generic (distinct classes)")
 			else
 				cpt_cast_pattern.inc("covariant downcast to a generic (same classes)")
@@ -280,14 +280,14 @@ private class DetectCovariancePhase
 		else if not sup isa MGenericType then
 			cpt_cast_pattern.inc("invariant downcast from non-generic to a generic")
 		else
-			assert sup.mclass != sub.mclass
+			assert sup.mnominal != sub.mnominal
 			cpt_cast_pattern.inc("invariant downcast from generic to generic")
 		end
 
 		cpt_cast_kind.inc(sub.class_name.to_s)
 
 		if sub isa MGenericType then
-			cpt_cast_classes.inc(sub.mclass.to_s)
+			cpt_cast_classes.inc(sub.mnominal.to_s)
 		else if sub isa MClassType then
 			# No generic class, so no covariance at runtime
 		else
@@ -364,7 +364,7 @@ redef class TypeVisitor
 			if not autocast then
 				return res
 			end
-			sup = supx.resolve_for(anchor.mclass.mclass_type, anchor, mmodule, true)
+			sup = supx.resolve_for(anchor.mnominal.mclass_type, anchor, mmodule, true)
 			if self.is_subtype(sub, sup) then
 				dcp.cpt_autocast.inc("vt")
 				dcp.count_cast(node, supx, sub, mmodule, anchor)
@@ -494,12 +494,12 @@ redef class MType
 
 		if anchor == null then anchor = sub # UGLY: any anchor will work
 		var resolved_sub = sub.anchor_to(mmodule, anchor)
-		var res = resolved_sub.collect_mclasses(mmodule).has(sup.mclass)
+		var res = resolved_sub.collect_mnominals(mmodule).has(sup.mnominal)
 		if res == false then return false
 		if not sup isa MGenericType then return true
-		var sub2 = sub.supertype_to(mmodule, anchor, sup.mclass)
-		assert sub2.mclass == sup.mclass
-		for i in [0..sup.mclass.arity[ do
+		var sub2 = sub.supertype_to(mmodule, anchor, sup.mnominal)
+		assert sub2.mnominal == sup.mnominal
+		for i in [0..sup.mnominal.arity[ do
 			var sub_arg = sub2.arguments[i]
 			var sup_arg = sup.arguments[i]
 			res = sub_arg.is_subtype(mmodule, anchor, sup_arg)

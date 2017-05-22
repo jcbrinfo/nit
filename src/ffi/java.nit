@@ -284,7 +284,7 @@ redef class AMethPropdef
 		end
 
 		# Pointer::sys
-		var pointer_class = modelbuilder.try_get_mclass_by_name(self, mmodule, "Pointer")
+		var pointer_class = modelbuilder.try_get_mnominal_by_name(self, mmodule, "Pointer")
 		assert pointer_class != null
 		var pointer_sys_meth = modelbuilder.try_get_mproperty_by_name2(self, mmodule, pointer_class.mclass_type, "sys")
 		assert pointer_sys_meth != null and pointer_sys_meth isa MMethod
@@ -294,7 +294,7 @@ redef class AMethPropdef
 		mmodule.ffi_callbacks[c_language_visitor].add(explicit_call)
 
 		# Sys::jni_env
-		var sys_class = modelbuilder.try_get_mclass_by_name(self, mmodule, "Sys")
+		var sys_class = modelbuilder.try_get_mnominal_by_name(self, mmodule, "Sys")
 		assert sys_class != null
 		var sys_jni_env_meth = modelbuilder.try_get_mproperty_by_name2(self, mmodule, sys_class.mclass_type, "jni_env")
 		if sys_jni_env_meth == null or not sys_jni_env_meth isa MMethod then

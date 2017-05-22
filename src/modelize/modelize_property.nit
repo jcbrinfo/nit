@@ -372,8 +372,8 @@ redef class ModelBuilder
 		var mmodule_type: nullable MModule = null # The original module of the type
 		mtype = mtype.undecorate
 		if mtype isa MClassType then
-			vis_type = mtype.mclass.visibility
-			mmodule_type = mtype.mclass.intro_mmodule
+			vis_type = mtype.mnominal.visibility
+			mmodule_type = mtype.mnominal.intro_mmodule
 		else if mtype isa MVirtualType then
 			vis_type = mtype.mproperty.visibility
 			mmodule_type = mtype.mproperty.intro_mclassdef.mmodule
@@ -491,7 +491,7 @@ redef class AClassdef
 	private var build_properties_is_done = false
 end
 
-redef class MClass
+redef class MNominal
 	# The base init of the class.
 	# Used to get the common new_msignature and initializers
 	#
@@ -526,7 +526,7 @@ redef class MClassDef
 			var nintro = modelbuilder.mpropdef2npropdef[intro]
 
 			# SELF must be declared in Object, otherwise this will create conflicts
-			if intro_mclassdef.mclass.name != "Object" then
+			if intro_mclassdef.mnominal.name != "Object" then
 				modelbuilder.error(nintro, "Error: the virtual type `SELF` must be declared in `Object`.")
 			end
 
@@ -546,7 +546,7 @@ redef class MClassDef
 		# This class introduction inherits a SELF
 		# We insert an artificial property to update it
 		var mpropdef = new MVirtualTypeDef(self, mprop, self.location)
-		mpropdef.bound = mclass.mclass_type
+		mpropdef.bound = mnominal.mclass_type
 	end
 end
 
@@ -570,7 +570,7 @@ redef class APropdef
 				mvisibility = public_visibility
 			end
 		end
-		if mclassdef.mclass.visibility == private_visibility then
+		if mclassdef.mnominal.visibility == private_visibility then
 			if mvisibility == protected_visibility then
 				assert nvisibility != null
 				modelbuilder.error(nvisibility, "Error: `private` is the only legal visibility for properties in a private class.")
@@ -619,13 +619,13 @@ redef class APropdef
 	private fun check_redef_keyword(modelbuilder: ModelBuilder, mclassdef: MClassDef, kwredef: nullable Token, need_redef: Bool, mprop: MProperty): Bool
 	do
 		if mclassdef.mprop2npropdef.has_key(mprop) then
-			modelbuilder.error(self, "Error: a property `{mprop}` is already defined in class `{mclassdef.mclass}` at line {mclassdef.mprop2npropdef[mprop].location.line_start}.")
+			modelbuilder.error(self, "Error: a property `{mprop}` is already defined in class `{mclassdef.mnominal}` at line {mclassdef.mprop2npropdef[mprop].location.line_start}.")
 			return false
 		end
 		if mprop isa MMethod and mprop.is_root_init then return true
 		if kwredef == null then
 			if need_redef then
-				modelbuilder.error(self, "Redef Error: `{mclassdef.mclass}::{mprop.name}` is an inherited property. To redefine it, add the `redef` keyword.")
+				modelbuilder.error(self, "Redef Error: `{mclassdef.mnominal}::{mprop.name}` is an inherited property. To redefine it, add the `redef` keyword.")
 				return false
 			end
 
@@ -634,15 +634,19 @@ redef class APropdef
 			if mprop.intro_mclassdef.mmodule.mgroup != null and mprop.visibility >= protected_visibility then
 				var others = modelbuilder.model.get_mproperties_by_name(mprop.name)
 				if others != null then for other in others do
-					if other != mprop and other.intro_mclassdef.mmodule.mgroup != null and other.intro_mclassdef.mmodule.mgroup.mpackage == mprop.intro_mclassdef.mmodule.mgroup.mpackage and other.intro_mclassdef.mclass.name == mprop.intro_mclassdef.mclass.name and other.visibility >= protected_visibility then
-						modelbuilder.advice(self, "full-name-conflict", "Warning: A property named `{other.full_name}` is already defined in module `{other.intro_mclassdef.mmodule}` for the class `{other.intro_mclassdef.mclass.name}`.")
+					if other != mprop and
+							other.intro_mclassdef.mmodule.mgroup != null and
+							other.intro_mclassdef.mmodule.mgroup.mpackage == mprop.intro_mclassdef.mmodule.mgroup.mpackage and
+							other.intro_mclassdef.mnominal.name == mprop.intro_mclassdef.mnominal.name and
+							other.visibility >= protected_visibility then
+						modelbuilder.advice(self, "full-name-conflict", "Warning: A property named `{other.full_name}` is already defined in module `{other.intro_mclassdef.mmodule}` for the class `{other.intro_mclassdef.mnominal.name}`.")
 						break
 					end
 				end
 			end
 		else
 			if not need_redef then
-				modelbuilder.error(self, "Error: no property `{mclassdef.mclass}::{mprop.name}` is inherited. Remove the `redef` keyword to define a new property.")
+				modelbuilder.error(self, "Error: no property `{mclassdef.mnominal}::{mprop.name}` is inherited. Remove the `redef` keyword to define a new property.")
 				return false
 			end
 		end
@@ -830,7 +834,7 @@ redef class AMethPropdef
 			end
 			mprop.is_init = is_init
 			mprop.is_new = n_kwnew != null
-			if mprop.is_new then mclassdef.mclass.has_new_factory = true
+			if mprop.is_new then mclassdef.mnominal.has_new_factory = true
 			if name == "sys" then mprop.is_toplevel = true # special case for sys allowed in `new` factories
 			if not self.check_redef_keyword(modelbuilder, mclassdef, n_kwredef, false, mprop) then
 				mprop.is_broken = true
@@ -879,7 +883,7 @@ redef class AMethPropdef
 		var nsig = self.n_signature
 
 		if mpropdef.mproperty.is_root_init and not mclassdef.is_intro then
-			var root_init = mclassdef.mclass.root_init
+			var root_init = mclassdef.mnominal.root_init
 			if root_init != null then
 				# Inherit the initializers by refinement
 				mpropdef.new_msignature = root_init.new_msignature
@@ -912,7 +916,7 @@ redef class AMethPropdef
 			if msignature == null then return # Skip error
 
 			# The local signature is adapted to use the local formal types, if any.
-			msignature = msignature.resolve_for(mclassdef.mclass.mclass_type, mclassdef.bound_mtype, mmodule, false)
+			msignature = msignature.resolve_for(mclassdef.mnominal.mclass_type, mclassdef.bound_mtype, mmodule, false)
 
 			# Check inherited signature arity
 			if param_names.length != msignature.arity then
@@ -962,7 +966,7 @@ redef class AMethPropdef
 		end
 
 		# In `new`-factories, the return type is by default the classtype.
-		if ret_type == null and mpropdef.mproperty.is_new then ret_type = mclassdef.mclass.mclass_type
+		if ret_type == null and mpropdef.mproperty.is_new then ret_type = mclassdef.mnominal.mclass_type
 
 		# Special checks for operator methods
 		if not accept_special_last_parameter and mparameters.not_empty and mparameters.last.is_vararg then
@@ -1175,7 +1179,7 @@ redef class AAttrPropdef
 
 	redef fun build_property(modelbuilder, mclassdef)
 	do
-		var mclass = mclassdef.mclass
+		var mclass = mclassdef.mnominal
 		var nid2 = n_id2
 		var name = nid2.text
 
@@ -1360,7 +1364,7 @@ redef class AAttrPropdef
 			inherited_type = msignature.return_mtype
 			if inherited_type != null then
 				# The inherited type is adapted to use the local formal types, if any.
-				inherited_type = inherited_type.resolve_for(mclassdef.mclass.mclass_type, mclassdef.bound_mtype, mmodule, false)
+				inherited_type = inherited_type.resolve_for(mclassdef.mnominal.mclass_type, mclassdef.bound_mtype, mmodule, false)
 				if mtype == null then mtype = inherited_type
 			end
 		end
@@ -1373,53 +1377,53 @@ redef class AAttrPropdef
 				else if nexpr isa AAsCastExpr then
 					mtype = modelbuilder.resolve_mtype_unchecked(mmodule, mclassdef, nexpr.n_type, true)
 				else if nexpr isa AIntegerExpr then
-					var cla: nullable MClass = null
+					var cla: nullable MNominal = null
 					if nexpr.value isa Int then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int")
 					else if nexpr.value isa Byte then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Byte")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Byte")
 					else if nexpr.value isa Int8 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int8")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int8")
 					else if nexpr.value isa Int16 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int16")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int16")
 					else if nexpr.value isa UInt16 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "UInt16")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "UInt16")
 					else if nexpr.value isa Int32 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int32")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int32")
 					else if nexpr.value isa UInt32 then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "UInt32")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "UInt32")
 					else
 						# Should not happen, and should be updated as new types are added
 						abort
 					end
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa AFloatExpr then
-					var cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Float")
+					var cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Float")
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa ACharExpr then
-					var cla: nullable MClass
+					var cla: nullable MNominal
 					if nexpr.is_ascii then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Byte")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Byte")
 					else if nexpr.is_code_point then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Int")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Int")
 					else
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Char")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Char")
 					end
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa ABoolExpr then
-					var cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Bool")
+					var cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Bool")
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa ASuperstringExpr then
-					var cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "String")
+					var cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "String")
 					if cla != null then mtype = cla.mclass_type
 				else if nexpr isa AStringFormExpr then
-					var cla: nullable MClass
+					var cla: nullable MNominal
 					if nexpr.is_bytestring then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Bytes")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Bytes")
 					else if nexpr.is_re then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "Regex")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "Regex")
 					else if nexpr.is_string then
-						cla = modelbuilder.try_get_mclass_by_name(nexpr, mmodule, "String")
+						cla = modelbuilder.try_get_mnominal_by_name(nexpr, mmodule, "String")
 					else
 						abort
 					end
@@ -1681,7 +1685,7 @@ redef class ATypePropdef
 			var supbound = p.bound
 			if supbound == null or supbound isa MBottomType or p.is_broken then break # broken super bound, skip error
 			if p.is_fixed then
-				modelbuilder.error(self, "Redef Error: virtual type `{mpropdef.mproperty}` is fixed in super-class `{p.mclassdef.mclass}`.")
+				modelbuilder.error(self, "Redef Error: virtual type `{mpropdef.mproperty}` is fixed in super-class `{p.mclassdef.mnominal}`.")
 				break
 			end
 			if p.mclassdef.mclass == mclassdef.mclass then

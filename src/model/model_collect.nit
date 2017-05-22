@@ -275,9 +275,9 @@ redef class MModule
 	end
 
 	# Collect mclasses introduced in `self` with `visibility >= to min_visibility`.
-	fun collect_intro_mclasses(view: ModelView): Set[MClass] do
-		var res = new HashSet[MClass]
-		for mclass in intro_mclasses do
+	fun collect_intro_mnominals(view: ModelView): Set[MNominal] do
+		var res = new HashSet[MNominal]
+		for mclass in intro_mnominals do
 			if not view.accept_mentity(mclass) then continue
 			res.add mclass
 		end
@@ -285,8 +285,8 @@ redef class MModule
 	end
 
 	# Collect mclasses redefined in `self` with `visibility >= to min_visibility`.
-	fun collect_redef_mclasses(view: ModelView): Set[MClass] do
-		var mclasses = new HashSet[MClass]
+	fun collect_redef_mnominals(view: ModelView): Set[MNominal] do
+		var mclasses = new HashSet[MNominal]
 		for mclassdef in mclassdefs do
 			if not view.accept_mentity(mclassdef) then continue
 			if not mclassdef.is_intro then mclasses.add(mclassdef.mclass)
@@ -295,7 +295,7 @@ redef class MModule
 	end
 end
 
-redef class MClass
+redef class MNominal
 
 	redef fun collect_modifiers do return intro.collect_modifiers
 
@@ -340,7 +340,7 @@ redef class MClass
 		for mclassdef in mclassdefs do
 			for child in mclassdef.collect_children(view) do
 				var mclass = child.mclass
-				if mclass == self or not view.accept_mentity(child) then continue
+				if mclass == self or not view.accept_mentity(mclass) then continue
 				res.add mclass
 			end
 		end
@@ -364,7 +364,7 @@ redef class MClass
 		var set = new HashSet[MProperty]
 		for mclassdef in mclassdefs do
 			for mpropdef in mclassdef.mpropdefs do
-				if mpropdef.mproperty.intro_mclassdef.mclass == self then continue
+				if mpropdef.mproperty.intro_mclassdef.mnominal == self then continue
 				if not view.accept_mentity(mpropdef) then continue
 				set.add(mpropdef.mproperty)
 			end
@@ -556,7 +556,7 @@ redef class MClassDef
 	redef fun collect_linearization(mainmodule) do
 		var mclassdefs = new Array[MClassDef]
 		for mclassdef in in_hierarchy.as(not null).greaters do
-			if mclassdef.mclass == self.mclass then mclassdefs.add mclassdef
+			if mclassdef.mnominal == self.mnominal then mclassdefs.add mclassdef
 		end
 		mainmodule.linearize_mclassdefs(mclassdefs)
 		return mclassdefs
@@ -635,9 +635,9 @@ redef class MClassDef
 		if not is_intro then
 			res.add "redef"
 		else
-			res.add mclass.visibility.to_s
+			res.add mnominal.visibility.to_s
 		end
-		res.add mclass.kind.to_s
+		res.add mnominal.kind.to_s
 		return res
 	end
 end

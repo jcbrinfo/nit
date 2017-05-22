@@ -171,7 +171,7 @@ private extern class CallArg `{ nit_call_arg* `}
 		else if static_type.name == "CString" then
 			assert value isa PrimitiveInstance[CString]
 			self.pointer = value.val
-		else if static_type isa MClassType and static_type.mclass.kind == extern_kind then
+		else if static_type isa MClassType and static_type.mnominal.mclass.kind == extern_kind then
 			assert value isa PrimitiveInstance[Pointer] else print value.class_name
 			self.pointer = value.val
 		else
@@ -211,7 +211,7 @@ private extern class CallArg `{ nit_call_arg* `}
 			var instance = new PrimitiveInstance[CString](static_type, self.c_string)
 			v.init_instance_primitive instance
 			return instance
-		else if static_type isa MClassType and static_type.mclass.kind == extern_kind then
+		else if static_type isa MClassType and static_type.mnominal.mclass.kind == extern_kind then
 			# We tag it with the most precise known type
 			var instance = new PrimitiveInstance[Pointer](static_type, self.pointer)
 			v.init_instance_primitive instance
@@ -285,7 +285,7 @@ redef class AMethPropdef
 		if not is_init then
 			var arg = args[a]
 			var native_arg = native_args[a]
-			native_arg.from_static_type(arg, mpropdef.mclassdef.mclass.mclass_type)
+			native_arg.from_static_type(arg, mpropdef.mclassdef.mnominal.mclass_type)
 			a += 1
 		end
 		for param in mpropdef.msignature.mparameters do
@@ -306,7 +306,7 @@ redef class AMethPropdef
 
 		# Get the result
 		var return_mtype = mpropdef.msignature.return_mtype
-		if is_init then return_mtype = mpropdef.mclassdef.mclass.mclass_type
+		if is_init then return_mtype = mpropdef.mclassdef.mnominal.mclass_type
 
 		var return_value
 		if return_mtype == null then

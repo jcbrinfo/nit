@@ -398,7 +398,7 @@ redef class IndexArticle
 		addn "<div class='container-fluid'>"
 		addn " <div class='row'>"
 		render_list("Modules", mmodules)
-		render_list("Classes", mclasses)
+		render_list("Classes", mnominals)
 		render_list("Properties", mprops)
 		addn "</div>"
 		addn "</div>"
@@ -415,7 +415,7 @@ redef class IndexArticle
 				var tpl = new Template
 				tpl.add mentity.intro.html_link
 				tpl.add " ("
-				tpl.add mentity.intro.mclassdef.mclass.html_link
+				tpl.add mentity.intro.mclassdef.mnominal.html_link
 				tpl.add ")"
 				lst.add_li new ListItem(tpl)
 			else

@@ -83,8 +83,8 @@ redef class MClassPage
 		var name = "dep_class_{mentity.nitdoc_id}"
 		op.append("digraph \"{name.escape_to_dot}\" \{ rankdir=BT; node[shape=none,margin=0,width=0,height=0,fontsize=10]; edge[dir=none,color=gray]; ranksep=0.2; nodesep=0.1;\n")
 		var classes = poset.to_a
-		var todo = new Array[MClass]
-		var done = new HashSet[MClass]
+		var todo = new Array[MNominal]
+		var done = new HashSet[MNominal]
 		doc.mainmodule.linearize_mclasses(classes)
 		if not classes.is_empty then todo.add classes.first
 		while not todo.is_empty do

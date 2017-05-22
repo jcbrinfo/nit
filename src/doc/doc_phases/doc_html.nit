@@ -285,7 +285,7 @@ redef class MGroupPage
 			sidebar.boxes.unshift new DocSideBox(doc_lnk, "")
 		end
 		# MClasses list
-		var mclasses = new HashSet[MClass]
+		var mclasses = new HashSet[MNominal]
 		mclasses.add_all intros
 		mclasses.add_all redefs
 		if mclasses.is_empty then return
@@ -300,7 +300,7 @@ redef class MGroupPage
 		sidebar.boxes.last.is_open = false
 	end
 
-	private fun tpl_sidebar_item(def: MClass): ListItem do
+	private fun tpl_sidebar_item(def: MNominal): ListItem do
 		var classes = def.intro.css_classes
 		if intros.has(def) then
 			classes.add "intro"
@@ -327,9 +327,9 @@ redef class MModulePage
 	redef fun init_sidebar(v, doc) do
 		# TODO filter here?
 		super
-		var mclasses = new HashSet[MClass]
-		mclasses.add_all mentity.collect_intro_mclasses(v.doc)
-		mclasses.add_all mentity.collect_redef_mclasses(v.doc)
+		var mclasses = new HashSet[MNominal]
+		mclasses.add_all mentity.collect_intro_mnominals(v.doc)
+		mclasses.add_all mentity.collect_redef_mnominals(v.doc)
 		if mclasses.is_empty then return
 		var list = new UnorderedList
 		list.css_classes.add "list-unstyled list-labeled"
@@ -343,7 +343,7 @@ redef class MModulePage
 		sidebar.boxes.last.is_open = false
 	end
 
-	private fun tpl_sidebar_item(def: MClass): ListItem do
+	private fun tpl_sidebar_item(def: MNominal): ListItem do
 		var classes = def.intro.css_classes
 		if def.intro_mmodule == self.mentity then
 			classes.add "intro"
@@ -397,7 +397,7 @@ redef class MClassPage
 		var classes = mprop.intro.css_classes
 		if not mprop_is_local(mprop) then
 			classes.add "inherit"
-			var cls_url = mprop.intro.mclassdef.mclass.nitdoc_url
+			var cls_url = mprop.intro.mclassdef.mnominal.nitdoc_url
 			var def_url = "{cls_url}#{mprop.nitdoc_id}.definition"
 			var lnk = new Link(def_url, mprop.html_name)
 			var mdoc = mprop.intro.mdoc_or_fallback
@@ -440,7 +440,7 @@ redef class MClassPage
 		for mprop in mentity.collect_inherited_mproperties(v.doc) do
 			if local.has(mprop) then continue
 			#if mprop isa MMethod and mprop.is_init then continue
-			if mprop.intro.mclassdef.mclass.name == "Object" and
+			if mprop.intro.mclassdef.mnominal.name == "Object" and
 				(mprop.visibility == protected_visibility or
 				mprop.intro.mclassdef.mmodule.name != "kernel") then continue
 			res.add mprop
@@ -466,7 +466,7 @@ redef class MPropertyPage
 		super
 		var mmodule = mentity.intro_mclassdef.mmodule
 		var mpackage = mmodule.mgroup.mpackage
-		var mclass = mentity.intro_mclassdef.mclass
+		var mclass = mentity.intro_mclassdef.mnominal
 		topmenu.add_li new ListItem(new Link(mpackage.nitdoc_url, mpackage.html_name))
 		topmenu.add_li new ListItem(new Link(mclass.nitdoc_url, mclass.html_name))
 		topmenu.add_li new ListItem(new Link(html_url, mentity.html_name))

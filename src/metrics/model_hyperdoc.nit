@@ -95,17 +95,17 @@ do
 		buf.append("<dt>introduced classes</dt>\n")
 		for x in mmodule.mclassdefs do
 			if not x.is_intro then continue
-			buf.append("<dd>{linkto(x.mclass)} by {linkto(x)}</dd>\n")
+			buf.append("<dd>{linkto(x.mnominal)} by {linkto(x)}</dd>\n")
 		end
 		buf.append("<dt>refined classes</dt>\n")
 		for x in mmodule.mclassdefs do
 			if x.is_intro then continue
-			buf.append("<dd>{linkto(x.mclass)} by {linkto(x)}</dd>\n")
+			buf.append("<dd>{linkto(x.mnominal)} by {linkto(x)}</dd>\n")
 		end
 		buf.append("</dl>\n")
 	end
 	buf.append("<h2>Classes</h2>\n")
-	for mclass in model.mclasses do
+	for mclass in model.mnominals do
 		buf.append("<h3 id='class-{mclass}'>{mclass}</h3>\n")
 		buf.append("<dl>\n")
 		buf.append("<dt>module of introduction</dt>\n")
@@ -117,27 +117,27 @@ do
 		buf.append("</dl>\n")
 	end
 	buf.append("<h2>Class Definitions</h2>\n")
-	for mclass in model.mclasses do
+	for mclass in model.mnominals do
 		for mclassdef in mclass.mclassdefs do
 			buf.append("<h3 id='classdef-{mclassdef}'>{mclassdef}</h3>\n")
 			buf.append("<dl>\n")
 			buf.append("<dt>module</dt>\n")
 			buf.append("<dd>{linkto(mclassdef.mmodule)}</dd>\n")
 			buf.append("<dt>class</dt>\n")
-			buf.append("<dd>{linkto(mclassdef.mclass)}</dd>\n")
+			buf.append("<dd>{linkto(mclassdef.mnominal)}</dd>\n")
 			buf.append("<dt>direct refinements</dt>\n")
 			for x in mclassdef.in_hierarchy.direct_greaters do
-				if x.mclass != mclass then continue
+				if x.mnominal != mclass then continue
 				buf.append("<dd>{linkto(x)} in {linkto(x.mmodule)}</dd>\n")
 			end
 			buf.append("<dt>direct refinemees</dt>\n")
 			for x in mclassdef.in_hierarchy.direct_smallers do
-				if x.mclass != mclass then continue
+				if x.mnominal != mclass then continue
 				buf.append("<dd>{linkto(x)} in {linkto(x.mmodule)}</dd>\n")
 			end
 			buf.append("<dt>direct superclasses</dt>\n")
 			for x in mclassdef.supertypes do
-				buf.append("<dd>{linkto(x.mclass)} by {x}</dd>\n")
+				buf.append("<dd>{linkto(x.mnominal)} by {x}</dd>\n")
 			end
 			buf.append("<dt>introduced properties</dt>\n")
 			for x in mclassdef.mpropdefs do
@@ -159,7 +159,7 @@ do
 		buf.append("<dt>module of introdcution</dt>\n")
 		buf.append("<dd>{linkto(mprop.intro_mclassdef.mmodule)}</dd>\n")
 		buf.append("<dt>class of introduction</dt>\n")
-		buf.append("<dd>{linkto(mprop.intro_mclassdef.mclass)}</dd>\n")
+		buf.append("<dd>{linkto(mprop.intro_mclassdef.mnominal)}</dd>\n")
 		buf.append("<dt>class definition of introduction</dt>\n")
 		buf.append("<dd>{linkto(mprop.intro_mclassdef)}</dd>\n")
 		buf.append("<dt>property definitions</dt>\n")
@@ -176,7 +176,7 @@ do
 			buf.append("<dt>module</dt>\n")
 			buf.append("<dd>{linkto(mpropdef.mclassdef.mmodule)}</dd>\n")
 			buf.append("<dt>class</dt>\n")
-			buf.append("<dd>{linkto(mpropdef.mclassdef.mclass)}</dd>\n")
+			buf.append("<dd>{linkto(mpropdef.mclassdef.mnominal)}</dd>\n")
 			buf.append("<dt>class definition</dt>\n")
 			buf.append("<dd>{linkto(mpropdef.mclassdef)}</dd>\n")
 			buf.append("<dt>super definitions</dt>\n")

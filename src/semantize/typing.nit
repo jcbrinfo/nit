@@ -66,7 +66,7 @@ private class TypeVisitor
 			self.mclassdef = mclassdef
 			self.anchor = mclassdef.bound_mtype
 
-			var mclass = mclassdef.mclass
+			var mclass = mclassdef.mnominal
 
 			var selfvariable = new Variable("self")
 			self.selfvariable = selfvariable
@@ -281,21 +281,19 @@ private class TypeVisitor
 		return self.modelbuilder.resolve_mtype(mmodule, mclassdef, node)
 	end
 
-	fun try_get_mclass(node: ANode, name: String): nullable MClass
+	fun try_get_mnominal(node: ANode, name: String): nullable MNominal
 	do
-		var mclass = modelbuilder.try_get_mclass_by_name(node, mmodule, name)
-		return mclass
+		return modelbuilder.try_get_mnominal_by_name(node, mmodule, name)
 	end
 
-	fun get_mclass(node: ANode, name: String): nullable MClass
+	fun get_mnominal(node: ANode, name: String): nullable MNominal
 	do
-		var mclass = modelbuilder.get_mclass_by_name(node, mmodule, name)
-		return mclass
+		return modelbuilder.get_mnominal_by_name(node, mmodule, name)
 	end
 
 	fun type_bool(node: ANode): nullable MType
 	do
-		var mclass = self.get_mclass(node, "Bool")
+		var mclass = self.get_mnominal(node, "Bool")
 		if mclass == null then return null
 		return mclass.mclass_type
 	end
@@ -306,7 +304,7 @@ private class TypeVisitor
 
 		#debug("recv: {recvtype} (aka {unsafe_type})")
 		if recvtype isa MNullType then
-			var objclass = get_mclass(node, "Object")
+			var objclass = get_mnominal(node, "Object")
 			if objclass == null then return null # Forward error
 			unsafe_type = objclass.mclass_type
 		end
@@ -529,7 +527,7 @@ private class TypeVisitor
 	fun check_one_vararg(arg: AExpr, param: MParameter): Bool
 	do
 		var paramtype = param.mtype
-		var mclass = get_mclass(arg, "Array")
+		var mclass = get_mnominal(arg, "Array")
 		if mclass == null then return false # Forward error
 		var array_mtype = mclass.get_mtype([paramtype])
 		if arg isa AVarargExpr then
@@ -873,7 +871,7 @@ redef class AMethPropdef
 		for i in [0..msignature.arity[ do
 			var mtype = msignature.mparameters[i].mtype
 			if msignature.vararg_rank == i then
-				var arrayclass = v.get_mclass(self.n_signature.n_params[i], "Array")
+				var arrayclass = v.get_mnominal(self.n_signature.n_params[i], "Array")
 				if arrayclass == null then return # Skip error
 				mtype = arrayclass.get_mtype([mtype])
 			end
@@ -1051,7 +1049,7 @@ redef class AVardeclExpr
 
 		var decltype = mtype
 		if mtype == null or mtype isa MNullType then
-			var objclass = v.get_mclass(self, "Object")
+			var objclass = v.get_mnominal(self, "Object")
 			if objclass == null then return # skip error
 			decltype = objclass.mclass_type.as_nullable
 			if mtype == null then mtype = decltype
@@ -1317,7 +1315,7 @@ redef class AForGroup
 		end
 
 		# get obj class
-		var objcla = v.get_mclass(self, "Object")
+		var objcla = v.get_mnominal(self, "Object")
 		if objcla == null then return
 
 		# check iterator method
@@ -1336,8 +1334,8 @@ redef class AForGroup
 		end
 
 		# get iterator type
-		var colit_cla = v.try_get_mclass(self, "Iterator")
-		var mapit_cla = v.try_get_mclass(self, "MapIterator")
+		var colit_cla = v.try_get_mnominal(self, "Iterator")
+		var mapit_cla = v.try_get_mnominal(self, "MapIterator")
 		var is_col = false
 		var is_map = false
 
@@ -1508,7 +1506,7 @@ redef class AOrElseExpr
 
 		var t = v.merge_types(self, [t1, t2])
 		if t == null then
-			var c = v.get_mclass(self, "Object")
+			var c = v.get_mnominal(self, "Object")
 			if c == null then return # forward error
 			t = c.mclass_type
 			if v.can_be_null(t2) then
@@ -1547,21 +1545,21 @@ end
 redef class AIntegerExpr
 	redef fun accept_typing(v)
 	do
-		var mclass: nullable MClass = null
+		var mclass: nullable MNominal = null
 		if value isa Byte then
-			mclass = v.get_mclass(self, "Byte")
+			mclass = v.get_mnominal(self, "Byte")
 		else if value isa Int then
-			mclass = v.get_mclass(self, "Int")
+			mclass = v.get_mnominal(self, "Int")
 		else if value isa Int8 then
-			mclass = v.get_mclass(self, "Int8")
+			mclass = v.get_mnominal(self, "Int8")
 		else if value isa Int16 then
-			mclass = v.get_mclass(self, "Int16")
+			mclass = v.get_mnominal(self, "Int16")
 		else if value isa UInt16 then
-			mclass = v.get_mclass(self, "UInt16")
+			mclass = v.get_mnominal(self, "UInt16")
 		else if value isa Int32 then
-			mclass = v.get_mclass(self, "Int32")
+			mclass = v.get_mnominal(self, "Int32")
 		else if value isa UInt32 then
-			mclass = v.get_mclass(self, "UInt32")
+			mclass = v.get_mnominal(self, "UInt32")
 		end
 		if mclass == null then return # Forward error
 		self.mtype = mclass.mclass_type
@@ -1571,7 +1569,7 @@ end
 redef class AFloatExpr
 	redef fun accept_typing(v)
 	do
-		var mclass = v.get_mclass(self, "Float")
+		var mclass = v.get_mnominal(self, "Float")
 		if mclass == null then return # Forward error
 		self.mtype = mclass.mclass_type
 	end
@@ -1579,13 +1577,13 @@ end
 
 redef class ACharExpr
 	redef fun accept_typing(v) do
-		var mclass: nullable MClass = null
+		var mclass: nullable MNominal = null
 		if is_ascii then
-			mclass = v.get_mclass(self, "Byte")
+			mclass = v.get_mnominal(self, "Byte")
 		else if is_code_point then
-			mclass = v.get_mclass(self, "Int")
+			mclass = v.get_mnominal(self, "Int")
 		else
-			mclass = v.get_mclass(self, "Char")
+			mclass = v.get_mnominal(self, "Char")
 		end
 		if mclass == null then return # Forward error
 		self.mtype = mclass.mclass_type
@@ -1607,15 +1605,15 @@ redef class AugmentedStringFormExpr
 	var to_bytes_with_copy: nullable CallSite = null
 
 	redef fun accept_typing(v) do
-		var mclass = v.get_mclass(self, "String")
+		var mclass = v.get_mnominal(self, "String")
 		if mclass == null then return # Forward error
 		if is_bytestring then
 			to_bytes_with_copy = v.get_method(self, v.mmodule.c_string_type, "to_bytes_with_copy", false)
-			mclass = v.get_mclass(self, "Bytes")
+			mclass = v.get_mnominal(self, "Bytes")
 		else if is_re then
 			to_re = v.get_method(self, mclass.mclass_type, "to_re", false)
 			for i in suffix.chars do
-				mclass = v.get_mclass(self, "Regex")
+				mclass = v.get_mnominal(self, "Regex")
 				if mclass == null then
 					v.error(self, "Error: `Regex` class unknown")
 					return
@@ -1645,7 +1643,7 @@ redef class ASuperstringExpr
 	redef fun accept_typing(v)
 	do
 		super
-		var objclass = v.get_mclass(self, "Object")
+		var objclass = v.get_mnominal(self, "Object")
 		if objclass == null then return # Forward error
 		var objtype = objclass.mclass_type
 		for nexpr in self.n_exprs do
@@ -1719,7 +1717,7 @@ redef class AArrayExpr
 
 		self.element_mtype = mtype
 
-		var mclass = v.get_mclass(self, "Array")
+		var mclass = v.get_mnominal(self, "Array")
 		if mclass == null then return # Forward error
 		var array_mtype = mclass.get_mtype([mtype])
 
@@ -1735,13 +1733,13 @@ redef class ARangeExpr
 
 	redef fun accept_typing(v)
 	do
-		var discrete_class = v.get_mclass(self, "Discrete")
+		var discrete_class = v.get_mnominal(self, "Discrete")
 		if discrete_class == null then return # Forward error
 		var discrete_type = discrete_class.intro.bound_mtype
 		var t1 = v.visit_expr_subtype(self.n_expr, discrete_type)
 		var t2 = v.visit_expr_subtype(self.n_expr2, discrete_type)
 		if t1 == null or t2 == null then return
-		var mclass = v.get_mclass(self, "Range")
+		var mclass = v.get_mnominal(self, "Range")
 		if mclass == null then return # Forward error
 		var mtype
 		if v.is_subtype(t1, t2) then
@@ -1930,7 +1928,7 @@ redef class ASendExpr
 		var mproperty = v.try_get_mproperty_by_name2(node, unsafe_type, name)
 		if mproperty == null and nrecv isa AImplicitSelfExpr then
 			# Special fall-back search in `sys` when noting found in the implicit receiver.
-			var sysclass = v.try_get_mclass(node, "Sys")
+			var sysclass = v.try_get_mnominal(node, "Sys")
 			if sysclass != null then
 				var systype = sysclass.mclass_type
 				mproperty = v.try_get_mproperty_by_name2(node, systype, name)
@@ -2291,7 +2289,7 @@ redef class ANewExpr
 		end
 
 		self.recvtype = recvtype
-		var kind = recvtype.mclass.kind
+		var kind = recvtype.mnominal.kind
 
 		var name: String
 		var nqid = self.n_qid
@@ -2333,7 +2331,7 @@ redef class ANewExpr
 
 		self.callsite = callsite
 
-		if not callsite.mproperty.is_init_for(recvtype.mclass) then
+		if not callsite.mproperty.is_init_for(recvtype.mnominal) then
 			v.error(self, "Error: `{name}` is not a constructor.")
 			return
 		end

@@ -41,7 +41,7 @@ do
 	var npas = 0 # Number of usages of properties without lookup (easy easy case, easier that CHA)
 
 	# Collect the full class hierarchy
-	var hier = main.flatten_mclass_hierarchy
+	var hier = main.flatten_mnominal_hierarchy
 	for c in hier do
 		# Skip classes without direct instances
 		if c.kind == interface_kind or c.kind == abstract_kind then continue

@@ -49,7 +49,7 @@ class MRawType
 		not_available
 		return new HashSet[MClassDef]
 	end
-	redef fun collect_mclasses(mmodule) do
+	redef fun collect_mnominals(mmodule) do
 		not_available
 		return new HashSet[MClass]
 	end

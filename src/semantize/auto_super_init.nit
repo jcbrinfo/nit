@@ -62,7 +62,7 @@ redef class AMethPropdef
 		if mpropdef == null or mpropdef.is_broken then return # skip error
 		var mmodule = mpropdef.mclassdef.mmodule
 		var anchor = mclassdef.bound_mtype
-		var recvtype = mclassdef.mclass.mclass_type
+		var recvtype = mclassdef.mnominal.mclass_type
 
 		# Get the annotation, but check its pertinence before returning
 		var nosuper = get_single_annotation("nosuper", modelbuilder)

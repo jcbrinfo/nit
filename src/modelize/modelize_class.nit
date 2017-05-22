@@ -77,7 +77,7 @@ redef class ModelBuilder
 				end
 				names.add(ptname)
 			end
-			mclass = try_get_mclass_by_qid(qid, mmodule)
+			mclass = try_get_mnominal_by_qid(qid, mmodule)
 			if mclass == null and (qid.n_qualified != null or nclassdef.n_kwredef != null) then
 				class_not_found(qid, mmodule)
 				nclassdef.is_broken = true
@@ -93,20 +93,20 @@ redef class ModelBuilder
 			mkind = interface_kind
 			nvisibility = null
 			mvisibility = public_visibility
-			mclass = try_get_mclass_by_name(nclassdef, mmodule, name)
+			mclass = try_get_mnominal_by_name(nclassdef, mmodule, name)
 		else
 			name = "Sys"
 			nkind = null
 			mkind = concrete_kind
 			nvisibility = null
 			mvisibility = public_visibility
-			mclass = try_get_mclass_by_name(nclassdef, mmodule, name)
+			mclass = try_get_mnominal_by_name(nclassdef, mmodule, name)
 		end
 
 		if mclass == null then
 			# Check for conflicting class full-names in the package
 			if mmodule.mgroup != null and mvisibility >= protected_visibility then
-				var mclasses = model.get_mclasses_by_name(name)
+				var mclasses = model.get_mnominals_by_name(name)
 				if mclasses != null then for other in mclasses do
 					if other.intro_mmodule.mgroup != null and other.intro_mmodule.mgroup.mpackage == mmodule.mgroup.mpackage then
 						# Skip classes that are buggy
@@ -149,7 +149,7 @@ redef class ModelBuilder
 	private fun build_a_mclassdef(nmodule: AModule, nclassdef: AClassdef)
 	do
 		var mmodule = nmodule.mmodule.as(not null)
-		var objectclass = try_get_mclass_by_name(nmodule, mmodule, "Object")
+		var objectclass = try_get_mnominal_by_name(nmodule, mmodule, "Object")
 		var mclass = nclassdef.mclass
 		if mclass == null then return # Skip error
 
@@ -188,7 +188,7 @@ redef class ModelBuilder
 						bounds.add(bound)
 						nfd.bound = bound
 					end
-					if bound isa MClassType and bound.mclass.kind == enum_kind then
+					if bound isa MClassType and bound.mnominal.kind == enum_kind then
 						warning(nfdt, "useless-bound", "Warning: useless formal parameter type since `{bound}` cannot have subclasses.")
 					end
 				else if mclass.mclassdefs.is_empty then
@@ -237,8 +237,8 @@ redef class ModelBuilder
 	do
 		var mmodule = nmodule.mmodule
 		if mmodule == null then return
-		var objectclass = try_get_mclass_by_name(nmodule, mmodule, "Object")
-		var pointerclass = try_get_mclass_by_name(nmodule, mmodule, "Pointer")
+		var objectclass = try_get_mnominal_by_name(nmodule, mmodule, "Object")
+		var pointerclass = try_get_mnominal_by_name(nmodule, mmodule, "Pointer")
 		var mclass = nclassdef.mclass
 		if mclass == null then return
 		var mclassdef = nclassdef.mclassdef
@@ -262,12 +262,12 @@ redef class ModelBuilder
 					error(ntype, "Error: supertypes cannot be a formal type.")
 					return
 				end
-				if not mclass.kind.can_specialize(mtype.mclass.kind) then
-					error(ntype, "Error: {mclass.kind} `{mclass}` cannot specialize {mtype.mclass.kind} `{mtype.mclass}`.")
+				if not mclass.kind.can_specialize(mtype.mnominal.kind) then
+					error(ntype, "Error: {mclass.kind} `{mclass}` cannot specialize {mtype.mnominal.kind} `{mtype.mnominal}`.")
 				end
 				supertypes.add mtype
 				#print "new super : {mclass} < {mtype}"
-				if mtype.mclass.kind == extern_kind then specpointer = false
+				if mtype.mnominal.kind == extern_kind then specpointer = false
 			end
 		end
 
@@ -387,16 +387,16 @@ redef class ModelBuilder
 		for nclassdef in nmodule.n_classdefs do
 			var mclassdef = nclassdef.mclassdef
 			if mclassdef == null then continue
-			var superclasses = new HashMap[MClass, MClassType]
+			var superclasses = new HashMap[MNominal, MClassType]
 			for scd in mclassdef.in_hierarchy.greaters do
 				for st in scd.supertypes do
-					if not superclasses.has_key(st.mclass) then
-						superclasses[st.mclass] = st
-					else if superclasses[st.mclass] != st then
-						var st1 = superclasses[st.mclass].resolve_for(mclassdef.mclass.mclass_type, mclassdef.bound_mtype, mmodule, false)
-						var st2 = st.resolve_for(mclassdef.mclass.mclass_type, mclassdef.bound_mtype, mmodule, false)
+					if not superclasses.has_key(st.mnominal) then
+						superclasses[st.mnominal] = st
+					else if superclasses[st.mnominal] != st then
+						var st1 = superclasses[st.mnominal].resolve_for(mclassdef.mnominal.mclass_type, mclassdef.bound_mtype, mmodule, false)
+						var st2 = st.resolve_for(mclassdef.mnominal.mclass_type, mclassdef.bound_mtype, mmodule, false)
 						if st1 != st2 then
-							error(nclassdef, "Error: incompatible ancestors for `{mclassdef.mclass}`; conflict: `{st1}` and `{st2}`")
+							error(nclassdef, "Error: incompatible ancestors for `{mclassdef.mnominal}`; conflict: `{st1}` and `{st2}`")
 						end
 					end
 				end
@@ -413,16 +413,16 @@ redef class ModelBuilder
 
 			# Get the direct superclasses
 			# Since we are a mclassdef, just look at the mclassdef hierarchy
-			var parents = new Array[MClass]
+			var parents = new Array[MNominal]
 			for sup in mclassdef.in_hierarchy.direct_greaters do
-				parents.add(sup.mclass)
+				parents.add(sup.mnominal)
 			end
 
 			# Used to track duplicates of superclasses
-			var seen_parents = new ArrayMap[MClass, AType]
+			var seen_parents = new ArrayMap[MNominal, AType]
 
 			# The Object class
-			var objectclass = try_get_mclass_by_name(nmodule, mmodule, "Object")
+			var objectclass = try_get_mnominal_by_name(nmodule, mmodule, "Object")
 
 			# Check each declared superclass to see if it belong to the direct superclass
 			for nsc in nclassdef.n_superclasses do
@@ -430,16 +430,16 @@ redef class ModelBuilder
 				var mtype = ntype.mtype
 				if mtype == null then continue
 				assert mtype isa MClassType
-				var sc = mtype.mclass
+				var sc = mtype.mnominal
 				if not parents.has(sc) or sc == objectclass then
 					# Skip the warning on generated code
 					if ntype.location.file != null and not ntype.location.file.filename.is_empty then
-						warning(ntype, "useless-superclass", "Warning: superfluous super-class `{mtype}` in class `{mclassdef.mclass}`.")
+						warning(ntype, "useless-superclass", "Warning: superfluous super-class `{mtype}` in class `{mclassdef.mnominal}`.")
 					end
 				else if not seen_parents.has_key(sc) then
 					seen_parents[sc] = ntype
 				else
-					warning(ntype, "useless-superclass", "Warning: duplicated super-class `{mtype}` in class `{mclassdef.mclass}`.")
+					warning(ntype, "useless-superclass", "Warning: duplicated super-class `{mtype}` in class `{mclassdef.mnominal}`.")
 				end
 			end
 		end
@@ -460,14 +460,14 @@ end
 redef class AModule
 	# Flag that indicate if the class building is already completed
 	var build_classes_is_done: Bool = false
-	# What is the AClassdef associated to a `MClass`?
+	# What is the AClassdef associated to a `MNominal`?
 	# Used to check multiple definition of a class.
-	var mclass2nclassdef: Map[MClass, AClassdef] = new HashMap[MClass, AClassdef]
+	var mclass2nclassdef: Map[MNominal, AClassdef] = new HashMap[MNominal, AClassdef]
 end
 
 redef class AClassdef
 	# The associated MClass once build by a `ModelBuilder`
-	var mclass: nullable MClass
+	var mclass: nullable MNominal
 	# The associated MClassDef once build by a `ModelBuilder`
 	var mclassdef: nullable MClassDef
 	# All (self and other) definitions for the same mclassdef

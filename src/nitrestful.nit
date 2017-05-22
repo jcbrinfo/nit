@@ -65,7 +65,7 @@ private class RestfulPhase
 
 		# Test subclass of `RestfulAction`
 		var sup_class_name = "RestfulAction"
-		var sup_class = toolcontext.modelbuilder.try_get_mclass_by_name(
+		var sup_class = toolcontext.modelbuilder.try_get_mnominal_by_name(
 			nat, mmodule, sup_class_name)
 		var in_hierarchy = mclassdef.in_hierarchy
 		if in_hierarchy == null or sup_class == null then return
@@ -208,7 +208,7 @@ var phase = toolcontext.restful_phase
 assert phase isa RestfulPhase
 
 for mclassdef in phase.restful_classes do
-	var mclass = mclassdef.mclass
+	var mclass = mclassdef.mnominal
 
 	var t = new Template
 	nit_module.content.add t

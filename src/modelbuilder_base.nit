@@ -60,14 +60,14 @@ class ModelBuilder
 	# If no such a class exists, then null is returned.
 	# If more than one class exists, then an error on `anode` is displayed and null is returned.
 	# FIXME: add a way to handle class name conflict
-	fun try_get_mclass_by_name(anode: ANode, mmodule: MModule, name: String): nullable MClass
+	fun try_get_mnominal_by_name(anode: ANode, mmodule: MModule, name: String): nullable MNominal
 	do
-		var classes = model.get_mclasses_by_name(name)
+		var classes = model.get_mnominals_by_name(name)
 		if classes == null then
 			return null
 		end
 
-		var res: nullable MClass = null
+		var res: nullable MNominal = null
 		for mclass in classes do
 			if not mmodule.in_importation <= mclass.intro_mmodule then continue
 			if not mmodule.is_visible(mclass.intro_mmodule, mclass.visibility) then continue
@@ -87,16 +87,16 @@ class ModelBuilder
 	# If more than one class exists, then null is silently returned.
 	# It is up to the caller to post-analysis the result and display a correct error message.
 	# The method `class_not_found` can be used to display such a message.
-	fun try_get_mclass_by_qid(qid: AQclassid, mmodule: MModule): nullable MClass
+	fun try_get_mnominal_by_qid(qid: AQclassid, mmodule: MModule): nullable MNominal
 	do
 		var name = qid.n_id.text
 
-		var classes = model.get_mclasses_by_name(name)
+		var classes = model.get_mnominals_by_name(name)
 		if classes == null then
 			return null
 		end
 
-		var res: nullable MClass = null
+		var res: nullable MNominal = null
 		for mclass in classes do
 			if not mmodule.in_importation <= mclass.intro_mmodule then continue
 			if not mmodule.is_visible(mclass.intro_mmodule, mclass.visibility) then continue
@@ -111,10 +111,10 @@ class ModelBuilder
 		return res
 	end
 
-	# Like `try_get_mclass_by_name` but display an error message when the class is not found
-	fun get_mclass_by_name(node: ANode, mmodule: MModule, name: String): nullable MClass
+	# Like `try_get_mnominal_by_name` but display an error message when the class is not found
+	fun get_mnominal_by_name(node: ANode, mmodule: MModule, name: String): nullable MNominal
 	do
-		var mclass = try_get_mclass_by_name(node, mmodule, name)
+		var mclass = try_get_mnominal_by_name(node, mmodule, name)
 		if mclass == null then
 			error(node, "Type Error: missing primitive class `{name}'.")
 		end
@@ -144,7 +144,7 @@ class ModelBuilder
 			if not mmodule.is_visible(mprop.intro_mclassdef.mmodule, mprop.visibility) then continue
 
 			# new-factories are invisible outside of the class
-			if mprop isa MMethod and mprop.is_new and (not mtype isa MClassType or mprop.intro_mclassdef.mclass != mtype.mclass) then
+			if mprop isa MMethod and mprop.is_new and (not mtype isa MClassType or mprop.intro_mclassdef.mnominal != mtype.mnominal) then
 				continue
 			end
 
@@ -247,7 +247,7 @@ class ModelBuilder
 	end
 
 	# Force to get the primitive method named `name` on the type `recv` or do a fatal error on `n`
-	fun force_get_primitive_method(n: nullable ANode, name: String, recv: MClass, mmodule: MModule): MMethod
+	fun force_get_primitive_method(n: nullable ANode, name: String, recv: MNominal, mmodule: MModule): MMethod
 	do
 		var res = mmodule.try_get_primitive_method(name, recv)
 		if res == null then
@@ -300,7 +300,7 @@ class ModelBuilder
 		end
 
 		# Check class
-		var mclass = try_get_mclass_by_qid(qid, mmodule)
+		var mclass = try_get_mnominal_by_qid(qid, mmodule)
 		if mclass != null then
 			var arity = ntype.n_types.length
 			if arity != mclass.arity then
@@ -354,7 +354,7 @@ class ModelBuilder
 		end
 		bad_class_names[mmodule].add(qname)
 
-		var all_classes = model.get_mclasses_by_name(name)
+		var all_classes = model.get_mnominals_by_name(name)
 		var hints = new Array[String]
 
 		# Look for conflicting classes.
@@ -392,8 +392,8 @@ class ModelBuilder
 		end
 
 		# Look for classes with an approximative name.
-		var bests = new BestDistance[MClass](qname.length - name.length / 2) # limit up to 50% name change
-		for c in model.mclasses do
+		var bests = new BestDistance[MNominal](qname.length - name.length / 2) # limit up to 50% name change
+		for c in model.mnominals do
 			if not mmodule.in_importation <= c.intro_mmodule then continue
 			if not mmodule.is_visible(c.intro_mmodule, c.visibility) then continue
 			var d = qname.levenshtein_distance(c.name)
@@ -426,7 +426,7 @@ class ModelBuilder
 
 		if ntype.checked_mtype then return mtype
 		if mtype isa MGenericType then
-			var mclass = mtype.mclass
+			var mclass = mtype.mnominal
 			for i in [0..mclass.arity[ do
 				var intro = mclass.try_intro
 				if intro == null then return null # skip error
@@ -574,7 +574,7 @@ redef class AQclassid
 	end
 
 	# Does `mclass` match the full qualified name?
-	fun accept(mclass: MClass): Bool
+	fun accept(mclass: MNominal): Bool
 	do
 		if mclass.name != n_id.text then return false
 		var mpackname = self.mpackname

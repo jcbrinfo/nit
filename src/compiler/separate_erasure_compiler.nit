@@ -81,16 +81,16 @@ end
 class SeparateErasureCompiler
 	super SeparateCompiler
 
-	private var class_ids: Map[MClass, Int] is noinit
-	private var class_colors: Map[MClass, Int] is noinit
+	private var class_ids: Map[MNominal, Int] is noinit
+	private var class_colors: Map[MNominal, Int] is noinit
 	protected var vt_colors: Map[MVirtualTypeProp, Int] is noinit
 
 	init do
 
 		# Class coloring
-		var poset = mainmodule.flatten_mclass_hierarchy
+		var poset = mainmodule.flatten_mnominal_hierarchy
 		var mclasses = new HashSet[MClass].from(poset)
-		var colorer = new POSetColorer[MClass]
+		var colorer = new POSetColorer[MNominal]
 		colorer.colorize(poset)
 		class_ids = colorer.ids
 		class_colors = colorer.colors
@@ -108,7 +108,7 @@ class SeparateErasureCompiler
 		end
 
 		# vt coloration
-		var vt_colorer = new POSetBucketsColorer[MClass, MVirtualTypeProp](poset, colorer.conflicts)
+		var vt_colorer = new POSetBucketsColorer[MNominal, MVirtualTypeProp](poset, colorer.conflicts)
 		vt_colors = vt_colorer.colorize(vts)
 		vt_tables = build_vt_tables(mclasses)
 	end
@@ -118,8 +118,8 @@ class SeparateErasureCompiler
 		for mclass in mclasses do
 			var table = new Array[nullable MPropDef]
 			# first, fill table from parents by reverse linearization order
-			var parents = new Array[MClass]
-			if mainmodule.flatten_mclass_hierarchy.has(mclass) then
+			var parents = new Array[MNominal]
+			if mainmodule.flatten_mnominal_hierarchy.has(mclass) then
 				parents = mclass.in_hierarchy(mainmodule).greaters.to_a
 				self.mainmodule.linearize_mclasses(parents)
 			end
@@ -166,8 +166,8 @@ class SeparateErasureCompiler
 		var tables = new HashMap[MClass, Array[nullable MClass]]
 		for mclass in mclasses do
 			var table = new Array[nullable MClass]
-			var supers = new Array[MClass]
-			if mainmodule.flatten_mclass_hierarchy.has(mclass) then
+			var supers = new Array[MNominal]
+			if mainmodule.flatten_mnominal_hierarchy.has(mclass) then
 				supers = mclass.in_hierarchy(mainmodule).greaters.to_a
 			end
 			for sup in supers do

@@ -102,7 +102,7 @@ class NitUnitGenerator
 
 	# Generate subject init.
 	private fun gen_init(mclassdef: MClassDef): Writable do
-		if mclassdef.mclass.arity == 0 then
+		if mclassdef.mnominal.arity == 0 then
 			return "\t\tvar subject: {mclassdef.name}"
 		end
 		return "\t\tvar subject: {mclassdef.name}[{mclassdef.bound_mtype.arguments.join(", ")}]"

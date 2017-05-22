@@ -98,7 +98,7 @@ class GlobalCompiler
 
 		compiler.compile_header
 
-		if mainmodule.model.get_mclasses_by_name("Pointer") != null then
+		if mainmodule.model.get_mnominals_by_name("Pointer") != null then
 			runtime_type_analysis.live_types.add(mainmodule.pointer_type)
 		end
 		for t in runtime_type_analysis.live_types do
@@ -495,7 +495,7 @@ class GlobalCompilerVisitor
 		var defaultpropdef: nullable MMethodDef = null
 		for t in types do
 			var propdef = m.lookup_first_definition(self.compiler.mainmodule, t)
-			if propdef.mclassdef.mclass.name == "Object" and not t.is_c_primitive then
+			if propdef.mclassdef.mnominal.name == "Object" and not t.is_c_primitive then
 				defaultpropdef = propdef
 				continue
 			end
@@ -522,7 +522,7 @@ class GlobalCompilerVisitor
 
 	fun check_valid_reciever(recvtype: MClassType)
 	do
-		if self.compiler.runtime_type_analysis.live_types.has(recvtype) or recvtype.mclass.name == "Object" then return
+		if self.compiler.runtime_type_analysis.live_types.has(recvtype) or recvtype.mnominal.name == "Object" then return
 		print_error "{recvtype} is not a live type"
 		abort
 	end
@@ -889,7 +889,7 @@ class GlobalCompilerVisitor
 				s.add "({value1}->classid == {self.compiler.classid(t)} && ((struct {t.c_name}*){value1})->value == ((struct {t.c_name}*){value2})->value)"
 			end
 
-			if self.compiler.mainmodule.model.get_mclasses_by_name("Pointer") != null then
+			if self.compiler.mainmodule.model.get_mnominals_by_name("Pointer") != null then
 				var pointer_type = self.compiler.mainmodule.pointer_type
 				if value1.mcasttype.is_subtype(self.compiler.mainmodule, null, pointer_type) or
 					value2.mcasttype.is_subtype(self.compiler.mainmodule, null, pointer_type) then
@@ -1037,7 +1037,7 @@ private class CustomizedRuntimeFunction
 			v.add("return {frame.returnvar.as(not null)};")
 		end
 		v.add("\}")
-		if not self.c_name.has_substring("VIRTUAL", 0) then compiler.names[self.c_name] = "{mmethoddef.mclassdef.mmodule.name}::{mmethoddef.mclassdef.mclass.name}::{mmethoddef.mproperty.name} ({mmethoddef.location.file.filename}:{mmethoddef.location.line_start})"
+		if not self.c_name.has_substring("VIRTUAL", 0) then compiler.names[self.c_name] = "{mmethoddef.mclassdef.mmodule.name}::{mmethoddef.mclassdef.mnominal.name}::{mmethoddef.mproperty.name} ({mmethoddef.location.file.filename}:{mmethoddef.location.line_start})"
 	end
 
 	redef fun call(v: VISITOR, arguments: Array[RuntimeVariable]): nullable RuntimeVariable

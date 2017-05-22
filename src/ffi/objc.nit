@@ -216,7 +216,7 @@ private class ObjCCallContext
 	redef fun name_mtype(mtype)
 	do
 		if mtype isa MClassType then
-			var ftype = mtype.mclass.ftype
+			var ftype = mtype.mnominal.ftype
 			if ftype isa ForeignObjCType then
 				return ftype.objc_type
 			end
@@ -231,7 +231,7 @@ private class ToObjCCallContext
 
 	redef fun cast_to(mtype, name)
 	do
-		if mtype isa MClassType and mtype.mclass.ftype isa ForeignObjCType then
+		if mtype isa MClassType and mtype.mnominal.ftype isa ForeignObjCType then
 			return "(void*)({name})"
 		else return name
 	end
@@ -242,14 +242,14 @@ private class FromObjCCallContext
 
 	redef fun cast_to(mtype, name)
 	do
-		if mtype isa MClassType and mtype.mclass.ftype isa ForeignObjCType then
+		if mtype isa MClassType and mtype.mnominal.ftype isa ForeignObjCType then
 			return "(__bridge void*)({name})"
 		else return name
 	end
 
 	redef fun cast_from(mtype, name)
 	do
-		if mtype isa MClassType and mtype.mclass.ftype isa ForeignObjCType then
+		if mtype isa MClassType and mtype.mnominal.ftype isa ForeignObjCType then
 			return "(__bridge {name_mtype(mtype)})({name})"
 		else return name
 	end

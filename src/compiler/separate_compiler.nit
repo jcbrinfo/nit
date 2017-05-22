@@ -254,7 +254,7 @@ class SeparateCompiler
 		# FIXME: this is not completely fine with a separate compilation scheme
 		for classname in ["Int", "Bool", "Byte", "Char", "Float", "CString",
 		                 "Pointer", "Int8", "Int16", "UInt16", "Int32", "UInt32"] do
-			var classes = self.mainmodule.model.get_mclasses_by_name(classname)
+			var classes = self.mainmodule.model.get_mnominals_by_name(classname)
 			if classes == null then continue
 			assert classes.length == 1 else print_error classes.join(", ")
 			self.box_kinds[classes.first] = self.box_kinds.length + 1
@@ -270,7 +270,7 @@ class SeparateCompiler
 		if mclass.mclass_type.ctype_extern == "val*" then
 			return 0
 		else if mclass.kind == extern_kind and mclass.name != "CString" then
-			return self.box_kinds[self.mainmodule.pointer_type.mclass]
+			return self.box_kinds[self.mainmodule.pointer_type.mnominal]
 		else
 			return self.box_kinds[mclass]
 		end
@@ -308,7 +308,7 @@ class SeparateCompiler
 	private var color_consts_done = new HashSet[Object]
 
 	# The conflict graph of classes used for coloration
-	var class_conflict_graph: POSetConflictGraph[MClass] is noinit
+	var class_conflict_graph: POSetConflictGraph[MNominal] is noinit
 
 	# colorize classe properties
 	fun do_property_coloring do
@@ -316,7 +316,7 @@ class SeparateCompiler
 		var rta = runtime_type_analysis
 
 		# Class graph
-		var mclasses = mainmodule.flatten_mclass_hierarchy
+		var mclasses = mainmodule.flatten_mnominal_hierarchy
 		class_conflict_graph = mclasses.to_conflict_graph
 
 		# Prepare to collect elements to color and build layout with
@@ -371,7 +371,7 @@ class SeparateCompiler
 		end
 
 		# methods coloration
-		var meth_colorer = new POSetGroupColorer[MClass, PropertyLayoutElement](class_conflict_graph, mmethods)
+		var meth_colorer = new POSetGroupColorer[MNominal, PropertyLayoutElement](class_conflict_graph, mmethods)
 		var method_colors = meth_colorer.colors
 		compile_color_consts(method_colors)
 
@@ -379,7 +379,7 @@ class SeparateCompiler
 		for mproperty in dead_methods do compile_color_const(new_visitor, mproperty, -1)
 
 		# attribute coloration
-		var attr_colorer = new POSetGroupColorer[MClass, MAttribute](class_conflict_graph, mattributes)
+		var attr_colorer = new POSetGroupColorer[MNominal, MAttribute](class_conflict_graph, mattributes)
 		var attr_colors = attr_colorer.colors#ize(poset, mattributes)
 		compile_color_consts(attr_colors)
 
@@ -459,14 +459,14 @@ class SeparateCompiler
 
 		var mtypes_by_class = new MultiHashMap[MClass, MType]
 		for e in mtypes do
-			var c = e.undecorate.as(MClassType).mclass
+			var c = e.undecorate.as(MClassType).mnominal.mclass
 			mtypes_by_class[c].add(e)
 			poset.add_node(e)
 		end
 
 		var casttypes_by_class = new MultiHashMap[MClass, MType]
 		for e in cast_types do
-			var c = e.undecorate.as(MClassType).mclass
+			var c = e.undecorate.as(MClassType).mnominal.mclass
 			casttypes_by_class[c].add(e)
 			poset.add_node(e)
 		end
@@ -519,7 +519,7 @@ class SeparateCompiler
 		end
 
 		# Colorize cast_types from the class hierarchy
-		var colorer = new POSetGroupColorer[MClass, MType](class_conflict_graph, bucklets)
+		var colorer = new POSetGroupColorer[MNominal, MType](class_conflict_graph, bucklets)
 		type_colors = colorer.colors
 
 		var layouts = new HashMap[MClass, Array[nullable MType]]

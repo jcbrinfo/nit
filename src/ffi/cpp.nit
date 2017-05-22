@@ -87,7 +87,7 @@ class CPPLanguage
 		if not mproperty.is_init then
 			var param_name = "self"
 			var type_name = to_cpp_call_context.name_mtype(mclass_type)
-			if mclass_type.mclass.ftype isa ForeignCppType then
+			if mclass_type.mnominal.ftype isa ForeignCppType then
 				fc.exprs.add("{type_name} {param_name}_for_cpp = static_cast<{type_name}>({param_name});\n")
 			else
 				fc.exprs.add("{type_name} {param_name}_for_cpp = {param_name};\n")
@@ -96,7 +96,7 @@ class CPPLanguage
 		for param in m.mpropdef.msignature.mparameters do
 			var param_name = param.name
 			var type_name = to_cpp_call_context.name_mtype(param.mtype)
-			if mclass_type.mclass.ftype isa ForeignCppType then
+			if mclass_type.mnominal.ftype isa ForeignCppType then
 				fc.exprs.add("{type_name} {param_name}_for_cpp = static_cast<{type_name}>({param_name});\n")
 			else
 				fc.exprs.add("{type_name} {param_name}_for_cpp = {param_name};\n")
@@ -219,7 +219,7 @@ private class CppCallContext
 	redef fun name_mtype(mtype)
 	do
 		if mtype isa MClassType then
-			var ftype = mtype.mclass.ftype
+			var ftype = mtype.mnominal.ftype
 			if ftype isa ForeignCppType then
 				return ftype.cpp_type
 			end
@@ -234,7 +234,7 @@ class ToCppCallContext
 
 	redef fun cast_to(mtype, name)
 	do
-		if mtype isa MClassType and mtype.mclass.ftype isa ForeignCppType then
+		if mtype isa MClassType and mtype.mnominal.ftype isa ForeignCppType then
 			return "(void*)({name})"
 		else return name
 	end
@@ -245,7 +245,7 @@ private class FromCppCallContext
 
 	redef fun cast_from(mtype, name)
 	do
-		if mtype isa MClassType and mtype.mclass.ftype isa ForeignCppType then
+		if mtype isa MClassType and mtype.mnominal.ftype isa ForeignCppType then
 			return "static_cast<{name_mtype(mtype)}>({name})"
 		else return name
 	end

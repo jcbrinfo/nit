@@ -803,7 +803,7 @@ extern void nitni_global_ref_decr( struct nitni_ref *ref );
 		var finalizable_type = mainmodule.finalizable_type
 		if finalizable_type == null then return
 
-		var finalize_meth = mainmodule.try_get_primitive_method("finalize", finalizable_type.mclass)
+		var finalize_meth = mainmodule.try_get_primitive_method("finalize", finalizable_type.mnominal)
 
 		if finalize_meth == null then
 			modelbuilder.toolcontext.error(null, "Error: the `Finalizable` class does not declare the `finalize` method.")
@@ -967,12 +967,12 @@ extern void nitni_global_ref_decr( struct nitni_ref *ref );
 			var mainmodule = v.compiler.mainmodule
 			var glob_sys = v.init_instance(main_type)
 			v.add("glob_sys = {glob_sys};")
-			var main_init = mainmodule.try_get_primitive_method("init", main_type.mclass)
+			var main_init = mainmodule.try_get_primitive_method("init", main_type.mnominal)
 			if main_init != null then
 				v.send(main_init, [glob_sys])
 			end
-			var main_method = mainmodule.try_get_primitive_method("run", main_type.mclass) or else
-				mainmodule.try_get_primitive_method("main", main_type.mclass)
+			var main_method = mainmodule.try_get_primitive_method("run", main_type.mnominal) or else
+				mainmodule.try_get_primitive_method("main", main_type.mnominal)
 			if main_method != null then
 				v.send(main_method, [glob_sys])
 			end
@@ -1254,7 +1254,7 @@ abstract class AbstractCompilerVisitor
 	fun get_property(name: String, recv: MType): MMethod
 	do
 		assert recv isa MClassType
-		return self.compiler.modelbuilder.force_get_primitive_method(self.current_node, name, recv.mclass, self.compiler.mainmodule)
+		return self.compiler.modelbuilder.force_get_primitive_method(self.current_node, name, recv.mnominal, self.compiler.mainmodule)
 	end
 
 	fun compile_callsite(callsite: CallSite, arguments: Array[RuntimeVariable]): nullable RuntimeVariable
@@ -2326,7 +2326,7 @@ redef class AMethPropdef
 		if self.auto_super_inits != null then return false
 		var nblock = self.n_block
 		if nblock == null then return true
-		if (mpropdef.mproperty.name == "==" or mpropdef.mproperty.name == "!=") and mpropdef.mclassdef.mclass.name == "Object" then return true
+		if (mpropdef.mproperty.name == "==" or mpropdef.mproperty.name == "!=") and mpropdef.mclassdef.mnominal.name == "Object" then return true
 		if nblock isa ABlockExpr and nblock.n_expr.length == 0 then return true
 		return false
 	end
@@ -4163,8 +4163,8 @@ redef class MModule
 	fun properties(mclass: MClass): Set[MProperty] do
 		if not self.properties_cache.has_key(mclass) then
 			var properties = new HashSet[MProperty]
-			var parents = new Array[MClass]
-			if self.flatten_mclass_hierarchy.has(mclass) then
+			var parents = new Array[MNominal]
+			if self.flatten_mnominal_hierarchy.has(mclass) then
 				parents.add_all(mclass.in_hierarchy(self).direct_greaters)
 			end
 			for parent in parents do

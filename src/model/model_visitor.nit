@@ -175,9 +175,9 @@ end
 redef class MModule
 	# Visit all the classes and class definitions of the module.
 	#
-	# On class introduction, the `MClass` then the `MClassDef` are visited.
-	# On class refinement, only the `MClassDef` is visited (the `MClass` is visited in an imported module).
-	# On class importation, nothing is visited (the `MClass` and the `MClassDef` are visited in imported modules).
+	# On class introduction, the `MNominal` then the `MClassDef` are visited.
+	# On class refinement, only the `MClassDef` is visited (the `MNominal` is visited in an imported module).
+	# On class importation, nothing is visited (the `MNominal` and the `MClassDef` are visited in imported modules).
 	redef fun visit_all(v) do
 		for x in mclassdefs do
 			if x.is_intro then v.enter_visit(x.mclass)

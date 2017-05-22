@@ -64,7 +64,7 @@ redef class ToolContext
 				var name = spl.first
 				var val = null
 				if spl.length > 1 then val = spl[1]
-				var prop = mainmodule.try_get_primitive_method(name, recv.mclass)
+				var prop = mainmodule.try_get_primitive_method(name, recv.mnominal)
 				if prop == null then
 					error(null, "Error: --define: no top-level function `{name}`.")
 					continue

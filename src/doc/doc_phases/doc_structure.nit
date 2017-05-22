@@ -65,7 +65,7 @@ redef class SearchPage
 	redef fun apply_structure(v, doc) do
 		var mmodules = doc.mmodules.to_a
 		v.name_sorter.sort(mmodules)
-		var mclasses = doc.mclasses.to_a
+		var mclasses = doc.mnominals.to_a
 		v.name_sorter.sort(mclasses)
 		var mprops = doc.mproperties.to_a
 		v.name_sorter.sort(mprops)
@@ -121,7 +121,7 @@ redef class MModulePage
 		for mentity in concerns do
 			var ssection = new ConcernSection("{mentity.nitdoc_id}.concern", null, mentity)
 			if mentity isa MModule then
-				var mclasses = mclasses_for_mmodule(mentity).to_a
+				var mclasses = mnominals_for_mmodule(mentity).to_a
 				v.name_sorter.sort(mclasses)
 				for mclass in mclasses do
 					var article = new DefinitionListArticle(
@@ -143,22 +143,22 @@ redef class MModulePage
 		end
 	end
 
-	# Filters `self.mclassses` by intro `mmodule`.
-	private fun mclasses_for_mmodule(mmodule: MModule): Set[MClass] do
-		var mclasses = new HashSet[MClass]
-		for mclass in self.mclasses do
-			if mclass.intro_mmodule == mmodule then
-				mclasses.add mclass
+	# Filters `self.mnominals` by intro `mmodule`.
+	private fun mnominals_for_mmodule(mmodule: MModule): Set[MNominal] do
+		var mnominals = new HashSet[MNominal]
+		for mnominal in self.mnominals do
+			if mnominal.intro_mmodule == mmodule then
+				mnominals.add mnominal
 			end
 		end
-		return mclasses
+		return mnominals
 	end
 
-	# Filters `self.mclassdefs` by `mclass`.
-	private fun mclassdefs_for(mclass: MClass): Set[MClassDef] do
+	# Filters `self.mclassdefs` by `mnominal`.
+	private fun mclassdefs_for(mnominal: MNominal): Set[MClassDef] do
 		var mclassdefs = new HashSet[MClassDef]
 		for mclassdef in self.mclassdefs do
-			if mclassdef.mclass == mclass then
+			if mclassdef.mnominal == mnominal then
 				mclassdefs.add mclassdef
 			end
 		end
@@ -389,14 +389,14 @@ class IndexArticle
 	# List of mmodules to display.
 	var mmodules: Array[MModule]
 
-	# List of mclasses to display.
-	var mclasses: Array[MClass]
+	# List of nominals to display.
+	var mnominals: Array[MNominal]
 
 	# List of mproperties to display.
 	var mprops: Array[MProperty]
 
 	redef fun is_hidden do
-		return mmodules.is_empty and mclasses.is_empty and mprops.is_empty
+		return mmodules.is_empty and mnominals.is_empty and mprops.is_empty
 	end
 end
 

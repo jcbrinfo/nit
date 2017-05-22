@@ -60,7 +60,7 @@ end
 redef class MMethodDef
 	# Name of the function to callback this method from C,
 	# also used in other functions names used for this method.
-	fun cname: String do return "{mclassdef.mclass.name}_{mproperty.short_cname}"
+	fun cname: String do return "{mclassdef.mnominal.name}_{mproperty.short_cname}"
 end
 
 redef class MType
@@ -128,7 +128,7 @@ redef class MClassType
 		return super
 	end
 
-	redef fun mangled_cname do return mclass.name
+	redef fun mangled_cname do return mnominal.name
 
 	redef fun is_cprimitive do return mclass.kind == extern_kind or
 			(once ["Bool", "Char", "Float", "Int", "CString",

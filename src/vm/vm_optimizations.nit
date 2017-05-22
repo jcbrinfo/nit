@@ -238,10 +238,10 @@ redef class AIsaExpr
 		# If this test can be optimized, directly call appropriate subtyping methods
 		if status == 1 and recv.mtype isa MClassType then
 			# Direct access
-			return v.bool_instance(v.inter_is_subtype_sst(id, position, recv.mtype.as(MClassType).mclass.vtable.internal_vtable))
+			return v.bool_instance(v.inter_is_subtype_sst(id, position, recv.mtype.as(MClassType).mnominal.mclass.vtable.internal_vtable))
 		else if status == 2 and recv.mtype isa MClassType then
 			# Perfect hashing
-			return v.bool_instance(v.inter_is_subtype_ph(id, recv.vtable.mask, recv.mtype.as(MClassType).mclass.vtable.internal_vtable))
+			return v.bool_instance(v.inter_is_subtype_ph(id, recv.vtable.mask, recv.mtype.as(MClassType).mnominal.mclass.vtable.internal_vtable))
 		else
 			# Use the slow path (default)
 			return v.bool_instance(v.is_subtype(recv.mtype, mtype))

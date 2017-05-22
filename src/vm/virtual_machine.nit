@@ -62,10 +62,10 @@ class VirtualMachine super NaiveInterpreter
 
 		# `sub` or `sup` are formal or virtual types, resolve them to concrete types
 		if sub isa MFormalType then
-			sub = sub.resolve_for(anchor.mclass.mclass_type, anchor, mainmodule, false)
+			sub = sub.resolve_for(anchor.mnominal.mclass_type, anchor, mainmodule, false)
 		end
 		if sup isa MFormalType then
-			sup = sup.resolve_for(anchor.mclass.mclass_type, anchor, mainmodule, false)
+			sup = sup.resolve_for(anchor.mnominal.mclass_type, anchor, mainmodule, false)
 		end
 
 		var sup_accept_null = false
@@ -112,18 +112,18 @@ class VirtualMachine super NaiveInterpreter
 		if not sup.mclass.abstract_loaded then return false
 
 		# For now, always use perfect hashing for subtyping test
-		var super_id = sup.mclass.vtable.id
-		var mask = sub.mclass.vtable.mask
+		var super_id = sup.mnominal.mclass.vtable.id
+		var mask = sub.mnominal.mclass.vtable.mask
 
 		var res = inter_is_subtype_ph(super_id, mask, sub.mclass.vtable.internal_vtable)
 		if res == false then return false
 		# sub and sup can be generic types, each argument of generics has to be tested
 
 		if not sup isa MGenericType then return true
-		var sub2 = sub.supertype_to(mainmodule, anchor, sup.mclass)
+		var sub2 = sub.supertype_to(mainmodule, anchor, sup.mnominal)
 
 		# Test each argument of a generic by recursive calls
-		for i in [0..sup.mclass.arity[ do
+		for i in [0..sup.mnominal.arity[ do
 			var sub_arg = sub2.arguments[i]
 			var sup_arg = sup.arguments[i]
 			var res2 = is_subtype(sub_arg, sup_arg)
@@ -902,7 +902,7 @@ class MInitType
 
 	redef fun collect_mclassdefs(mmodule) do return new HashSet[MClassDef]
 
-	redef fun collect_mclasses(mmodule) do return new HashSet[MClass]
+	redef fun collect_mnominals(mmodule) do return new HashSet[MNominal]
 
 	redef fun collect_mtypes(mmodule) do return new HashSet[MClassType]
 end
