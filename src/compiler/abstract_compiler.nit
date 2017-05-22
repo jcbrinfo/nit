@@ -1594,7 +1594,7 @@ abstract class AbstractCompilerVisitor
 	do
 		var recv
 		var ctype = mtype.ctype
-		assert mtype.mclass.name != "NativeArray"
+		assert mtype.mnominal.data_class.name != "NativeArray"
 		if not mtype.is_c_primitive then
 			recv = init_instance(mtype)
 		else if ctype == "char*" then
@@ -2098,6 +2098,7 @@ end
 redef class MClassType
 
 	redef var ctype is lazy do
+		var mclass = mnominal.data_class
 		if mclass.name == "Int" then
 			return "long"
 		else if mclass.name == "Bool" then
@@ -2131,7 +2132,7 @@ redef class MClassType
 
 	redef fun ctype_extern: String
 	do
-		if mclass.kind == extern_kind then
+		if mnominal.data_class.kind == extern_kind then
 			return "void*"
 		else
 			return ctype
@@ -2140,6 +2141,7 @@ redef class MClassType
 
 	redef fun ctypename: String
 	do
+		var mclass = mnominal.data_class
 		if mclass.name == "Int" then
 			return "l"
 		else if mclass.name == "Bool" then
@@ -4036,7 +4038,7 @@ redef class ANewExpr
 		var mtype = self.recvtype
 		assert mtype != null
 
-		if mtype.mclass.name == "NativeArray" then
+		if mtype.mnominal.data_class.name == "NativeArray" then
 			assert self.n_args.n_exprs.length == 1
 			var l = v.expr(self.n_args.n_exprs.first, null)
 			assert mtype isa MGenericType

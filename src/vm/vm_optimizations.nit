@@ -94,7 +94,7 @@ redef class AAttrFormExpr
 	# * `recv` The receiver (The object) of the access
 	protected fun optimize(mproperty: MAttribute, recv: MutableInstance)
 	do
-		var position = recv.mtype.as(MClassType).mclass.get_position_attributes(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_attributes(mproperty.intro_mclassdef.mclass)
 		if position > 0 then
 			# if this attribute class has an unique position for this receiver, then use direct access
 			offset = position + mproperty.offset
@@ -198,7 +198,7 @@ redef class CallSite
 	# Otherwise we must use perfect hashing
 	fun optimize(recv: Instance)
 	do
-		var position = recv.mtype.as(MClassType).mclass.get_position_methods(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_methods(mproperty.intro_mclassdef.mclass)
 		if position > 0 then
 			offset = position + mproperty.offset
 			status = 1
@@ -238,10 +238,10 @@ redef class AIsaExpr
 		# If this test can be optimized, directly call appropriate subtyping methods
 		if status == 1 and recv.mtype isa MClassType then
 			# Direct access
-			return v.bool_instance(v.inter_is_subtype_sst(id, position, recv.mtype.as(MClassType).mnominal.mclass.vtable.internal_vtable))
+			return v.bool_instance(v.inter_is_subtype_sst(id, position, recv.mtype.as(MClassType).mnominal.data_class.vtable.internal_vtable))
 		else if status == 2 and recv.mtype isa MClassType then
 			# Perfect hashing
-			return v.bool_instance(v.inter_is_subtype_ph(id, recv.vtable.mask, recv.mtype.as(MClassType).mnominal.mclass.vtable.internal_vtable))
+			return v.bool_instance(v.inter_is_subtype_ph(id, recv.vtable.mask, recv.mtype.as(MClassType).mnominal.data_class.vtable.internal_vtable))
 		else
 			# Use the slow path (default)
 			return v.bool_instance(v.is_subtype(recv.mtype, mtype))
@@ -258,10 +258,10 @@ redef class AIsaExpr
 			return
 		end
 
-		if not target.mclass.abstract_loaded then return
+		if not target.mnominal.data_class.abstract_loaded then return
 
 		# If the value is positive, the target class has an invariant position in source's structures
-		var value = source.mclass.get_position_methods(target.mclass)
+		var value = source.mnominal.data_class.get_position_methods(target.mnominal.data_class)
 
 		if value > 0 then
 			# `value - 2` is the position of the target identifier in source vtable
@@ -271,7 +271,7 @@ redef class AIsaExpr
 			# We use perfect hashing
 			status = 2
 		end
-		id = target.mclass.vtable.id
+		id = target.mnominal.data_class.vtable.id
 	end
 end
 
@@ -305,10 +305,10 @@ redef class AAsCastExpr
 		var res: Bool
 		if status == 1 and recv.mtype isa MClassType then
 			# Direct access
-			res = v.inter_is_subtype_sst(id, position, recv.mtype.as(MClassType).mclass.vtable.internal_vtable)
+			res = v.inter_is_subtype_sst(id, position, recv.mtype.as(MClassType).mnominal.data_class.vtable.internal_vtable)
 		else if status == 2 and recv.mtype isa MClassType then
 			# Perfect hashing
-			res = v.inter_is_subtype_ph(id, recv.vtable.mask, recv.mtype.as(MClassType).mclass.vtable.internal_vtable)
+			res = v.inter_is_subtype_ph(id, recv.vtable.mask, recv.mtype.as(MClassType).mnominal.data_class.vtable.internal_vtable)
 		else
 			# Use the slow path (default)
 			res = v.is_subtype(recv.mtype, amtype)
@@ -330,10 +330,10 @@ redef class AAsCastExpr
 			return
 		end
 
-		if not target.mclass.loaded then return
+		if not target.mnominal.data_class.loaded then return
 
 		# If the value is positive, the target class has an invariant position in source's structures
-		var value = source.mclass.get_position_methods(target.mclass)
+		var value = source.mnominal.data_class.get_position_methods(target.mnominal.data_class)
 
 		if value > 0 then
 			# `value - 2` is the position of the target identifier in source vtable
@@ -343,6 +343,6 @@ redef class AAsCastExpr
 			# We use perfect hashing
 			status = 2
 		end
-		id = target.mclass.vtable.id
+		id = target.mnominal.data_class.vtable.id
 	end
 end

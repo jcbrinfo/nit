@@ -105,7 +105,7 @@ class ToCCallContext
 
 	redef fun name_mtype(mtype)
 	do
-		if mtype isa MClassType and mtype.mclass.kind == extern_kind then return "void *"
+		if mtype isa MClassType and mtype.mnominal.data_class.kind == extern_kind then return "void *"
 		return mtype.cname
 	end
 end

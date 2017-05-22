@@ -674,6 +674,7 @@ class MClassDef
 	init
 	do
 		self.mnominal = bound_mtype.mnominal
+		self.mclass = self.mnominal.data_class
 		mmodule.mclassdefs.add(self)
 		mnominal.mclassdefs.add(self)
 		if mnominal.intro_mmodule == mmodule then

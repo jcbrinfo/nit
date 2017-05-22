@@ -86,7 +86,7 @@ class GlobalCompiler
 		self.header = new CodeWriter(file)
 		self.live_primitive_types = new Array[MClassType]
 		for t in runtime_type_analysis.live_types do
-			if t.is_c_primitive or t.mclass.name == "Pointer" then
+			if t.is_c_primitive or t.mnominal.data_class.name == "Pointer" then
 				self.live_primitive_types.add(t)
 			end
 		end
@@ -111,7 +111,7 @@ class GlobalCompiler
 		for t in runtime_type_analysis.live_types do
 			if not t.is_c_primitive then
 				compiler.generate_init_instance(t)
-				if t.mclass.kind == extern_kind then
+				if t.mnominal.data_class.kind == extern_kind then
 					compiler.generate_box_instance(t)
 				end
 			else
@@ -198,7 +198,7 @@ class GlobalCompiler
 		v.add_decl("struct {mtype.c_name} \{")
 		v.add_decl("int classid; /* must be {idname} */")
 
-		if mtype.mclass.name == "NativeArray" then
+		if mtype.mnominal.data_class.name == "NativeArray" then
 			# NativeArrays are just a instance header followed by an array of values
 			v.add_decl("int length;")
 			v.add_decl("{mtype.arguments.first.ctype} values[1];")
@@ -231,7 +231,7 @@ class GlobalCompiler
 		assert not mtype.is_c_primitive
 		var v = self.new_visitor
 
-		var is_native_array = mtype.mclass.name == "NativeArray"
+		var is_native_array = mtype.mnominal.data_class.name == "NativeArray"
 
 		var sig
 		if is_native_array then
@@ -329,8 +329,9 @@ class GlobalCompilerVisitor
 
 	redef fun unbox_extern(value, mtype)
 	do
-		if mtype isa MClassType and mtype.mclass.kind == extern_kind and
-		   mtype.mclass.name != "CString" then
+		if mtype isa MClassType and
+		   mtype.mnominal.data_class.kind == extern_kind and
+		   mtype.mnominal.data_class.name != "CString" then
 			var res = self.new_var_extern(mtype)
 			self.add "{res} = ((struct {mtype.c_name}*){value})->value; /* unboxing {value.mtype} */"
 			return res
@@ -341,8 +342,9 @@ class GlobalCompilerVisitor
 
 	redef fun box_extern(value, mtype)
 	do
-		if not mtype isa MClassType or mtype.mclass.kind != extern_kind or
-			mtype.mclass.name == "CString" then return value
+		if not mtype isa MClassType or
+			mtype.mnominal.data_class.kind != extern_kind or
+			mtype.mnominal.data_class.name == "CString" then return value
 
 		var valtype = value.mtype.as(MClassType)
 		var res = self.new_var(mtype)

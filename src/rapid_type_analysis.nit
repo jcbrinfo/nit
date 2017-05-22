@@ -98,7 +98,7 @@ class RapidTypeAnalysis
 		var anchor = callsite.anchor
 		if anchor != null then mtype = mtype.anchor_to(callsite.mmodule, anchor)
 		mtype = mtype.undecorate
-		if mtype isa MClassType then mtype = mtype.mclass.intro.bound_mtype
+		if mtype isa MClassType then mtype = mtype.mnominal.data_class.intro.bound_mtype
 		var mproperty = callsite.mproperty
 		var res = live_targets_cache[mtype, mproperty]
 		if res != null then return res
@@ -396,7 +396,7 @@ class RapidTypeAnalysis
 
 	fun try_send(recv: MClassType, mproperty: MMethod)
 	do
-		recv = recv.mclass.intro.bound_mtype
+		recv = recv.mnominal.data_class.intro.bound_mtype
 		if not recv.has_mproperty(mainmodule, mproperty) then return
 		var d = mproperty.lookup_first_definition(mainmodule, recv)
 		add_call(d)
@@ -441,7 +441,7 @@ class RapidTypeAnalysis
 
 	fun try_super_send(recv: MClassType, mpropdef: MMethodDef)
 	do
-		recv = recv.mclass.intro.bound_mtype
+		recv = recv.mnominal.data_class.intro.bound_mtype
 		if not recv.collect_mclassdefs(mainmodule).has(mpropdef.mclassdef) then return
 		var d = mpropdef.lookup_next_definition(mainmodule, recv)
 		add_call(d)
