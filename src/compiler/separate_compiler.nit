@@ -169,6 +169,8 @@ class SeparateCompiler
 		compiler.do_property_coloring
 		compiler.compile_class_infos
 		for m in mainmodule.in_importation.greaters do
+			# Only non-subsets are compiled because subsets’ vtables are
+			# merged into their base class’
 			for mclass in m.intro_mclasses do
 				#if mclass.kind == abstract_kind or mclass.kind == interface_kind then continue
 				compiler.compile_class_to_c(mclass)
@@ -327,6 +329,7 @@ class SeparateCompiler
 		var dead_methods = new Array[PropertyLayoutElement]
 
 		for mclass in mclasses do
+			if not mclass isa MClass then continue
 			mmethods[mclass] = new HashSet[PropertyLayoutElement]
 			mattributes[mclass] = new HashSet[MAttribute]
 		end
@@ -387,6 +390,7 @@ class SeparateCompiler
 		method_tables = new HashMap[MClass, Array[nullable MPropDef]]
 		attr_tables = new HashMap[MClass, Array[nullable MProperty]]
 		for mclass in mclasses do
+			if not mclass isa MClass then continue
 			if not mclass.has_new_factory and (mclass.kind == abstract_kind or mclass.kind == interface_kind) then continue
 			if rta != null and not rta.live_classes.has(mclass) then continue
 

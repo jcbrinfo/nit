@@ -89,7 +89,10 @@ class SeparateErasureCompiler
 
 		# Class coloring
 		var poset = mainmodule.flatten_mnominal_hierarchy
-		var mclasses = new HashSet[MClass].from(poset)
+		var mclasses = new HashSet[MClass]
+		for n in poset do
+			if n isa MClass then mclasses.add(n)
+		end
 		var colorer = new POSetColorer[MNominal]
 		colorer.colorize(poset)
 		class_ids = colorer.ids

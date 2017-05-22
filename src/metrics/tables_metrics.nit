@@ -44,7 +44,7 @@ do
 	var hier = main.flatten_mnominal_hierarchy
 	for c in hier do
 		# Skip classes without direct instances
-		if c.kind == interface_kind or c.kind == abstract_kind then continue
+		if (not c isa MClass) or c.kind == interface_kind or c.kind == abstract_kind then continue
 
 		nc += 1
 

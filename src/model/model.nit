@@ -1342,6 +1342,7 @@ class MClassType
 			var mclass = todo.pop
 			#print "process {mclass}"
 			for mclassdef in mclass.mclassdefs do
+				if mclassdef.mnominal != mclass then continue
 				if not mmodule.in_importation <= mclassdef.mmodule then continue
 				#print "  process {mclassdef}"
 				res.add(mclassdef)
