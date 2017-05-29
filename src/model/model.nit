@@ -391,8 +391,29 @@ end
 # *is the method `foo` exists in the class `Bar` in the current module?*
 #
 # During some global analysis, the module considered may be the main module of the program.
-class MClass
+abstract class MClass
 	super MEntity
+
+	# Create a `MNormalClass` or a `MSubset`, depending on the class kind.
+	#
+	# SEE: `intro_mmodule`
+	# SEE: `name`
+	# SEE: `location`
+	# SEE: `MClass::setup_parameter_names`
+	# SEE: `kind`
+	# SEE: `visibility`
+	new(intro_mmodule: MModule, name: String, location: Location,
+			parameter_names: nullable Array[String],
+			kind: MClassKind, visibility: MVisibility)
+	do
+		if kind == subset_kind then
+			return new MSubset(intro_mmodule, name, location, parameter_names,
+					kind, visibility)
+		else
+			return new MNormalClass(intro_mmodule, name, location,
+					parameter_names, kind, visibility)
+		end
+	end
 
 	# The module that introduce the class
 	#
