@@ -499,6 +499,14 @@ class MClass
 	# All class definitions (introduction and refinements)
 	var mclassdefs = new Array[MClassDef]
 
+	# The main normal (non-subset) class associated to `self`.
+	#
+	# If `self` is already a normal class, return `self`.
+	#
+	# Warning: such a definition may not exist in the early life of `self`.
+	# In this case, the method will abort.
+	fun normal_class: MNormalClass is abstract
+
 	# Alias for `name`
 	redef fun to_s do return self.name
 
@@ -581,6 +589,13 @@ class MClass
 		# recursion.
 		return intro.mdoc
 	end
+end
+
+# A normal class that is, a class that is not a `MSubset`.
+class MNormalClass
+	super MClass
+
+	redef fun normal_class do return self
 end
 
 
