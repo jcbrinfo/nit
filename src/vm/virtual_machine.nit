@@ -248,12 +248,12 @@ class VirtualMachine super NaiveInterpreter
 	# returns the most specific local method in the class corresponding to `vtable`
 	private fun method_dispatch(mproperty: MMethod, vtable: VTable, recv: Instance): MMethodDef
 	do
-		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_methods(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_methods(mproperty.intro_mclassdef.data_class)
 		if position > 0 then
 			return method_dispatch_sst(vtable.internal_vtable, mproperty.offset + position)
 		else
 			return method_dispatch_ph(vtable.internal_vtable, vtable.mask,
-				mproperty.intro_mclassdef.mclass.vtable.id, mproperty.offset)
+				mproperty.intro_mclassdef.data_class.vtable.id, mproperty.offset)
 		end
 	end
 
@@ -291,13 +291,13 @@ class VirtualMachine super NaiveInterpreter
 		assert recv isa MutableInstance
 
 		var i: Instance
-		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_attributes(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_attributes(mproperty.intro_mclassdef.data_class)
 		if position > 0 then
 			# if this attribute class has an unique position for this receiver, then use direct access
 			i = read_attribute_sst(recv.internal_attributes, position + mproperty.offset)
 		else
 			# Otherwise, read the attribute value with perfect hashing
-			var id = mproperty.intro_mclassdef.mclass.vtable.id
+			var id = mproperty.intro_mclassdef.data_class.vtable.id
 
 			i = read_attribute_ph(recv.internal_attributes, recv.vtable.internal_vtable,
 					recv.vtable.mask, id, mproperty.offset)
@@ -349,13 +349,13 @@ class VirtualMachine super NaiveInterpreter
 		assert recv isa MutableInstance
 
 		# Replace the old value of mproperty in recv
-		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_attributes(mproperty.intro_mclassdef.mclass)
+		var position = recv.mtype.as(MClassType).mnominal.data_class.get_position_attributes(mproperty.intro_mclassdef.data_class)
 		if position > -1 then
 			# if this attribute class has an unique position for this receiver, then use direct access
 			write_attribute_sst(recv.internal_attributes, position + mproperty.offset, value)
 		else
 			# Otherwise, use perfect hashing to replace the old value
-			var id = mproperty.intro_mclassdef.mclass.vtable.id
+			var id = mproperty.intro_mclassdef.data_class.vtable.id
 
 			write_attribute_ph(recv.internal_attributes, recv.vtable.internal_vtable,
 					recv.vtable.mask, id, mproperty.offset, value)
@@ -398,7 +398,7 @@ class VirtualMachine super NaiveInterpreter
 
 		# Read the attribute value with internal perfect hashing read
 		# because we do not want to throw an error if the value is `initialization_value`
-		var id = mproperty.intro_mclassdef.mclass.vtable.id
+		var id = mproperty.intro_mclassdef.data_class.vtable.id
 
 		var i = read_attribute_ph(recv.internal_attributes, recv.vtable.internal_vtable,
 					recv.vtable.mask, id, mproperty.offset)

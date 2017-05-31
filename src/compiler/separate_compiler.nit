@@ -337,16 +337,16 @@ class SeparateCompiler
 		# Pre-collect known live things
 		if rta != null then
 			for m in rta.live_methods do
-				mmethods[m.intro_mclassdef.mclass].add m
+				mmethods[m.intro_mclassdef.data_class].add m
 			end
 			for m in rta.live_super_sends do
-				var mclass = m.mclassdef.mclass
+				var mclass = m.mclassdef.data_class
 				mmethods[mclass].add m
 			end
 		end
 
 		for m in mainmodule.in_importation.greaters do for cd in m.mclassdefs do
-			var mclass = cd.mclass
+			var mclass = cd.data_class
 			# Collect methods and attributes
 			for p in cd.intro_mproperties do
 				if p isa MMethod then
@@ -1181,8 +1181,8 @@ class SeparateCompilerVisitor
 	do
 		var msignature = m.msignature.resolve_for(m.mclassdef.bound_mtype, m.mclassdef.bound_mtype, m.mclassdef.mmodule, true)
 		var recv = args.first
-		if recv.mtype.ctype != m.mclassdef.mclass.mclass_type.ctype then
-			args.first = self.autobox(args.first, m.mclassdef.mclass.mclass_type)
+		if recv.mtype.ctype != m.mclassdef.data_class.mclass_type.ctype then
+			args.first = self.autobox(args.first, m.mclassdef.data_class.mclass_type)
 		end
 		for i in [0..msignature.arity[ do
 			var mp = msignature.mparameters[i]
@@ -1198,7 +1198,7 @@ class SeparateCompilerVisitor
 	do
 		var msignature = m.msignature.resolve_for(m.mclassdef.bound_mtype, m.mclassdef.bound_mtype, m.mclassdef.mmodule, true)
 		if not m.mproperty.is_init and m.is_extern then
-			args.first = self.unbox_extern(args.first, m.mclassdef.mclass.mclass_type)
+			args.first = self.unbox_extern(args.first, m.mclassdef.data_class.mclass_type)
 		end
 		for i in [0..msignature.arity[ do
 			var mp = msignature.mparameters[i]

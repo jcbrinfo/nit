@@ -359,8 +359,8 @@ private class MClassDefSorter
 	var mmodule: MModule
 	redef fun compare(a, b)
 	do
-		var ca = a.mclass
-		var cb = b.mclass
+		var ca = a.data_class
+		var cb = b.data_class
 		if ca != cb then return mmodule.flatten_mnominal_hierarchy.compare(ca, cb)
 		return mmodule.model.mclassdef_hierarchy.compare(a, b)
 	end
@@ -664,7 +664,7 @@ class MClassDef
 	var mmodule: MModule
 
 	# The associated `MClass`
-	var mclass: MClass is noinit
+	var data_class: MClass is noinit
 
 	# The associated `MNominal`
 	#
@@ -695,7 +695,7 @@ class MClassDef
 	init
 	do
 		self.mnominal = bound_mtype.mnominal
-		self.mclass = self.mnominal.data_class
+		self.data_class = self.mnominal.data_class
 		mmodule.mclassdefs.add(self)
 		mnominal.mclassdefs.add(self)
 		if mnominal.intro_mmodule == mmodule then
@@ -797,7 +797,7 @@ class MClassDef
 	var in_hierarchy: nullable POSetElement[MClassDef] = null
 
 	# Is the definition the one that introduced `mclass`?
-	fun is_class_intro: Bool do return isset mclass._intro and mclass.intro == self
+	fun is_class_intro: Bool do return isset data_class._intro and data_class.intro == self
 
 	# Is the definition the one that introduced `mnominal`?
 	fun is_nominal_intro: Bool do return isset mnominal._intro and mnominal.intro == self
