@@ -598,6 +598,42 @@ class MNormalClass
 	redef fun normal_class do return self
 end
 
+# A class subset.
+#
+# Instances of a class subset are instances of its base class that are accepted
+# by the subset’s predicate (`isa` method).
+#
+# Note: `arity`, `mparameters` and `mclass_type` are set twice: once by the
+# constructor, then again when `normal_class` is set. This allows to have the
+# declared type parameters while reading a `super` declaration. For example,
+# we have to correctly deduce that in `subset S[T: B] super A[T] end`, the `T`
+# type of `A` is the same than the `T` type of `S`.
+class MSubset
+	super MClass
+
+	redef fun normal_class do return p_normal_class
+
+	# The main normal (non-subset) class associated to `self`.
+	fun normal_class=(normal_class: MNormalClass)
+	do
+		p_normal_class = normal_class
+
+		# Update the signature.
+		arity = normal_class.arity
+		mparameters = normal_class.mparameters
+		get_mtype_cache.clear
+		if arity > 0 then
+			var mclass_type = new MGenericType(self, mparameters)
+			self.mclass_type = mclass_type
+			get_mtype_cache[mparameters] = mclass_type
+		else
+			assert mclass_type.arguments.is_empty
+		end
+	end
+
+	private var p_normal_class: MNormalClass is noinit
+end
+
 
 # A definition (an introduction or a refinement) of a class in a module
 #
