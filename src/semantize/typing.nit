@@ -40,7 +40,7 @@ private class TypeVisitor
 
 	# The static type of the receiver
 	# Mainly used for type tests and type resolutions
-	var anchor: nullable MClassType = null
+	var anchor: MClassType is noinit
 
 	# The analyzed mclassdef
 	var mclassdef: MClassDef is noinit
@@ -2139,7 +2139,6 @@ redef class ASuperExpr
 	redef fun accept_typing(v)
 	do
 		var anchor = v.anchor
-		assert anchor != null
 		var recvtype = v.get_variable(self, v.selfvariable)
 		assert recvtype != null
 		var mproperty = v.mpropdef.mproperty
@@ -2178,7 +2177,6 @@ redef class ASuperExpr
 	private fun process_superinit(v: TypeVisitor)
 	do
 		var anchor = v.anchor
-		assert anchor != null
 		var recvtype = v.get_variable(self, v.selfvariable)
 		assert recvtype != null
 		var mpropdef = v.mpropdef
