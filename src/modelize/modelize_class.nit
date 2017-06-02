@@ -182,7 +182,7 @@ redef class ModelBuilder
 				end
 				var nfdt = nfd.n_type
 				if nfdt != null then
-					var bound = resolve_mtype_unchecked(mmodule, null, nfdt, false)
+					var bound = resolve_mtype3_unchecked(mmodule, mclass, null, nfdt, false)
 					if bound == null then return # Forward error
 					if bound.need_anchor then
 						# No F-bounds!
@@ -259,7 +259,7 @@ redef class ModelBuilder
 			for nsc in nclassdef.n_superclasses do
 				specobject = false
 				var ntype = nsc.n_type
-				var mtype = resolve_mtype_unchecked(mmodule, mclassdef, ntype, false)
+				var mtype = resolve_mtype_unchecked(mclassdef, ntype, false)
 				if mtype == null then continue # Skip because of error
 				if not mtype isa MClassType then
 					error(ntype, "Error: supertypes cannot be a formal type.")
@@ -366,12 +366,20 @@ redef class ModelBuilder
 		# Check unchecked ntypes
 		for nclassdef in nmodule.n_classdefs do
 			if nclassdef isa AStdClassdef then
+				var mclass = nclassdef.mclass
 				var mclassdef = nclassdef.mclassdef
+				var anchor
+				if mclassdef == null then
+					anchor = null
+				else
+					anchor = mclassdef.bound_mtype
+				end
+
 				# check bound of formal parameter
 				for nfd in nclassdef.n_formaldefs do
 					var nfdt = nfd.n_type
 					if nfdt != null and nfdt.mtype != null then
-						var bound = resolve_mtype(mmodule, mclassdef, nfdt)
+						var bound = resolve_mtype3(mmodule, mclass, anchor, nfdt)
 						if bound == null then return # Forward error
 					end
 				end
@@ -379,7 +387,7 @@ redef class ModelBuilder
 				for nsc in nclassdef.n_superclasses do
 					var ntype = nsc.n_type
 					if ntype.mtype != null then
-						var mtype = resolve_mtype(mmodule, mclassdef, ntype)
+						var mtype = resolve_mtype3(mmodule, mclass, anchor, ntype)
 						if mtype == null then return # Forward error
 					end
 				end
