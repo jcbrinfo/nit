@@ -229,8 +229,14 @@ redef class ModelBuilder
 						"base classes."
 					)
 				end
+			else
+				var normal_class = supertypes.first.mclass
+				if normal_class isa MNormalClass then
+					mclass.normal_class = normal_class
+				end
+				# Else, an error about specializations rules has already been
+				# raised.
 			end
-			# TODO: Actually set the normal class.
 		else if supertypes.not_empty then
 			error(nclassdef,
 				"Error: Only the introducing definition of " +
