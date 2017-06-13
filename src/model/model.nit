@@ -1660,7 +1660,10 @@ class MParameterType
 		assert resolved_receiver isa MClassType # It is the only remaining type
 		var goalclass = self.mclass
 		if resolved_receiver.mclass == goalclass then
-			return resolved_receiver.arguments[self.rank]
+			var result = resolved_receiver.arguments[self.rank]
+			# Abort early in case of a circular reference.
+			assert result != self
+			return result
 		end
 		var supertypes = resolved_receiver.collect_mtypes(mmodule)
 		for t in supertypes do
@@ -1668,6 +1671,8 @@ class MParameterType
 				# Yeah! c specialize goalclass with a "super `t'". So the question is what is the argument of f
 				# FIXME: Here, we stop on the first goal. Should we check others and detect inconsistencies?
 				var res = t.arguments[self.rank]
+				# Abort early in case of a circular reference.
+				assert res != self
 				return res
 			end
 		end
