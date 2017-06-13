@@ -1194,6 +1194,13 @@ abstract class MType
 		return self
 	end
 
+	# Replace each wrapped class by their nearest normal (non-subset) class.
+	#
+	# Keep type arguments intact.
+	#
+	# SEE: `MClass::normal_class`
+	fun as_normal: MType do return self
+
 	# Returns the not null version of the type.
 	# That is `self` minus the `null` value.
 	#
@@ -1310,6 +1317,10 @@ class MClassType
 			self.collect_things(mmodule)
 		end
 		return cache[mmodule]
+	end
+
+	redef var as_normal is lazy do
+		return mclass.normal_class.get_mtype(arguments)
 	end
 
 	redef fun collect_mclasses(mmodule)
@@ -1831,6 +1842,9 @@ class MNullableType
 	redef var c_name is lazy do return "nullable__{mtype.c_name}"
 
 	redef fun as_nullable do return self
+
+	redef fun as_normal do return mtype.as_normal.as_nullable
+
 	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
 	do
 		var res = super
@@ -1855,6 +1869,8 @@ class MNotNullType
 	redef fun to_s do return "not null {mtype}"
 	redef var full_name is lazy do return "not null {mtype.full_name}"
 	redef var c_name is lazy do return "notnull__{mtype.c_name}"
+
+	redef fun as_normal do return mtype.as_normal.as_notnull
 
 	redef fun as_notnull do return self
 
