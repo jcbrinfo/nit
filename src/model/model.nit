@@ -2399,6 +2399,11 @@ class MMethod
 	# Is the property a 'new' constructor?
 	var is_new: Bool = false is writable
 
+	# Is the property the predicate of `intro_mclassdef.mclass`?
+	#
+	# If it is the case, it should be named `isa`.
+	var is_predicate: Bool = false is writable
+
 	# Is the property a legal constructor for a given class?
 	# As usual, visibility is not considered.
 	# FIXME not implemented
