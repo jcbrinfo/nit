@@ -640,6 +640,12 @@ class MSubset
 	super MClass
 
 	redef var normal_class is noinit, writable
+
+	# The predicate of this subset.
+	#
+	# That is, the boolean method that indicates if the receiver belongs to the
+	# subset. A `null` predicate means that no predicate is explicitly defined.
+	var predicate: nullable MMethod = null is writable
 end
 
 
