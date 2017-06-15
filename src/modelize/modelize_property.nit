@@ -902,8 +902,6 @@ redef class AMethPropdef
 			end
 		end
 
-		var accept_special_last_parameter = self.n_methid == null or self.n_methid.accept_special_last_parameter
-		var return_is_mandatory = self.n_methid != null and self.n_methid.return_is_mandatory
 
 		# Retrieve info from the signature AST
 		var param_names = new Array[String] # Names of parameters from the AST
@@ -1003,6 +1001,8 @@ redef class AMethPropdef
 			end
 		else
 			# Special checks for operator methods
+			var accept_special_last_parameter = n_methid == null or n_methid.accept_special_last_parameter
+			var return_is_mandatory = n_methid != null and n_methid.return_is_mandatory
 			if not accept_special_last_parameter and mparameters.not_empty and mparameters.last.is_vararg then
 				modelbuilder.error(self.n_signature.n_params.last, "Error: illegal variadic parameter `{mparameters.last}` for `{mproperty.name}`.")
 			end
