@@ -768,6 +768,7 @@ redef class AMethPropdef
 	redef fun build_property(modelbuilder, mclassdef)
 	do
 		var n_kwinit = n_kwinit
+		var n_kwisa = n_kwisa
 		var n_kwnew = n_kwnew
 		var is_new = n_kwnew != null
 		var is_init = n_kwinit != null or is_new
@@ -781,6 +782,9 @@ redef class AMethPropdef
 			else if n_kwnew != null then
 				name = "new"
 				name_node = n_kwnew
+			else if n_kwisa != null then
+				name = "isa"
+				name_node = n_kwisa
 			else
 				name = "main"
 				name_node = self
@@ -829,6 +833,9 @@ redef class AMethPropdef
 			mprop.is_init = is_init
 			mprop.is_new = is_new
 			if is_new then mclassdef.mclass.has_new_factory = true
+			if n_kwisa != null then
+				mprop.is_predicate = true
+			end
 			if name == "sys" then mprop.is_toplevel = true # special case for sys allowed in `new` factories
 			if not self.check_redef_keyword(modelbuilder, mclassdef, n_kwredef, false, mprop) then
 				mprop.is_broken = true
