@@ -838,6 +838,10 @@ redef class AMethPropdef
 				var mclass = mclassdef.mclass
 				if mclass isa MSubset then
 					mclass.predicate = mprop
+				else
+					modelbuilder.error(name_node,
+						"Error: only class subsets may define a predicate."
+					)
 				end
 			end
 			if name == "sys" then mprop.is_toplevel = true # special case for sys allowed in `new` factories
