@@ -975,8 +975,15 @@ redef class AMethPropdef
 			mparameters.add(mparameter)
 		end
 
-		# In `new`-factories, the return type is by default the classtype.
-		if ret_type == null and mproperty.is_new then ret_type = mclassdef.mclass.mclass_type
+		if ret_type == null then
+			if mproperty.is_new then
+				# For “`new`” factories, the return type is by default the
+				# classtype.
+				ret_type = mclassdef.mclass.mclass_type
+			else if mproperty.is_predicate then
+				# Predicates always return a `Bool`.
+				ret_type = mmodule.bool_type
+			end
 
 		# Special checks for operator methods
 		if not accept_special_last_parameter and mparameters.not_empty and mparameters.last.is_vararg then
