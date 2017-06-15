@@ -984,13 +984,31 @@ redef class AMethPropdef
 				# Predicates always return a `Bool`.
 				ret_type = mmodule.bool_type
 			end
-
-		# Special checks for operator methods
-		if not accept_special_last_parameter and mparameters.not_empty and mparameters.last.is_vararg then
-			modelbuilder.error(self.n_signature.n_params.last, "Error: illegal variadic parameter `{mparameters.last}` for `{mproperty.name}`.")
 		end
-		if ret_type == null and return_is_mandatory then
-			modelbuilder.error(self.n_methid, "Error: mandatory return type for `{mproperty.name}`.")
+
+		if mproperty.is_predicate then
+			# Special checks for `isa`.
+			# The signature may be already enforced by the syntax, but we prefer
+			# not to assume too much about the latter.
+			if ret_type != mmodule.bool_type then
+				modelbuilder.error(n_signature.n_type,
+					"Error: the return type for `{mproperty.name}` must be " +
+					"`{mmodule.bool_type}`."
+				)
+			end
+			if mparameters.not_empty then
+				modelbuilder.error(n_signature,
+					"Error: `{mproperty.name}` cannot have parameters."
+				)
+			end
+		else
+			# Special checks for operator methods
+			if not accept_special_last_parameter and mparameters.not_empty and mparameters.last.is_vararg then
+				modelbuilder.error(self.n_signature.n_params.last, "Error: illegal variadic parameter `{mparameters.last}` for `{mproperty.name}`.")
+			end
+			if ret_type == null and return_is_mandatory then
+				modelbuilder.error(self.n_methid, "Error: mandatory return type for `{mproperty.name}`.")
+			end
 		end
 
 		msignature = new MSignature(mparameters, ret_type)
