@@ -835,6 +835,10 @@ redef class AMethPropdef
 			if is_new then mclassdef.mclass.has_new_factory = true
 			if n_kwisa != null then
 				mprop.is_predicate = true
+				var mclass = mclassdef.mclass
+				if mclass isa MSubset then
+					mclass.predicate = mprop
+				end
 			end
 			if name == "sys" then mprop.is_toplevel = true # special case for sys allowed in `new` factories
 			if not self.check_redef_keyword(modelbuilder, mclassdef, n_kwredef, false, mprop) then
