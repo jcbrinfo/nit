@@ -843,6 +843,12 @@ redef class AMethPropdef
 						"Error: only class subsets may define a predicate."
 					)
 				end
+				if mvisibility != mclass.visibility then
+					modelbuilder.error(name_node,
+						"Error: a predicate must have the same visibility " +
+						"as the class for which it is defined."
+					)
+				end
 			end
 			if name == "sys" then mprop.is_toplevel = true # special case for sys allowed in `new` factories
 			if not self.check_redef_keyword(modelbuilder, mclassdef, n_kwredef, false, mprop) then
