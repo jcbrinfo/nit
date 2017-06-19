@@ -817,8 +817,6 @@ abstract class MType
 		if sup isa MNullableType then
 			sup_accept_null = true
 			sup = sup.mtype
-		else if sup isa MNotNullType then
-			sup = sup.mtype
 		else if sup isa MNullType then
 			sup_accept_null = true
 		end
@@ -826,12 +824,8 @@ abstract class MType
 		# Can `sub` provide null or not?
 		# Thus we can match with `sup_accept_null`
 		# Also discard the nullable marker if it exists
-		var sub_reject_null = false
 		if sub isa MNullableType then
 			if not sup_accept_null then return false
-			sub = sub.mtype
-		else if sub isa MNotNullType then
-			sub_reject_null = true
 			sub = sub.mtype
 		else if sub isa MNullType then
 			return sup_accept_null
@@ -847,16 +841,12 @@ abstract class MType
 
 			assert anchor != null
 			sub = sub.lookup_bound(mmodule, anchor)
-			if sub_reject_null then sub = sub.as_notnull
 
 			#print "3.is {sub} a {sup}?"
 
 			# Manage the second layer of null/nullable
 			if sub isa MNullableType then
-				if not sup_accept_null and not sub_reject_null then return false
-				sub = sub.mtype
-			else if sub isa MNotNullType then
-				sub_reject_null = true
+				if not sup_accept_null then return false
 				sub = sub.mtype
 			else if sub isa MNullType then
 				return sup_accept_null
@@ -1184,15 +1174,14 @@ abstract class MType
 				return type2
 			end
 		end
-		return type1.cache_intersection(type2, mmodule)
+		return type1.cache_intersection(type2)
 	end
 
-	private fun cache_intersection(other: MType, mmodule: MModule): MIntersectionType
+	private fun cache_intersection(other: MType): MIntersectionType
 	do
-		# TODO: Remove the `mmodule` parameter.
 		var result = intersection_cache.get_or_null(other)
 		if result == null then
-			result = new MIntersectionType.with_operands(mmodule, self, other)
+			result = new MIntersectionType.with_operands(self, other)
 			intersection_cache[other] = result
 		end
 		return result
@@ -1230,7 +1219,8 @@ abstract class MType
 	# `mmodule` is used to look for `Object`.
 	#
 	# For most types, this return `self`.
-	# For formal types, this returns a special `MNotNullType`
+	# For formal types, this returns an intersection with `Object`
+	# (`mmodule.object_type`).
 	fun as_notnull(mmodule: MModule): MType do return self
 
 	private var as_nullable_cache: nullable MType = null
@@ -1435,7 +1425,7 @@ abstract class MTypeSet[E: MType]
 	# The separator to use in `to_s` and `full_name`.
 	#
 	# `" and "` or `" or "`
-	private fun separator: String do return " {keyword} "
+	protected fun separator: String do return " {keyword} "
 
 	redef var to_s is lazy do return "({operands.join(separator)})"
 
@@ -1460,7 +1450,7 @@ class MIntersectionType
 	super MTypeSet[MType]
 
 	# Intersect the specified types.
-	init with_operands(mmodule: MModule, operands: MType...) do
+	init with_operands(operands: MType...) do
 		init(new HashSet[MType].from(operands))
 	end
 
@@ -1487,37 +1477,43 @@ class MIntersectionType
 
 	redef fun as_notnull(mmodule)
 	do
-		var new_operands = new Set[MType]
-		# Do we need to add `Object` to the operands?
-		var add_object = true
-		for mtype in operands do
-			if mtype isa MClassType or mtype isa MNotNullType then
-				# Already not null.
-				return self
-			else
-				var operand = mtype.undecorate
-				if operand isa MNullType then
-					return model.bottom_type
-				else if operand isa MClassType or
-						operand isa MNotNullType then
-					add_object = false
+		var result = as_notnull_cache.get_or_null(mmodule)
+		if result == null then
+			var new_operands = new Set[MType]
+			# Do we need to add `Object` to the operands?
+			var add_object = true
+			for mtype in operands do
+				if mtype isa MClassType then
+					# Already not null.
+					return self
+				else
+					var operand = mtype.undecorate
+					if operand isa MNullType then
+						return model.bottom_type
+					else if operand isa MClassType then
+						add_object = false
+					end
+					new_operands.add operand
 				end
-				new_operands.add operand
 			end
-		end
-		if add_object then
-			new_operands.add mmodule.object_type
-		end
-
-		# TODO: Merge to the subtype when possible.
-		var i = new_operands.iterator
-		var result = i.item
-		i.next
-		for operand in i do
-			result = result.cache_intersection(operand, mmodule)
+			if add_object then
+				new_operands.add mmodule.object_type
+			end
+			
+			# TODO: Merge to the subtype when possible.
+			var i = new_operands.iterator
+			var result = i.item
+			i.next
+			for operand in i do
+				result = result.cache_intersection(operand, mmodule)
+			end
+			return result
+			as_notnull_cache[mmodule] = result
 		end
 		return result
 	end
+
+	private var as_notnull_cache = new Map[MModule, MType]
 
 	redef fun cache_intersection(other, mmodule)
 	do
@@ -2238,33 +2234,6 @@ class MNullableType
 		var t = super
 		if t == mtype then return self
 		return t.as_nullable
-	end
-end
-
-# A non-null version of a formal type.
-#
-# When a formal type in bounded to a nullable type, this is the type of the not null version of it.
-class MNotNullType
-	super MProxyType
-
-	redef fun to_s do return "not null {mtype}"
-	redef var full_name is lazy do return "not null {mtype.full_name}"
-	redef var c_name is lazy do return "notnull__{mtype.c_name}"
-
-	redef fun as_notnull do return self
-
-	redef fun resolve_for(mtype, anchor, mmodule, cleanup_virtual)
-	do
-		var res = super
-		return res.as_notnull
-	end
-
-	# Efficiently returns `mtype.lookup_fixed(mmodule, resolved_receiver).as_notnull`
-	redef fun lookup_fixed(mmodule, resolved_receiver)
-	do
-		var t = super
-		if t == mtype then return self
-		return t.as_notnull
 	end
 end
 
