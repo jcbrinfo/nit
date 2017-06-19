@@ -611,6 +611,16 @@ class MNormalClass
 	redef fun normal_class do return self
 end
 
+# A class subset.
+#
+# Instances of a class subset are instances of its base class that are accepted
+# by the subset’s predicate (`isa` method).
+class MSubset
+	super MClass
+
+	redef var normal_class is noinit, writable
+end
+
 
 # A definition (an introduction or a refinement) of a class in a module
 #
