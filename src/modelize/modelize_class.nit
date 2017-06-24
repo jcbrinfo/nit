@@ -163,6 +163,7 @@ redef class ModelBuilder
 		var is_intro = (mclass.intro_mmodule == mmodule)
 		var supertypes = collect_supertypes(nmodule, nclassdef, is_intro)
 		set_normal_class_of(nmodule, nclassdef, supertypes, is_intro)
+		if mclass.is_broken then return
 
 		var bound_mtype = build_a_bound_mtype(nmodule, nclassdef)
 		if bound_mtype == null then return
@@ -202,6 +203,9 @@ redef class ModelBuilder
 	#
 	# `is_intro` indicates if we are currently processing a definition that
 	# introduces the class.
+	#
+	# Note: If this method fails to set the normal class,
+	# `nclassdef.mclass.is_broken` is set to `true`.
 	private fun set_normal_class_of(nmodule: AModule, nclassdef: AClassdef,
 			supertypes: Array[MClassType], is_intro: Bool)
 	do
@@ -229,13 +233,16 @@ redef class ModelBuilder
 						"base classes."
 					)
 				end
+				mclass.is_broken = true
 			else
 				var normal_class = supertypes.first.mclass
 				if normal_class isa MNormalClass then
 					mclass.normal_class = normal_class
+				else
+					# An error about specializations rules has already been
+					# raised.
+					mclass.is_broken = true
 				end
-				# Else, an error about specializations rules has already been
-				# raised.
 			end
 		else if supertypes.not_empty then
 			error(nclassdef,
