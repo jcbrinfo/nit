@@ -265,10 +265,30 @@ redef class ModelBuilder
 	do
 		var mmodule = nmodule.mmodule.as(not null)
 		var mclass = nclassdef.mclass.as(not null)
+		var normal_class = mclass.normal_class
 
 		var bounds = new Array[MType]
-		if nclassdef isa AStdClassdef and mclass.arity > 0 then
+		if not nclassdef isa AStdClassdef then return mclass.get_mtype(bounds)
+
+		if is_intro and mclass.arity != normal_class.arity then
+			error(nclassdef,
+				"Error: expected {normal_class.arity} formal parameter(s) " +
+				"for a subset of {normal_class.signature_to_s}; " +
+				"got {mclass.arity}."
+			)
+			mclass.is_broken = true
+			return null
+		end
+
+		if mclass.arity > 0 then
 			var objectclass = try_get_mclass_by_name(nmodule, mmodule, "Object")
+
+			# If `nclassdef` is a subset introduction, the arguments of the lone
+			# supertype.
+			var normal_args: nullable Array[MType] = null
+			if mclass isa MSubset and is_intro then
+				normal_args = supertypes.first.arguments
+			end
 
 			# Revolve bound for formal parameters
 			for i in [0..mclass.arity[ do
@@ -284,6 +304,22 @@ redef class ModelBuilder
 				if nfd.n_id.text != pname then
 					error(nfd.n_id, "Error: formal parameter type #{i} `{nfd.n_id.text}` must be named `{pname}` as in the original definition in module `{mclass.intro.mmodule}`.")
 				end
+				if normal_args != null then
+					var normal_arg = normal_args[i]
+					if normal_arg isa MParameterType and
+							normal_arg.mclass == mclass then
+						if normal_arg.rank != i then
+							error(nfd.n_id,
+								"Error: formal parameter type #{i} " +
+								"`{nfd.n_id.text}` must be linked to the " +
+								"type parameter #{i} of the base class."
+							)
+						end
+					end
+					# Else, an error has already been raised while setting the
+					# normal class.
+				end
+
 				var nfdt = nfd.n_type
 				if nfdt != null then
 					var bound = resolve_mtype3_unchecked(mmodule, null, null, nfdt, false)
