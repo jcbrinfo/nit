@@ -165,7 +165,7 @@ redef class ModelBuilder
 		set_normal_class_of(nmodule, nclassdef, supertypes, is_intro)
 		if mclass.is_broken then return
 
-		var bound_mtype = build_a_bound_mtype(nmodule, nclassdef)
+		var bound_mtype = build_a_bound_mtype(nmodule, nclassdef, supertypes, is_intro)
 		if bound_mtype == null then return
 		var mclassdef = new MClassDef(mmodule, bound_mtype, nclassdef.location)
 		nclassdef.mclassdef = mclassdef
@@ -255,10 +255,13 @@ redef class ModelBuilder
 	# Determine the type parameter bounds for `nclassdef`.
 	#
 	# In case of error, return `null`.
+	# `is_intro` indicates if we are currently processing a definition that
+	# introduces the class.
 	#
 	# REQUIRE: `nmodule.mmodule != null`
 	# REQUIRE: `nclassdef.mclass != null`
-	private fun build_a_bound_mtype(nmodule: AModule, nclassdef: AClassdef): nullable MClassType
+	private fun build_a_bound_mtype(nmodule: AModule, nclassdef: AClassdef,
+			supertypes: Array[MClassType], is_intro: Bool): nullable MClassType
 	do
 		var mmodule = nmodule.mmodule.as(not null)
 		var mclass = nclassdef.mclass.as(not null)
@@ -292,7 +295,7 @@ redef class ModelBuilder
 						bounds.add(bound)
 						nfd.bound = bound
 					end
-				else if mclass.mclassdefs.is_empty then
+				else if is_intro then
 					if objectclass == null then
 						error(nfd, "Error: formal parameter type `{pname}` unbounded but no `Object` class exists.")
 						return null
