@@ -199,7 +199,11 @@ redef class ModelBuilder
 	#
 	# If `mclass` is not a subset, do nothing. Else, ensure that `mclass` has
 	# exactly one (explicit or implied) direct superclass and set it as the
-	# base normal class.
+	# base normal class. If the aforementionned constraint is not respected,
+	# an error is raised and the normal class is not set. An error is also
+	# raised in the case where the said superclass has one of its type argument
+	# fixed by the subset, but in this particular case, the normal class is
+	# nevertheless set.
 	#
 	# `is_intro` indicates if we are currently processing a definition that
 	# introduces the class.
@@ -213,6 +217,8 @@ redef class ModelBuilder
 		if mclass.kind != subset_kind then
 			return
 		else if is_intro then
+			assert nclassdef isa AStdClassdef
+
 			# A subset can only have one direct supertype.
 			if supertypes.length != 1 then
 				if supertypes.is_empty then
@@ -238,6 +244,23 @@ redef class ModelBuilder
 				var normal_class = supertypes.first.mclass
 				if normal_class isa MNormalClass then
 					mclass.normal_class = normal_class
+
+					# Ensure that no bound is fixed by the subset.
+					var args = supertypes.first.arguments
+					for i in [0..args.length[ do
+						var arg = args[i]
+						if (not arg isa MParameterType) or arg.mclass != mclass then
+							var super_node = nclassdef.n_superclasses.first
+							var arg_node = super_node.n_type.n_types[i]
+							error(arg_node,
+								"Error: the type argument #{i} for " +
+								"`{normal_class}` is fixed. However, a " +
+								"{mclass.kind} cannot fix the arguments of " +
+								"its base type. The bounds of `{mclass}`" +
+								"should be set instead."
+							)
+						end
+					end
 				else
 					# An error about specializations rules has already been
 					# raised.
