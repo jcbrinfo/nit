@@ -141,6 +141,88 @@ class TestMIntersectionType
 	end
 end
 
+class TestMClassType
+	super TestSuite
+
+	private var model: GenericModel is noinit
+
+	private var mmodule: MModule is noinit
+
+	private var bound_type_g: MClassType is noinit
+
+	private var bound_type_gs: MClassType is noinit
+
+	private var type_b: MClassType is noinit
+
+	private var type_d: MClassType is noinit
+
+	private var type_g_b: MClassType is noinit
+
+	private var type_g_d: MClassType is noinit
+
+	private var type_h: MClassType is noinit
+
+	init do
+		model = new GenericModel
+		mmodule = model.mmodule0
+		bound_type_g = model.mclass_g.intro.bound_mtype
+		bound_type_gs = model.mclass_gs.intro.bound_mtype
+		type_b = model.mclass_b.mclass_type
+		type_d = model.mclass_d.mclass_type
+		type_g_b = model.mclass_g.get_mtype([type_b])
+		type_g_d = model.mclass_g.get_mtype([type_d])
+		type_h = model.mclass_h.mclass_type
+	end
+
+	private fun assert_equals(actual, expected: Object) do
+		assert actual == expected else
+			print_error "{actual} == {expected}"
+		end
+	end
+
+	fun test_collect_subsets do
+		assert bound_type_g.collect_subsets(mmodule).is_empty
+		assert type_g_b.collect_subsets(mmodule).has_exactly([
+			model.mclass_gs
+		])
+		assert type_g_d.collect_subsets(mmodule).has_exactly([
+			model.mclass_gs
+		])
+		assert bound_type_gs.collect_subsets(mmodule).has_exactly([
+			model.mclass_gs
+		])
+		assert type_h.collect_subsets(mmodule).is_empty
+	end
+
+	fun test_collect_subset_defs do
+		assert bound_type_g.collect_subset_defs(mmodule).is_empty
+		assert type_g_b.collect_subset_defs(mmodule).has_exactly([
+			model.mclassdef_gs
+		])
+		assert type_g_d.collect_subset_defs(mmodule).has_exactly([
+			model.mclassdef_gs
+		])
+		assert bound_type_gs.collect_subset_defs(mmodule).has_exactly([
+			model.mclassdef_gs
+		])
+		assert type_h.collect_subset_defs(mmodule).is_empty
+	end
+
+	fun test_collect_subset_types do
+		assert bound_type_g.collect_subset_types(mmodule).is_empty
+		assert type_g_b.collect_subset_types(mmodule).has_exactly([
+			bound_type_gs
+		])
+		assert type_g_d.collect_subset_types(mmodule).has_exactly([
+			model.mclass_gs.get_mtype([type_d])
+		])
+		assert bound_type_gs.collect_subset_types(mmodule).has_exactly([
+			bound_type_gs
+		])
+		assert type_h.collect_subset_types(mmodule).is_empty
+	end
+end
+
 private class MTypeStub
 	super MType
 

@@ -1360,6 +1360,38 @@ abstract class MType
 	# REQUIRE: `not self.need_anchor`
 	fun collect_mtypes(mmodule: MModule): Set[MClassType] is abstract
 
+	# List all classdefs of the class subsets that are applicable to direct instances of this type.
+	#
+	# The returned set contains:
+	# * the subset definitions from `mmodule` and its imported modules
+	# * the subset definitions directly linked to this type and its super-types
+	#
+	# This function is used mainly internally.
+	#
+	# REQUIRE: `not self.need_anchor`
+	fun collect_subset_defs(mmodule: MModule): Set[MClassDef] is abstract
+
+	# List types associated to class subsets that are applicable to direct instances of this type.
+	#
+	# The returned set contains:
+	# * the subsets from `mmodule` and its imported modules
+	# * the subsets directly linked to this type and its super-types
+	#
+	# The type arguments of the returned types are set according to the
+	# arguments (both implicit and explicit) of `self`.
+	#
+	# REQUIRE: `not self.need_anchor`
+	fun collect_subset_types(mmodule: MModule): Set[MClassType] is abstract
+
+	# List class subsets that are applicable to direct instances of this type.
+	#
+	# The returned set contains:
+	# * the subsets from `mmodule` and its imported modules
+	# * the subsets directly linked to this type and its super-types
+	#
+	# REQUIRE: `not self.need_anchor`
+	fun collect_subsets(mmodule: MModule): Set[MSubset] is abstract
+
 	# Is the property in self for a given module
 	# This method does not filter visibility or whatever
 	#
@@ -1664,6 +1696,51 @@ class MIntersectionType
 
 	private var collect_mtypes_cache = new Map[MModule, Set[MClassType]]
 
+	redef fun collect_subset_defs(mmodule)
+	do
+		var result = collect_subset_defs_cache.get_or_null(mmodule)
+		if result == null then
+			result = new Set[MClassDef]
+			for mtype in operands do
+				result.add_all(mtype.collect_subset_defs(mmodule))
+			end
+			collect_subset_defs_cache[mmodule] = result
+		end
+		return result
+	end
+
+	private var collect_subset_defs_cache = new Map[MModule, Set[MClassDef]]
+
+	redef fun collect_subset_types(mmodule)
+	do
+		var result = collect_subset_types_cache.get_or_null(mmodule)
+		if result == null then
+			result = new Set[MClassType]
+			for mtype in operands do
+				result.add_all(mtype.collect_subset_types(mmodule))
+			end
+			collect_subset_types_cache[mmodule] = result
+		end
+		return result
+	end
+
+	private var collect_subset_types_cache = new Map[MModule, Set[MClassType]]
+
+	redef fun collect_subsets(mmodule)
+	do
+		var result = collect_subsets_cache.get_or_null(mmodule)
+		if result == null then
+			result = new Set[MSubset]
+			for mtype in operands do
+				result.add_all(mtype.collect_subsets(mmodule))
+			end
+			collect_subsets_cache[mmodule] = result
+		end
+		return result
+	end
+
+	private var collect_subsets_cache = new Map[MModule, Set[MSubset]]
+
 	redef fun separator do return " and "
 
 	redef var undecorate is lazy do return super
@@ -1746,6 +1823,34 @@ class MClassType
 		return cache[mmodule]
 	end
 
+	redef fun collect_subset_defs(mmodule)
+	do
+		var cache = collect_subset_defs_cache
+		if not cache.has_key(mmodule) then
+			collect_subset_things(mmodule)
+		end
+		return cache[mmodule]
+	end
+
+	redef fun collect_subset_types(mmodule)
+	do
+		var cache = collect_subset_types_cache
+		if not cache.has_key(mmodule) then
+			collect_subset_things(mmodule)
+		end
+		return cache[mmodule]
+	end
+
+
+	redef fun collect_subsets(mmodule)
+	do
+		var cache = collect_subsets_cache
+		if not cache.has_key(mmodule) then
+			collect_subset_things(mmodule)
+		end
+		return cache[mmodule]
+	end
+
 	# common implementation for `collect_mclassdefs`, `collect_mclasses`, and `collect_mtypes`.
 	private fun collect_things(mmodule: MModule)
 	do
@@ -1779,6 +1884,67 @@ class MClassType
 	private var collect_mclassdefs_cache = new HashMap[MModule, Set[MClassDef]]
 	private var collect_mclasses_cache = new HashMap[MModule, Set[MClass]]
 	private var collect_mtypes_cache = new HashMap[MModule, Set[MClassType]]
+
+	# Common implementation for `collect_subset_defs`, `collect_subset_types`, and `collect_subsets`.
+	private fun collect_subset_things(mmodule: MModule)
+	do
+		var subsets = new Set[MSubset]
+		var subset_candidates = new Set[MSubset]
+		var subset_defs = new Set[MClassDef]
+		var subset_types = new Set[MClassType]
+
+		for mclass in collect_mclasses(mmodule) do
+			subset_candidates.add_all(mclass.subsets)
+		end
+		for msubset in subset_candidates do
+			# Filter out subsets that are not defined in the context of `mmodule`.
+			var intro = msubset.intro
+			if not mmodule.in_importation <= intro.mmodule then continue
+
+			# Filter out inapplicable subsets.
+			# A subset is applicable if it’s “normal” type is a supertype of
+			# `self`.
+
+			var subset_bound_type = intro.bound_mtype
+
+			# The type arguments of the subset, in the context of `self`.
+			var bounds = new Array[MType].with_capacity(msubset.arity)
+
+			# Since we already know that `self.mclass` is a subclass of
+			# `msubset.normal_class`, we can simply compare type arguments.
+			for mparameter in msubset.mparameters do
+				var normal_parameter = mparameter.as_normal
+				var bound = normal_parameter.resolve_for(
+					self, null, mmodule, false
+				)
+				var subset_bound = mparameter.resolve_for(
+					subset_bound_type, null, mmodule, false
+				)
+				if not bound.is_subtype(mmodule, null, subset_bound) then
+					continue label next_subset
+				end
+				bounds.add(bound)
+			end
+			var subset_type = msubset.get_mtype(bounds)
+
+			# Add the subset to the collections.
+			subset_types.add(subset_type)
+			subsets.add(msubset)
+			for mclassdef in msubset.mclassdefs do
+				if mmodule.in_importation <= mclassdef.mmodule then
+					subset_defs.add(mclassdef)
+				end
+			end
+		end label next_subset
+
+		collect_subsets_cache[mmodule] = subsets
+		collect_subset_defs_cache[mmodule] = subset_defs
+		collect_subset_types_cache[mmodule] = subset_types
+	end
+
+	private var collect_subset_defs_cache = new Map[MModule, Set[MClassDef]]
+	private var collect_subset_types_cache = new Map[MModule, Set[MClassType]]
+	private var collect_subsets_cache = new Map[MModule, Set[MSubset]]
 
 	redef fun mdoc_or_fallback do return mclass.mdoc_or_fallback
 end
@@ -2283,6 +2449,24 @@ abstract class MProxyType
 		assert not self.need_anchor
 		return self.mtype.collect_mtypes(mmodule)
 	end
+
+	redef fun collect_subset_defs(mmodule)
+	do
+		assert not need_anchor
+		return mtype.collect_subset_defs(mmodule)
+	end
+
+	redef fun collect_subset_types(mmodule)
+	do
+		assert not need_anchor
+		return mtype.collect_subset_types(mmodule)
+	end
+
+	redef fun collect_subsets(mmodule)
+	do
+		assert not need_anchor
+		return mtype.collect_subsets(mmodule)
+	end
 end
 
 # A type prefixed with "nullable"
@@ -2374,6 +2558,12 @@ class MNullType
 	redef fun collect_mclasses(mmodule) do return new HashSet[MClass]
 
 	redef fun collect_mtypes(mmodule) do return new HashSet[MClassType]
+
+	redef fun collect_subset_defs(mmodule) do return new HashSet[MClassDef]
+
+	redef fun collect_subset_types(mmodule) do return new HashSet[MClassType]
+
+	redef fun collect_subsets(mmodule) do return new HashSet[MSubset]
 end
 
 # The special universal most specific type.
@@ -2400,6 +2590,12 @@ class MBottomType
 	redef fun collect_mclasses(mmodule) do return new HashSet[MClass]
 
 	redef fun collect_mtypes(mmodule) do return new HashSet[MClassType]
+
+	redef fun collect_subset_defs(mmodule) do return new HashSet[MClassDef]
+
+	redef fun collect_subset_types(mmodule) do return new HashSet[MClassType]
+
+	redef fun collect_subsets(mmodule) do return new HashSet[MSubset]
 end
 
 # A special type used as a silent error marker when building types.
@@ -2425,6 +2621,12 @@ class MErrorType
 	redef fun collect_mclasses(mmodule) do return new HashSet[MClass]
 
 	redef fun collect_mtypes(mmodule) do return new HashSet[MClassType]
+
+	redef fun collect_subset_defs(mmodule) do return new HashSet[MClassDef]
+
+	redef fun collect_subset_types(mmodule) do return new HashSet[MClassType]
+
+	redef fun collect_subsets(mmodule) do return new HashSet[MSubset]
 end
 
 # A signature of a method
