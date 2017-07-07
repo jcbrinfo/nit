@@ -1396,10 +1396,24 @@ abstract class MType
 	# This method does not filter visibility or whatever
 	#
 	# REQUIRE: `not self.need_anchor`
+	# SEE: `may_have_mproperty`
 	fun has_mproperty(mmodule: MModule, mproperty: MProperty): Bool
 	do
 		assert not self.need_anchor
 		return self.collect_mclassdefs(mmodule).has(mproperty.intro_mclassdef)
+	end
+
+	# Same as `has_mproperty`, but also considers applicable class subsets.
+	#
+	# REQUIRE: `not self.need_anchor`
+	fun may_have_mproperty(mmodule: MModule, mproperty: MProperty): Bool
+	do
+		assert not self.need_anchor
+		var intro = mproperty.intro_mclassdef
+		return (
+			self.collect_mclassdefs(mmodule).has(intro) or
+			self.collect_subset_defs(mmodule).has(intro)
+		)
 	end
 end
 
