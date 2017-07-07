@@ -2823,7 +2823,7 @@ abstract class MProperty
 	#
 	# For public properties not introduced by refinement, the module name is not used.
 	#
-	# Example: `my_package::MyClass::My_method`
+	# Example: `my_package::MyClass::my_method`
 	redef var full_name is lazy do
 		if intro_mclassdef.is_intro then
 			return "{intro_mclassdef.mmodule.namespace_for(visibility)}::{intro_mclassdef.mclass.name}::{name}"
