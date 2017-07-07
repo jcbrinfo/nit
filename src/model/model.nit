@@ -1180,6 +1180,12 @@ abstract class MType
 	# * its generic formal arguments are within their bounds.
 	fun is_legal_in(mmodule: MModule, anchor: nullable MClassType): Bool do return is_ok
 
+	# Does `self` refers to a subset (ignoring type arguments)?
+	#
+	# In other words, does `self` represents a class subset, a type parameter of
+	# a subset, or a set-theoretic operation over such a type?
+	fun is_subset: Bool do return self != as_normal
+
 	# Can the type be resolved?
 	#
 	# In order to resolve open types, the formal types must make sence.
