@@ -2029,6 +2029,10 @@ class MParameterType
 	# The generic class where the parameter belong
 	var mclass: MClass
 
+	redef var as_normal is lazy do
+		return mclass.normal_class.mparameters[rank]
+	end
+
 	redef fun can_be_null(mmodule, anchor)
 	do
 		if anchor == null then
