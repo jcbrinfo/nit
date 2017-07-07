@@ -1543,6 +1543,17 @@ class MIntersectionType
 		return result
 	end
 
+	redef var as_normal is lazy do
+		# We at least simplify equal types.
+		var normals = new Set[MType]
+		for t in operands do
+			normals.add(t.as_normal)
+		end
+		# TODO: Simplify further?
+		# TODO: Retrieve from the general cache?
+		return new MIntersectionType(mmodule, normals)
+	end
+
 	redef var as_notnull is lazy do
 		var new_operands = new Set[MType]
 		# Do we need to add `Object` to the operands?
