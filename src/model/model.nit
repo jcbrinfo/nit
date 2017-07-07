@@ -533,6 +533,9 @@ abstract class MClass
 	# All class definitions (introduction and refinements)
 	var mclassdefs = new Array[MClassDef]
 
+	# All direct subclasses that are class subsets
+	var subsets = new Array[MSubset]
+
 	# The main normal (non-subset) class associated to `self`.
 	#
 	# If `self` is already a normal class, return `self`.
@@ -646,7 +649,16 @@ end
 class MSubset
 	super MClass
 
-	redef var normal_class is noinit, writable
+	redef fun normal_class do return p_normal_class
+
+	fun normal_class=(normal_class: MNormalClass)
+	do
+		assert not isset _p_normal_class
+		normal_class.subsets.add(self)
+		p_normal_class = normal_class
+	end
+
+	var p_normal_class: MNormalClass is noinit, writable
 
 	redef var predicate: nullable MMethod = null is writable
 end
