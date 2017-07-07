@@ -2907,10 +2907,7 @@ abstract class MProperty
 		if mpropdefs.length <= 1 or mpropdefs.length < mtype.collect_mclassdefs(mmodule).length then
 			# Iterate on all definitions of `self`, keep only those inherited by `mtype` in `mmodule`
 			for mpropdef in mpropdefs do
-				# If the definition is not imported by the module, then skip
-				if not mmodule.in_importation <= mpropdef.mclassdef.mmodule then continue
-				# If the definition is not inherited by the type, then skip
-				if not mtype.is_subtype(mmodule, null, mpropdef.mclassdef.bound_mtype) then continue
+				if not mpropdef.is_available(mmodule, mtype) then continue
 				# Else, we keep it
 				candidates.add(mpropdef)
 			end
@@ -2951,11 +2948,8 @@ abstract class MProperty
 		# First, select all candidates
 		var candidates = new Array[MPROPDEF]
 		for mpropdef in self.mpropdefs do
-			# If the definition is not imported by the module, then skip
-			if not mmodule.in_importation <= mpropdef.mclassdef.mmodule then continue
-			# If the definition is not inherited by the type, then skip
-			if not mtype.is_subtype(mmodule, null, mpropdef.mclassdef.bound_mtype) then continue
-			# If the definition is defined by the type, then skip (we want the super, so e skip the current)
+			if not mpropdef.is_available(mmodule, mtype) then continue
+			# If the definition is defined by the type, then skip (we want the super, so we skip the current)
 			if mtype == mpropdef.mclassdef.bound_mtype and mmodule == mpropdef.mclassdef.mmodule then continue
 			# Else, we keep it
 			candidates.add(mpropdef)
@@ -3036,10 +3030,7 @@ abstract class MProperty
 		# First, select all candidates
 		var candidates = new Array[MPROPDEF]
 		for mpropdef in self.mpropdefs do
-			# If the definition is not imported by the module, then skip
-			if not mmodule.in_importation <= mpropdef.mclassdef.mmodule then continue
-			# If the definition is not inherited by the type, then skip
-			if not mtype.is_subtype(mmodule, null, mpropdef.mclassdef.bound_mtype) then continue
+			if not mpropdef.is_available(mmodule, mtype) then continue
 			# Else, we keep it
 			candidates.add(mpropdef)
 		end
@@ -3230,6 +3221,20 @@ abstract class MPropDef
 
 	# Is self the definition that introduce the property?
 	fun is_intro: Bool do return isset mproperty._intro and mproperty.intro == self
+
+	# Does `mpropdef` is available for `mtype`, in the context of `mmodule`?
+	#
+	# Used in `MProperty::lookup_*` methods to skip definition that are not
+	# inherited by the given `mtype`, or not imported by `mmodule`.
+	private fun is_available(mmodule: MModule, mtype: MType): Bool
+	do
+		return (
+			# The definition is imported by the module.
+			mmodule.in_importation <= mclassdef.mmodule and
+			# The definition is inherited by the type.
+			mtype.is_subtype(mmodule, null, mclassdef.bound_mtype)
+		)
+	end
 
 	# Return the next definition in linearization of `mtype`.
 	#
