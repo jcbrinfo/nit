@@ -154,3 +154,60 @@ private class MTypeStub
 	redef var need_anchor is noinit
 	redef var to_s is noinit
 end
+
+# A standalone model with generic classes (and a generic class subset)
+class GenericModel
+	super ModelDiamond
+
+	# G, a generic class
+	var mclass_g = new MNormalClass(mmodule0, "G", location, ["E"],
+			concrete_kind, public_visibility)
+
+	# The introduction of `mclass_g`
+	var mclassdef_g: MClassDef do
+		var result = new MClassDef(
+			mmodule0,
+			mclass_g.get_mtype([mclass_o.mclass_type.as_nullable]),
+			location
+		)
+		result.set_supertypes([mclass_o.mclass_type])
+		result.add_in_hierarchy
+		return result
+	end
+
+	# GS, a subset of `G[B]` (`mclass_g`)
+	var mclass_gs: MSubset do
+		var result = new MSubset(mmodule0, "GS", location, ["T"], subset_kind,
+				public_visibility)
+		result.normal_class = mclass_g
+		return result
+	end
+
+	# The introduction of `mclass_gs`
+	var mclassdef_gs: MClassDef do
+		var result = new MClassDef(
+			mmodule0,
+			mclass_gs.get_mtype([mclass_b.mclass_type]),
+			location
+		)
+		result.set_supertypes([
+			mclass_g.get_mtype([mclass_gs.mparameters.first])
+		])
+		result.add_in_hierarchy
+		return result
+	end
+
+	# H, a subclass of `G[C]` (`mclass_g`, with `mclass_c` as argument)
+	var mclass_h = new MClass(mmodule0, "H", location, null, concrete_kind,
+			public_visibility)
+
+	# The introduction of `mclass_h`
+	var mclassdef_h: MClassDef do
+		var result = new MClassDef(mmodule0, mclass_h.mclass_type, location)
+		result.set_supertypes([
+			mclass_g.get_mtype([mclass_c.mclass_type])
+		])
+		result.add_in_hierarchy
+		return result
+	end
+end
