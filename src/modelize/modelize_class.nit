@@ -214,7 +214,7 @@ redef class ModelBuilder
 			supertypes: Array[MClassType], is_intro: Bool)
 	do
 		var mclass = nclassdef.mclass
-		if mclass.kind != subset_kind then
+		if not mclass isa MSubset then
 			return
 		else if is_intro then
 			assert nclassdef isa AStdClassdef
