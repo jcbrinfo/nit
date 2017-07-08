@@ -3338,9 +3338,6 @@ end
 class MClassKind
 	redef var to_s
 
-	# Can a class of kind `self` define a membership predicate?
-	var can_customize_isa: Bool
-
 	# Can a class of kind `self` define a constructor?
 	var can_init: Bool
 
@@ -3373,17 +3370,17 @@ class MClassKind
 end
 
 # The class kind `abstract`
-fun abstract_kind: MClassKind do return once new MClassKind("abstract class", false, true, true)
+fun abstract_kind: MClassKind do return once new MClassKind("abstract class", true, true)
 # The class kind `concrete`
-fun concrete_kind: MClassKind do return once new MClassKind("class", false, true, true)
+fun concrete_kind: MClassKind do return once new MClassKind("class", true, true)
 # The class kind `interface`
-fun interface_kind: MClassKind do return once new MClassKind("interface", false, true, false)
+fun interface_kind: MClassKind do return once new MClassKind("interface", true, false)
 # The class kind `enum`
-fun enum_kind: MClassKind do return once new MClassKind("enum", false, true, false)
+fun enum_kind: MClassKind do return once new MClassKind("enum", true, false)
 # The class kind `extern`
-fun extern_kind: MClassKind do return once new MClassKind("extern class", false, true, false)
+fun extern_kind: MClassKind do return once new MClassKind("extern class", true, false)
 # The class kind `subset`
-fun subset_kind: MClassKind do return once new MClassKind("subset", true, false, false)
+fun subset_kind: MClassKind do return once new MClassKind("subset", false, false)
 
 # A standalone pre-constructed model used to test various model-related methods.
 #
