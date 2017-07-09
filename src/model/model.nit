@@ -2063,8 +2063,13 @@ class MParameterType
 		if resolved_receiver isa MTypeSet[MType] then
 			var operands = new Set[MType]
 			for operand in resolved_receiver.operands do
-				operands.add(lookup_bound(mmodule, operand))
+				var bound = lookup_bound(mmodule, operand)
+				# Skip operands that don’t have this parameter.
+				if bound isa MErrorType then continue
+				operands.add(bound)
 			end
+			# If we cannot find `self` in any operand…
+			if operands.is_empty then return new MErrorType(model)
 			return resolved_receiver.apply_to(operands, mmodule)
 		end
 
@@ -2135,9 +2140,14 @@ class MParameterType
 		if resolved_receiver isa MTypeSet[MType] then
 			var operands = new Set[MType]
 			for operand in resolved_receiver.operands do
-				operands.add(resolve_for_anchored(mtype, operand, anchor,
-						mmodule, cleanup_virtual))
+				var resolved = resolve_for_anchored(mtype, operand, anchor,
+						mmodule, cleanup_virtual)
+				# Skip operands that don’t have this parameter.
+				if resolved isa MErrorType then continue
+				operands.add(resolved)
 			end
+			# If we cannot find `self` in any operand…
+			if operands.is_empty then return new MErrorType(model)
 			return resolved_receiver.apply_to(operands, mmodule, anchor)
 		end
 		return resolve_for_anchored(mtype, resolved_receiver, anchor, mmodule,
