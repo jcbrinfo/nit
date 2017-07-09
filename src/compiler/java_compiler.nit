@@ -565,8 +565,10 @@ class JavaCompilerVisitor
 	#  Generate a polymorphic send for `method` with `arguments`
 	fun send(mmethod: MMethod, arguments: Array[RuntimeVariable]): nullable RuntimeVariable do
 		# Shortcut calls on primitives
-		if arguments.first.mcasttype.is_java_primitive then
-			return monomorphic_send(mmethod, arguments.first.mcasttype, arguments)
+		var mcasttype
+		if mcasttype.is_java_primitive then
+			mcasttype = mcasttype.to_java_primitive
+			return monomorphic_send(mmethod, mcasttype, arguments)
 		end
 		# Polymorphic send
 		return table_send(mmethod, arguments)
@@ -1303,6 +1305,15 @@ redef class MType
 	var is_java_primitive: Bool is lazy do return java_type != "RTVal"
 
 	private fun can_be_primitive: Bool do return false
+
+	# Return the wrapped type that reprensents a primitive Java type.
+	#
+	# For set-theoretic operations over types, return the operand which
+	# represents a primitive Java type. For other types, return `self` (if it
+	# represents a primitive Java type) or abort.
+	#
+	# REQUIRE: `is_c_primitive`
+	fun to_java_primitive: MClassType do abort
 end
 
 redef class MIntersectionType
@@ -1323,6 +1334,15 @@ redef class MIntersectionType
 			end
 		end
 		return false
+	end
+
+	redef var to_java_primitive is lazy do
+		for t in operands do
+			if t.is_java_primitive then
+				return t.to_java_primitive
+			end
+		end
+		return super
 	end
 end
 
@@ -1350,6 +1370,12 @@ redef class MClassType
 	redef fun can_be_primitive
 	do
 		return mclass.kind == interface_kind or is_java_primitive
+	end
+
+	redef fun to_java_primitive
+	do
+		assert is_java_primitive
+		return self
 	end
 end
 

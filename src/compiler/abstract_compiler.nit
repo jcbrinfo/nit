@@ -2097,6 +2097,15 @@ redef class MType
 	#
 	# ENSURE `result == (ctype != "val*")`
 	fun is_c_primitive: Bool do return false
+
+	# Return the wrapped type that reprensents a primitive C type.
+	#
+	# For set-theoretic operations over types, return the operand which
+	# represents a primitive C type. For other types, return `self` (if it
+	# represents a primitive C type) or abort.
+	#
+	# REQUIRE: `is_c_primitive`
+	fun to_c_primitive: MClassType do abort
 end
 
 redef class MIntersectionType
@@ -2110,6 +2119,15 @@ redef class MIntersectionType
 	end
 
 	redef var is_c_primitive is lazy do return ctype != "val*"
+
+	redef var to_c_primitive is lazy do
+		for t in operands do
+			if t.is_c_primitive then
+				return t.to_c_primitive
+			end
+		end
+		return super
+	end
 end
 
 redef class MClassType
@@ -2185,6 +2203,12 @@ redef class MClassType
 		else
 			return "val"
 		end
+	end
+
+	redef fun to_c_primitive
+	do
+		assert is_c_primitive
+		return self
 	end
 end
 

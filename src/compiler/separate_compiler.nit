@@ -1376,12 +1376,14 @@ class SeparateCompilerVisitor
 	end
 	redef fun send(mmethod, arguments)
 	do
-		if arguments.first.mcasttype.is_c_primitive then
+		var mcasttype = arguments.first.mcasttype
+		if mcasttype.is_c_primitive then
 			# In order to shortcut the primitive, we need to find the most specific method
-			# Howverr, because of performance (no flattening), we always work on the realmainmodule
+			# However, because of performance (no flattening), we always work on the realmainmodule
 			var m = self.compiler.mainmodule
 			self.compiler.mainmodule = self.compiler.realmainmodule
-			var res = self.monomorphic_send(mmethod, arguments.first.mcasttype, arguments)
+			mcasttype = mcasttype.to_c_primitive
+			var res = self.monomorphic_send(mmethod, mcasttype, arguments)
 			self.compiler.mainmodule = m
 			return res
 		end
