@@ -813,6 +813,17 @@ redef class AMethPropdef
 			end
 		end
 
+		# Can this kind of method be defined for the current kind of class?
+		if is_init and not is_new then
+			var mclass = mclassdef.mclass
+			var kind = mclass.kind
+			if not kind.can_init then
+				modelbuilder.error(name_node,
+					"Error: {kind} `{mclass}` can not define a constructor."
+				)
+			end
+		end
+
 		var look_like_a_root_init = look_like_a_root_init(modelbuilder, mclassdef)
 		var mprop: nullable MMethod = null
 		if not is_init or n_kwredef != null then mprop = modelbuilder.try_get_mproperty_by_name(name_node, mclassdef, name).as(nullable MMethod)
@@ -1029,10 +1040,13 @@ redef class AMethPropdef
 
 		var atautoinit = self.get_single_annotation("autoinit", modelbuilder)
 		if atautoinit != null then
+			var kind = mclassdef.mclass.kind
 			if not mpropdef.is_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be set on redefinitions.")
 			else if not mclassdef.is_intro then
 				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be used in class refinements.")
+			else if not kind.can_init then
+				modelbuilder.error(atautoinit, "Error: `autoinit` cannot be used in {kind}s.")
 			else
 				self.is_autoinit = true
 			end
