@@ -65,15 +65,20 @@ private class TypeVisitor
 		self.anchor = mclassdef.bound_mtype
 
 		var mclass = mclassdef.mclass
+		var declared_type: MType = mclass.mclass_type
+
+		var mprop = mpropdef.mproperty
+		if mprop isa MMethod then
+			if mprop.is_new then
+				is_toplevel_context = true
+			else if mprop.is_predicate then
+				declared_type = declared_type.as_normal
+			end
+		end
 
 		var selfvariable = new Variable("self")
 		self.selfvariable = selfvariable
-		selfvariable.declared_type = mclass.mclass_type
-
-		var mprop = mpropdef.mproperty
-		if mprop isa MMethod and mprop.is_new then
-			is_toplevel_context = true
-		end
+		selfvariable.declared_type = declared_type
 	end
 
 	fun anchor_to(mtype: MType): MType
@@ -333,23 +338,9 @@ private class TypeVisitor
 		if is_toplevel_context and recv_is_self and not mproperty.is_toplevel then
 			error(node, "Error: `{name}` is not a top-level method, thus need a receiver.")
 		end
-		if recv_is_self then
-			var caller = mpropdef.mproperty
-			var callee = mproperty
-			if
-				caller isa MMethod and
-				caller.is_predicate and
-				caller.intro_mclassdef.mclass == callee.intro_mclassdef.mclass
-			then
-				error(node,
-					"Error: `{name}` cannot be called in this context " +
-					"because we must first know if `self` belongs to " +
-					"`{recvtype}`."
-				)
-				# TODO: Consider the children of the caller.
-				# TODO: Consider method overriding.
-			end
-		else if mproperty.is_toplevel then
+		# TODO: If `self.mpropdef` is a predicate, forbid methods of the
+		# receiver overridden by `self.mclassdef.mclass`.
+		if not recv_is_self and mproperty.is_toplevel then
 			error(node, "Error: cannot call `{name}`, a top-level method, with a receiver.")
 		end
 
