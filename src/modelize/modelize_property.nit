@@ -618,6 +618,7 @@ redef class APropdef
 
 	private fun check_redef_keyword(modelbuilder: ModelBuilder, mclassdef: MClassDef, kwredef: nullable Token, need_redef: Bool, mprop: MProperty): Bool
 	do
+		var mclass = mclassdef.mclass
 		if mclassdef.mprop2npropdef.has_key(mprop) then
 			modelbuilder.error(self, "Error: a property `{mprop}` is already defined in class `{mclassdef.mclass}` at line {mclassdef.mprop2npropdef[mprop].location.line_start}.")
 			return false
@@ -640,11 +641,18 @@ redef class APropdef
 					end
 				end
 			end
-		else
-			if not need_redef then
-				modelbuilder.error(self, "Error: no property `{mclassdef.mclass}::{mprop.name}` is inherited. Remove the `redef` keyword to define a new property.")
-				return false
-			end
+		else if not need_redef then
+			modelbuilder.error(self, "Error: no property `{mclass}::{mprop.name}` is inherited. Remove the `redef` keyword to define a new property.")
+			return false
+		else if
+			mclass isa MSubset and
+			mclass != mprop.intro_mclassdef.mclass
+		then
+			modelbuilder.error(self,
+				"Error: `{mclass}::{mprop.name}` is an inherited property. " +
+				"Yet, a {mclass.kind} can not override a property."
+			)
+			return false
 		end
 		return true
 	end
