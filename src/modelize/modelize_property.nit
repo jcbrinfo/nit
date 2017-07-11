@@ -620,13 +620,13 @@ redef class APropdef
 	do
 		var mclass = mclassdef.mclass
 		if mclassdef.mprop2npropdef.has_key(mprop) then
-			modelbuilder.error(self, "Error: a property `{mprop}` is already defined in class `{mclassdef.mclass}` at line {mclassdef.mprop2npropdef[mprop].location.line_start}.")
+			modelbuilder.error(self, "Error: a property `{mprop}` is already defined in class `{mclass}` at line {mclassdef.mprop2npropdef[mprop].location.line_start}.")
 			return false
 		end
 		if mprop isa MMethod and mprop.is_root_init then return true
 		if kwredef == null then
 			if need_redef then
-				modelbuilder.error(self, "Redef Error: `{mclassdef.mclass}::{mprop.name}` is an inherited property. To redefine it, add the `redef` keyword.")
+				modelbuilder.error(self, "Redef Error: `{mclass}::{mprop.name}` is an inherited property. To redefine it, add the `redef` keyword.")
 				return false
 			end
 
