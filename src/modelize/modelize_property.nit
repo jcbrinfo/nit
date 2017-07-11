@@ -508,7 +508,7 @@ redef class MClassDef
 	# Build the virtual type `SELF` only for introduction `MClassDef`
 	fun build_self_type(modelbuilder: ModelBuilder, nclassdef: AClassdef)
 	do
-		if not is_intro then return
+		if not is_intro or mclass isa MSubset then return
 
 		var name = "SELF"
 		var mprop = modelbuilder.try_get_mproperty_by_name(nclassdef, self, name)
