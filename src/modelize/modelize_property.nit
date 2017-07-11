@@ -513,7 +513,7 @@ redef class MClassDef
 		var name = "SELF"
 		var mprop = modelbuilder.try_get_mproperty_by_name(nclassdef, self, name)
 
-		# If SELF type is declared nowherer?
+		# If SELF type is declared nowhere?
 		if mprop == null then return
 
 		# SELF is not a virtual type? it is weird but we ignore it
