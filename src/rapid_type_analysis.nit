@@ -331,7 +331,7 @@ class RapidTypeAnalysis
 				if not ot.can_resolve_for(t, t, mainmodule) then continue
 				var rt = ot.anchor_to(mainmodule, t)
 				if not rt.is_legal_in(mainmodule) then continue
-				live_cast_types.add(rt)
+				add_cast_closed(rt)
 				#print "  {ot}/{t} -> {rt}"
 			end
 		end
@@ -390,7 +390,16 @@ class RapidTypeAnalysis
 		if mtype.need_anchor then
 			live_open_cast_types.add(mtype)
 		else
-			live_cast_types.add(mtype)
+			add_cast_closed(mtype)
+		end
+	end
+
+	private fun add_cast_closed(mtype: MType)
+	do
+		live_cast_types.add(mtype)
+		if mtype.is_subset then
+			live_cast_types.add(mtype.as_normal)
+			mtype.add_predicate_send(self)
 		end
 	end
 
@@ -737,5 +746,44 @@ redef class ANewExpr
 		var mtype = self.recvtype.as(not null)
 		v.add_type(mtype)
 		v.add_callsite(callsite)
+	end
+end
+
+redef class MType
+
+	# Register predicates implicitly needed for type tests over `self`.
+	#
+	# Do nothing except when `self` refers to a class subset.
+	#
+	# REQUIRE: `not need_anchor`
+	private fun add_predicate_send(analysis: RapidTypeAnalysis) do end
+end
+
+redef class MTypeSet
+
+	redef fun add_predicate_send(analysis: RapidTypeAnalysis) do
+		for operand in operands do
+			operand.add_predicate_send(analysis)
+		end
+	end
+end
+
+redef class MClassType
+
+	redef fun add_predicate_send(analysis: RapidTypeAnalysis) do
+		var mclass = mclass
+		if mclass isa MSubset then
+			var predicate = mclass.predicate
+			if predicate != null then
+				analysis.add_send(self, predicate)
+			end
+		end
+	end
+end
+
+redef class MProxyType
+
+	redef fun add_predicate_send(analysis: RapidTypeAnalysis) do
+		mtype.add_predicate_send(analysis)
 	end
 end
