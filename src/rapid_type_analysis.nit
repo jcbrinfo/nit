@@ -224,7 +224,7 @@ class RapidTypeAnalysis
 		force_alive("Int32")
 		force_alive("UInt32")
 
-		while not todo.is_empty do
+		while todo.not_empty do
 			var mmethoddef = todo.shift
 			var mmeth = mmethoddef.mproperty
 			var msignature = mmethoddef.msignature
