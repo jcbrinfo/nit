@@ -316,7 +316,7 @@ class RapidTypeAnalysis
 				if not rt.is_legal_in(mainmodule) then continue
 				if not check_depth(rt) then continue
 				#print "{ot}/{t} -> {rt}"
-				live_types.add(rt)
+				add_live_type(rt)
 				# unshift means a deep-first visit.
 				# So that the `check_depth` limit is reached sooner.
 				todo_types.unshift(rt)
@@ -356,7 +356,7 @@ class RapidTypeAnalysis
 			live_open_types.add(mtype)
 		else
 			if live_types.has(mtype) then return
-			live_types.add(mtype)
+			add_live_type(mtype)
 		end
 
 		if not add_class(mtype) then return
@@ -413,6 +413,19 @@ class RapidTypeAnalysis
 		totry_methods_to_remove.clear
 
 		return true
+	end
+
+	# Add `mtype` (and its applicable subsets) to `live_types`.
+	#
+	# REQUIRE: `not mtype.need_anchor`
+	private fun add_live_type(mtype: MClassType)
+	do
+		live_types.add(mtype)
+		# Appliable subsets are also live.
+		for subset_type in mtype.collect_subset_types(mainmodule) do
+			live_types.add(subset_type)
+			add_class(subset_type)
+		end
 	end
 
 	fun try_send(recv: MClassType, mproperty: MMethod)
