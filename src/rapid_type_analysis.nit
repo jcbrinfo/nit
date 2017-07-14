@@ -359,16 +359,7 @@ class RapidTypeAnalysis
 			live_types.add(mtype)
 		end
 
-		var mclass = mtype.mclass
-		if live_classes.has(mclass) then return
-		live_classes.add(mclass)
-
-		for p in totry_methods do try_send(mtype, p)
-		for p in live_super_sends do try_super_send(mtype, p)
-
-		# Remove cleared ones
-		for p in totry_methods_to_remove do totry_methods.remove(p)
-		totry_methods_to_remove.clear
+		if not add_class(mtype) then return
 
 		var bound_mtype = mtype.anchor_to(mainmodule, recv)
 		for cd in bound_mtype.collect_mclassdefs(mainmodule)
@@ -401,6 +392,27 @@ class RapidTypeAnalysis
 			live_cast_types.add(mtype.as_normal)
 			mtype.add_predicate_send(self)
 		end
+	end
+
+	# Make the class of `mtype` live.
+	#
+	# Return `false` if the class was already live. Else, add the class to the
+	# set of live classes, append now live method definitions to the queues, and
+	# return `true`.
+	private fun add_class(mtype: MClassType): Bool
+	do
+		var mclass = mtype.mclass
+		if live_classes.has(mclass) then return false
+		live_classes.add(mclass)
+
+		for p in totry_methods do try_send(mtype, p)
+		for p in live_super_sends do try_super_send(mtype, p)
+
+		# Remove cleared ones
+		for p in totry_methods_to_remove do totry_methods.remove(p)
+		totry_methods_to_remove.clear
+
+		return true
 	end
 
 	fun try_send(recv: MClassType, mproperty: MMethod)
