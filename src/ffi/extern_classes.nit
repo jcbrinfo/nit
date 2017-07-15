@@ -38,9 +38,13 @@ private class ExternClassesTypingPhaseAst
 		var code_block = nclassdef.n_extern_code_block
 		if code_block == null then return
 
+		var mclass = nclassdef.mclass
 		if nclassdef.n_kwredef != null then
 			# A redef cannot specify a different extern type
 			toolcontext.error(nclassdef.location, "FFI Error: only the introduction of a class can declare an extern type.")
+			return
+		else if mclass != null and mclass.kind != extern_kind then
+			toolcontext.error(nclassdef.location, "FFI Error: only extern classes can declare an extern type.")
 			return
 		end
 
