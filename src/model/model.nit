@@ -541,6 +541,13 @@ abstract class MClass
 	# In this case, the method will abort.
 	fun normal_class: MNormalClass is abstract
 
+	# The predicate of this class.
+	#
+	# That is, the boolean method that indicates if the receiver belongs to the
+	# class. A `null` predicate means that no predicate is explicitly defined.
+	# Only subsets (`MSubset`) may define this method.
+	fun predicate: nullable MMethod do return null
+
 	# Alias for `name`
 	redef fun to_s do return self.name
 
@@ -641,11 +648,7 @@ class MSubset
 
 	redef var normal_class is noinit, writable
 
-	# The predicate of this subset.
-	#
-	# That is, the boolean method that indicates if the receiver belongs to the
-	# subset. A `null` predicate means that no predicate is explicitly defined.
-	var predicate: nullable MMethod = null is writable
+	redef var predicate: nullable MMethod = null is writable
 end
 
 
