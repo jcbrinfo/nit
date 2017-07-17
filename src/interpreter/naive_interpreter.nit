@@ -2355,9 +2355,60 @@ redef class MType
 		if need_anchor then
 			return v.unanchor_type(self).type_test(instance, v)
 		else
-			return v.is_subtype(instance.mtype, self)
+			return type_test_closed(instance, v)
 		end
 	end
 
-	private fun type_test_concrete(instance: Instance, v: NaiveInterpreter): Bool is abstract
+	private fun type_test_closed(instance: Instance, v: NaiveInterpreter): Bool is abstract
+end
+
+redef class MIntersectionType
+	redef fun type_test_closed(instance, v)
+	do
+		for operand in operands do
+			if not operand.type_test_closed(instance, v) then
+				return false
+			end
+		end
+		return true
+	end
+end
+
+redef class MClassType
+	redef fun type_test_closed(instance, v)
+	do
+		if not v.is_subtype(instance.mtype, as_normal) then return false
+		var predicate = mclass.predicate
+		if predicate != null then
+			return v.send(predicate, [instance]).is_true
+		end
+		return true
+	end
+end
+
+redef class MNullableType
+	redef fun type_test_closed(instance, v)
+	do
+		if instance == v.null_instance then return true
+		return mtype.type_test_closed(instance, v)
+	end
+end
+
+redef class MNotNullType
+	redef fun type_test_closed(instance, v)
+	do
+		if instance == v.null_instance then return false
+		return mtype.type_test_closed(instance, v)
+	end
+end
+
+redef class MNullType
+	redef fun type_test_closed(instance, v)
+	do
+		return instance == v.null_instance
+	end
+end
+
+redef class MBottomType
+	redef fun type_test_closed(instance, v) do return false
 end
