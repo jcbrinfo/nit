@@ -162,7 +162,7 @@ class NaiveInterpreter
 		var implicit_cast_to = n.implicit_cast_to
 		if i != null and implicit_cast_to != null then
 			var mtype = self.unanchor_type(implicit_cast_to)
-			if not self.is_subtype(i.mtype, mtype) then n.fatal(self, "Cast failed. Expected `{implicit_cast_to}`, got `{i.mtype}`")
+			if not mtype.type_test(i, self) then n.fatal(self, "Cast failed. Expected `{implicit_cast_to}`, got `{i.mtype}`")
 		end
 
 		#n.debug("OUT Execute expr: value is {i}")
@@ -556,7 +556,7 @@ class NaiveInterpreter
 			var mtype = mp.mtype
 			var anchor = args.first.mtype.as(MClassType)
 			var amtype = mtype.anchor_to(self.mainmodule, anchor)
-			if not args[i+1].mtype.is_subtype(self.mainmodule, anchor, amtype) then
+			if not amtype.type_test(args[i+1], self) then
 				node.fatal(self, "Cast failed. Expected `{mtype}`, got `{args[i+1].mtype}`")
 			end
 		end
@@ -2129,7 +2129,7 @@ redef class AIsaExpr
 		var i = v.expr(self.n_expr)
 		if i == null then return null
 		var mtype = v.unanchor_type(self.cast_type.as(not null))
-		return v.bool_instance(v.is_subtype(i.mtype, mtype))
+		return v.bool_instance(mtype.type_test(i, v))
 	end
 end
 
@@ -2140,7 +2140,7 @@ redef class AAsCastExpr
 		if i == null then return null
 		var mtype = self.mtype.as(not null)
 		var amtype = v.unanchor_type(mtype)
-		if not v.is_subtype(i.mtype, amtype) then
+		if not mtype.type_test(i, v) then
 			fatal(v, "Cast failed. Expected `{amtype}`, got `{i.mtype}`")
 		end
 		return i
@@ -2346,4 +2346,18 @@ redef class ADebugTypeExpr
 	do
 		# do nothing
 	end
+end
+
+redef class MType
+	# Execute a type test of `instance` over `self`.
+	private fun type_test(instance: Instance, v: NaiveInterpreter): Bool
+	do
+		if need_anchor then
+			return v.unanchor_type(self).type_test(instance, v)
+		else
+			return v.is_subtype(instance.mtype, self)
+		end
+	end
+
+	private fun type_test_concrete(instance: Instance, v: NaiveInterpreter): Bool is abstract
 end
