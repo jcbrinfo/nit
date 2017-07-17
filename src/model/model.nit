@@ -2305,6 +2305,34 @@ class MParameterType
 				return res
 			end
 		end
+		if is_subset then
+			# Retry with the “normal type” type.
+			return as_normal.lookup_bound(mmodule, resolved_receiver)
+		end
+		# Cannot found `self` in `resolved_receiver`
+		return new MErrorType(model)
+	end
+
+	private fun lookup_bound_class(mmodule: MModule, resolved_receiver: MClassType): MType
+	do
+		var goalclass = self.mclass
+		if resolved_receiver.mclass == goalclass then
+			var result = resolved_receiver.arguments[self.rank]
+			# Abort early in case of a circular reference.
+			assert result != self
+			return result
+		end
+		var supertypes = resolved_receiver.collect_mtypes(mmodule)
+		for t in supertypes do
+			if t.mclass == goalclass then
+				# Yeah! c specialize goalclass with a "super `t'". So the question is what is the argument of f
+				# FIXME: Here, we stop on the first goal. Should we check others and detect inconsistencies?
+				var res = t.arguments[self.rank]
+				# Abort early in case of a circular reference.
+				assert res != self
+				return res
+			end
+		end
 		# Cannot found `self` in `resolved_receiver`
 		return new MErrorType(model)
 	end
@@ -2401,7 +2429,7 @@ class MParameterType
 			assert anchor != null
 			mtype = mtype.anchor_to(mmodule, anchor)
 		end
-		return mtype.collect_mclassdefs(mmodule).has(mclass.intro)
+		return mtype.collect_mclassdefs(mmodule).has(mclass.normal_class.intro)
 	end
 end
 
