@@ -596,7 +596,8 @@ abstract class MClass
 	var mclass_type: MClassType is noinit
 
 	# Return a generic type based on the class
-	# Is the class is not generic, then the result is `mclass_type`
+	#
+	# If the class is not generic, then the result is `mclass_type`
 	#
 	# REQUIRE: `mtype_arguments.length == self.arity`
 	fun get_mtype(mtype_arguments: Array[MType]): MClassType
