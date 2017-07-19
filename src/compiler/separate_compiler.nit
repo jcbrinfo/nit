@@ -655,6 +655,10 @@ class SeparateCompiler
 				r.compile_to_c(self)
 				var r2 = pd.virtual_runtime_function
 				if r2 != r then r2.compile_to_c(self)
+				if pd.mproperty.is_predicate then
+					var r3 = pd.predicate_runtime_function
+					if r3 != r2 then r3.compile_to_c(self)
+				end
 
 				# Generate trampolines
 				if modelbuilder.toolcontext.opt_trampoline_call.value then
@@ -2189,6 +2193,24 @@ redef class MMethodDef
 		return res
 	end
 	private var separate_runtime_function_cache: nullable SeparateRuntimeFunction
+
+	# The C function that can be stored in a `type` structure.
+	#
+	# REQUIRE: `mproperty.is_predicate`
+	private var predicate_runtime_function: SeparateRuntimeFunction is lazy do
+		# Because a `type` structure may corresponds to any type, the receiver
+		# type must be `val *`.
+		var intro_module = mproperty.intro.mclassdef.mmodule
+		var recv = intro_module.object_type
+
+		var result = virtual_runtime_function
+		if result.called_recv.ctype == recv.ctype then return result
+
+		var msignature = mproperty.intro.msignature.resolve_for(recv, recv, intro_module, true)
+		result = new SeparateRuntimeFunction(self, recv, msignature, "ISA_{c_name}")
+		result.is_thunk = true
+		return result
+	end
 
 	# The C function associated to a mmethoddef, that can be stored into a VFT of a class
 	# The first parameter (the reciever) is always typed by val* in order to accept an object value
