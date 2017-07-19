@@ -1894,13 +1894,13 @@ class SeparateCompilerVisitor
 		end
 
 		if maybe_null then
-			self.add("if({value} == NULL) \{")
+			self.add("if ({value} == NULL) \{")
 			self.add("{res} = {accept_null};")
 			self.add("\} else \{")
 		end
 		var value_type_info = self.type_info(value)
 		# Check if the color is in the table.
-		self.add("if({cltype} >= {value_type_info}->table_size) \{")
+		self.add("if ({cltype} >= {value_type_info}->table_size) \{")
 		self.add("{res} = 0;")
 		self.add("\} else \{")
 		self.add("{res} = {value_type_info}->type_table[{cltype}] == {idtype};")
