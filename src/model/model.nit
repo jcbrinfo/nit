@@ -612,6 +612,16 @@ abstract class MClass
 
 	private var get_mtype_cache = new HashMap[Array[MType], MGenericType]
 
+	# A generic type based on the class, with all bounds set to the bottom type.
+	#
+	# If the class is not generic, then the result is `mclass_type`
+	#
+	# REQUIRE: `mtype_arguments.length == self.arity`
+	var bottom_bound_mtype: MClassType is lazy do
+		var bounds = new Array[MType].filled_with(model.bottom_type, arity)
+		return get_mtype(bounds)
+	end
+
 	# Is there a `new` factory to allow the pseudo instantiation?
 	var has_new_factory = false is writable
 
