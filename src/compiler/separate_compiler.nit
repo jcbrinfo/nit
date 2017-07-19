@@ -1848,6 +1848,10 @@ class SeparateCompilerVisitor
 			accept_null = "1"
 		end
 
+		var predicate: nullable String = null
+		var open_type = false
+		var object_type = compiler.mainmodule.object_type
+
 		if value.mcasttype.is_subtype(self.frame.mpropdef.mclassdef.mmodule, self.frame.mpropdef.mclassdef.bound_mtype, mtype) then
 			self.add("{res} = 1; /* easy {value.inspect} isa {mtype}*/")
 			if compiler.modelbuilder.toolcontext.opt_typing_test_metrics.value then
@@ -1879,12 +1883,18 @@ class SeparateCompilerVisitor
 				self.add("{is_nullable} = {type_struct}->is_nullable;")
 				accept_null = is_nullable.to_s
 			end
+			predicate = "{type_struct}->predicate"
+			open_type = true
 		else if ntype isa MClassType then
 			compiler.undead_types.add(mtype)
 			self.require_declaration("type_{mtype.c_name}")
 			hardening_cast_type("(&type_{mtype.c_name})")
 			self.add("{cltype} = type_{mtype.c_name}.color;")
 			self.add("{idtype} = type_{mtype.c_name}.id;")
+			if ntype.is_subset then
+				predicate = "type_{mtype.c_name}.predicate"
+				self.add("{idtype} = -{idtype};")
+			end
 			if compiler.modelbuilder.toolcontext.opt_typing_test_metrics.value then
 				self.compiler.count_type_test_resolved[tag] += 1
 				self.add("count_type_test_resolved_{tag}++;")
@@ -1903,7 +1913,24 @@ class SeparateCompilerVisitor
 		self.add("if ({cltype} >= {value_type_info}->table_size) \{")
 		self.add("{res} = 0;")
 		self.add("\} else \{")
-		self.add("{res} = {value_type_info}->type_table[{cltype}] == {idtype};")
+		var idtype_value = self.get_name("idtype_value")
+		self.add_decl("int {idtype_value};")
+		self.add("{idtype_value} = {value_type_info}->type_table[{cltype}];")
+		if predicate != null then
+			if open_type then
+				add("if ({idtype_value} == {idtype}) \{")
+				add("{res} = 1;")
+				add("\} else if ({idtype_value} == -{idtype}) \{")
+				add("{res} = {predicate}({autobox(value, object_type)});")
+				add("\} else \{")
+				add("{res} = 0;")
+				add("\}")
+			else
+				add("{res} = ({idtype_value} == {idtype} && {predicate}({autobox(value, object_type)}));")
+			end
+		else
+			add("{res} = {idtype_value} == {idtype};")
+		end
 		self.add("\}")
 		if maybe_null then
 			self.add("\}")
