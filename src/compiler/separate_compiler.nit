@@ -438,7 +438,12 @@ class SeparateCompiler
 
 		var res = new HashSet[MType]
 		var subsets = new Array[MType]
-		res.add_all live_types
+		for mtype in live_types do
+			# No need to add a `type` structure for subsets never used in type
+			# tests.
+			if mtype.is_subset then continue
+			res.add(mtype)
+		end
 		for mtype in live_cast_types do
 			if mtype.is_subset then
 				# Subsets’ IDs and colors are treated separately.
