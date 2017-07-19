@@ -1893,13 +1893,13 @@ class SeparateCompilerVisitor
 			self.add("PRINT_ERROR(\"NOT YET IMPLEMENTED: type_test(%s, {mtype}).\\n\", \"{value.inspect}\"); fatal_exit(1);")
 		end
 
-		# check color is in table
 		if maybe_null then
 			self.add("if({value} == NULL) \{")
 			self.add("{res} = {accept_null};")
 			self.add("\} else \{")
 		end
 		var value_type_info = self.type_info(value)
+		# Check if the color is in the table.
 		self.add("if({cltype} >= {value_type_info}->table_size) \{")
 		self.add("{res} = 0;")
 		self.add("\} else \{")
