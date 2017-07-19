@@ -213,12 +213,15 @@ class SeparateCompiler
 	end
 
 	redef fun compile_header_structs do
+		# It’s in fact `typedef short int (*nitisa_t)(val *)`, but this would
+		# create a circular definition.
+		self.header.add_decl("typedef short int (*nitisa_t)(void *); /* C type for the “`Object`” version of a Nit predicate. */")
 		self.header.add_decl("typedef void(*nitmethod_t)(void); /* general C type representing a Nit method. */")
 		self.compile_header_attribute_structs
 		self.header.add_decl("struct class \{ int box_kind; nitmethod_t vft[]; \}; /* general C type representing a Nit class. */")
 
 		# With resolution_table_table, all live type resolution are stored in a big table: resolution_table
-		self.header.add_decl("struct type \{ int id; const char *name; int color; short int is_nullable; const struct types *resolution_table; int table_size; int type_table[]; \}; /* general C type representing a Nit type. */")
+		self.header.add_decl("struct type \{ int id; const char *name; int color; short int is_nullable; nitisa_t predicate; const struct types *resolution_table; int table_size; int type_table[]; \}; /* general C type representing a Nit type. */")
 		self.header.add_decl("struct instance \{ const struct type *type; const struct class *class; nitattribute_t attrs[]; \}; /* general C type representing a Nit instance. */")
 		self.header.add_decl("struct types \{ int dummy; const struct type *types[]; \}; /* a list types (used for vts, fts and unresolved lists). */")
 		self.header.add_decl("typedef struct instance val; /* general C type representing a Nit instance. */")
@@ -227,6 +230,16 @@ class SeparateCompiler
 			self.header.add_decl("extern const struct class *class_info[];")
 			self.header.add_decl("extern const struct type *type_info[];")
 		end
+
+		# Trivial predicates (implemented by `compile_before_main`)
+		self.header.add_decl("short int nitpredicate_true(void *); /* the always true predicate. */")
+		self.header.add_decl("short int nitpredicate_false(void *); /* the always false predicate. */")
+	end
+
+	redef fun compile_before_main(v)
+	do
+		v.add_decl("short int nitpredicate_true(void *self) \{ return 1; \}")
+		v.add_decl("short int nitpredicate_false(void *self) \{ return 0; \}")
 	end
 
 	fun compile_header_attribute_structs
@@ -766,11 +779,27 @@ class SeparateCompiler
 		else
 			v.add_decl("0,")
 		end
+		var mclass_type = mtype.undecorate
+		assert mclass_type isa MClassType
+
+		# Pointer to the predicate
+		var mclass = mclass_type.mclass
+		var predicate = mclass.predicate
+		if predicate == null then
+			v.add_decl("nitpredicate_true,")
+		else if runtime_type_analysis.live_classes.has(mclass) then
+			var predicate_def = predicate.lookup_first_definition(
+				mainmodule, mclass_type.as_normal
+			)
+			var function_name = predicate_def.predicate_runtime_function.c_name
+			v.require_declaration(function_name)
+			v.add_decl("(nitisa_t) {function_name},")
+		else
+			v.add_decl("nitpredicate_false, /* DEAD */")
+		end
 
 		# resolution table (for receiver)
 		if is_live then
-			var mclass_type = mtype.undecorate
-			assert mclass_type isa MClassType
 			if resolution_tables[mclass_type].is_empty then
 				v.add_decl("NULL, /*NO RESOLUTIONS*/")
 			else
