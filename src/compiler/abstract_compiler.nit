@@ -2133,6 +2133,7 @@ end
 redef class MClassType
 
 	redef var ctype is lazy do
+		var mclass = mclass.normal_class
 		if mclass.name == "Int" then
 			return "long"
 		else if mclass.name == "Bool" then
@@ -2166,7 +2167,7 @@ redef class MClassType
 
 	redef fun ctype_extern: String
 	do
-		if mclass.kind == extern_kind then
+		if mclass.normal_class.kind == extern_kind then
 			return "void*"
 		else
 			return ctype
@@ -2175,6 +2176,7 @@ redef class MClassType
 
 	redef fun ctypename: String
 	do
+		var mclass = mclass.normal_class
 		if mclass.name == "Int" then
 			return "l"
 		else if mclass.name == "Bool" then
