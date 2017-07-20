@@ -170,7 +170,8 @@ class SeparateCompiler
 		compiler.compile_class_infos
 		for m in mainmodule.in_importation.greaters do
 			for mclass in m.intro_mclasses do
-				#if mclass.kind == abstract_kind or mclass.kind == interface_kind then continue
+				# TODO: Check kind
+				#if mclass.kind == abstract_kind or mclass.kind == interface_kind or mclass.kind == subset_kind then continue
 				compiler.compile_class_to_c(mclass)
 			end
 		end
@@ -333,13 +334,17 @@ class SeparateCompiler
 		class_conflict_graph = mclasses.to_conflict_graph
 
 		# Prepare to collect elements to color and build layout with
-		var mmethods = new HashMap[MClass, Set[PropertyLayoutElement]]
-		var mattributes = new HashMap[MClass, Set[MAttribute]]
+		var mmethods = new HashMap[MNormalClass, Set[PropertyLayoutElement]]
+		var mattributes = new HashMap[MNormalClass, Set[MAttribute]]
 
 		# The dead methods and super-call, still need to provide a dead color symbol
 		var dead_methods = new Array[PropertyLayoutElement]
 
 		for mclass in mclasses do
+			# The methods of a class subset are registered for its base class.
+			# By skipping the subsets, we ensure that we don't register methods
+			# for a `MSubset` (whose table is inaccessible in practice).
+			if not mclass isa MNormalClass then continue
 			mmethods[mclass] = new HashSet[PropertyLayoutElement]
 			mattributes[mclass] = new HashSet[MAttribute]
 		end
@@ -347,16 +352,17 @@ class SeparateCompiler
 		# Pre-collect known live things
 		if rta != null then
 			for m in rta.live_methods do
-				mmethods[m.intro_mclassdef.mclass].add m
+				var mclass = m.intro_mclassdef.mclass.normal_class
+				mmethods[mclass].add m
 			end
 			for m in rta.live_super_sends do
-				var mclass = m.mclassdef.mclass
+				var mclass = m.mclassdef.mclass.normal_class
 				mmethods[mclass].add m
 			end
 		end
 
 		for m in mainmodule.in_importation.greaters do for cd in m.mclassdefs do
-			var mclass = cd.mclass
+			var mclass = cd.mclass.normal_class
 			# Collect methods and attributes
 			for p in cd.intro_mproperties do
 				if p isa MMethod then
