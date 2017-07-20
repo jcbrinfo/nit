@@ -2208,7 +2208,11 @@ redef class MClassType
 	redef fun to_c_primitive
 	do
 		assert is_c_primitive
-		return self
+		if is_subset then
+			return as_normal.to_c_primitive
+		else
+			return self
+		end
 	end
 end
 
