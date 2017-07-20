@@ -279,6 +279,7 @@ class SeparateCompiler
 
 	fun box_kind_of(mclass: MClass): Int
 	do
+		mclass = mclass.normal_class
 		#var pointer_type = self.mainmodule.pointer_type
 		#if mclass.mclass_type.ctype == "val*" or mclass.mclass_type.is_subtype(self.mainmodule, mclass.mclass_type pointer_type) then
 		if mclass.mclass_type.ctype_extern == "val*" then
@@ -1273,11 +1274,12 @@ class SeparateCompilerVisitor
 
 	redef fun autobox(value, mtype)
 	do
-		if value.mtype == mtype then
+		if value.mtype.as_normal == mtype.as_normal then
 			return value
 		else if not value.mtype.is_c_primitive and not mtype.is_c_primitive then
 			return value
 		else if not value.mtype.is_c_primitive then
+			mtype = mtype.to_c_primitive
 			if mtype.is_tagged then
 				if mtype.name == "Int" then
 					return self.new_expr("(long)({value})>>2", mtype)
@@ -1291,14 +1293,15 @@ class SeparateCompilerVisitor
 			end
 			return self.new_expr("((struct instance_{mtype.c_name}*){value})->value; /* autounbox from {value.mtype} to {mtype} */", mtype)
 		else if not mtype.is_c_primitive then
-			assert value.mtype == value.mcasttype
-			if value.mtype.is_tagged then
+			var valtype = value.mtype.to_c_primitive
+			assert valtype == value.mcasttype.to_c_primitive
+			if valtype.is_tagged then
 				var res
-				if value.mtype.name == "Int" then
+				if valtype.name == "Int" then
 					res = self.new_expr("(val*)({value}<<2|1)", mtype)
-				else if value.mtype.name == "Char" then
+				else if valtype.name == "Char" then
 					res = self.new_expr("(val*)((long)({value})<<2|2)", mtype)
-				else if value.mtype.name == "Bool" then
+				else if valtype.name == "Bool" then
 					res = self.new_expr("(val*)((long)({value})<<2|3)", mtype)
 				else
 					abort
@@ -1307,7 +1310,6 @@ class SeparateCompilerVisitor
 				res.mcasttype = mtype.intersection(value.mcasttype, compiler.mainmodule)
 				return res
 			end
-			var valtype = value.mtype.as(MClassType)
 			if mtype isa MClassType and mtype.mclass.kind == extern_kind and mtype.mclass.name != "CString" then
 				valtype = compiler.mainmodule.pointer_type
 			end
