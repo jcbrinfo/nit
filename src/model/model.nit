@@ -1176,6 +1176,11 @@ abstract class MType
 	# In case of conflicts or inconsistencies in the model, the method returns a `MErrorType`.
 	fun lookup_fixed(mmodule: MModule, resolved_receiver: MType): MType do return self
 
+	# Does `self` is a formal type or wraps a formal type?
+	#
+	# Note that type arguments of `MGenericType`s are ignored.
+	fun is_formal: Bool do return false
+
 	# Is the type a `MErrorType` or contains an `MErrorType`?
 	#
 	# `MErrorType` are used in result with conflict or inconsistencies.
@@ -1494,6 +1499,16 @@ abstract class MTypeSet[E: MType]
 			names.add(mtype.full_name)
 		end
 		return names.join(separator)
+	end
+
+	redef fun is_formal
+	do
+		for mtype in operands do
+			if mtype.is_formal then
+				return true
+			end
+		end
+		return false
 	end
 
 	redef fun is_legal_in(mmodule, anchor)
@@ -2096,6 +2111,8 @@ abstract class MFormalType
 	do
 		return anchor_to(mmodule, anchor).can_be_null(mmodule, anchor)
 	end
+
+	redef fun is_formal do return true
 end
 
 # A virtual formal type.
@@ -2470,6 +2487,8 @@ abstract class MProxyType
 	do
 		return self.mtype.can_resolve_for(mtype, anchor, mmodule)
 	end
+
+	redef fun is_formal do return mtype.is_formal
 
 	redef fun is_ok do return mtype.is_ok
 
