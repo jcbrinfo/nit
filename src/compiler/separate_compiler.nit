@@ -2017,9 +2017,14 @@ class SeparateCompilerVisitor
 			value1 = value2
 			value2 = tmp
 		end
-		if value1.mtype.is_c_primitive then
-			var t1 = value1.mtype
-			assert t1 == value1.mcasttype
+
+		var mtype1 = value1.mtype
+		var mtype2 = value2.mtype
+		var t1 = value1.mcasttype
+		var t2 = value2.mcasttype
+
+		if mtype1.is_c_primitive then
+			assert mtype1 == t1
 
 			# Fast case: same C type.
 			if value2.mtype == t1 then
@@ -2035,7 +2040,6 @@ class SeparateCompilerVisitor
 			# Conjunction (ands) of dynamic tests according to the static knowledge
 			var tests = new Array[String]
 
-			var t2 = value2.mcasttype
 			if t2.can_be_null(compiler.mainmodule) then
 				# The destination type cannot be null
 				tests.add("({value2} != NULL)")
@@ -2074,14 +2078,12 @@ class SeparateCompilerVisitor
 		end
 		var maybe_null = true
 		var test = new Array[String]
-		var t1 = value1.mcasttype
 		if t1.can_be_null(compiler.mainmodule) then
 			test.add("{value1} != NULL")
 			t1 = t1.as_notnull
 		else
 			maybe_null = false
 		end
-		var t2 = value2.mcasttype
 		if t2.can_be_null(compiler.mainmodule) then
 			test.add("{value2} != NULL")
 			t2 = t2.as_notnull
