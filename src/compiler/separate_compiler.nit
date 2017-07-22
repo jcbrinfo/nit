@@ -2535,11 +2535,11 @@ redef class MIntersectionType
 	redef fun can_be_primitive
 	do
 		for t in operands do
-			if t.can_be_primitive then
-				return true
+			if not t.can_be_primitive then
+				return false
 			end
 		end
-		return false
+		return true
 	end
 end
 
