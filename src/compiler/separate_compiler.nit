@@ -2546,7 +2546,7 @@ end
 redef class MClassType
 	redef fun can_be_primitive
 	do
-		return mclass.kind == interface_kind or is_c_primitive
+		return mclass.normal_class.kind == interface_kind or is_c_primitive
 	end
 end
 
