@@ -1889,6 +1889,8 @@ class SeparateCompilerVisitor
 		end
 
 		if ntype.need_anchor then
+			# See `link_unresolved_type`.
+			if ntype.is_formal then mtype = mtype.as_normal
 			var type_struct = self.get_name("type_struct")
 			self.add_decl("const struct type* {type_struct};")
 
@@ -2261,6 +2263,11 @@ class SeparateCompilerVisitor
 
 	fun link_unresolved_type(mclassdef: MClassDef, mtype: MType) do
 		assert mtype.need_anchor
+		# A type defined by a subset must share the same entries as its “normal
+		# type.” For example, if `IntArray` is a subset of `Array`, we must be
+		# able to extract the `E` of `IntArray[E]` from the `type` structure of
+		#`Array[Int]`.
+		if mtype.is_formal then mtype = mtype.as_normal
 		var compiler = self.compiler
 		if not compiler.live_unresolved_types.has_key(self.frame.mpropdef.mclassdef) then
 			compiler.live_unresolved_types[self.frame.mpropdef.mclassdef] = new HashSet[MType]
