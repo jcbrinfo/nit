@@ -2024,10 +2024,11 @@ class SeparateCompilerVisitor
 		var t2 = value2.mcasttype
 
 		if mtype1.is_c_primitive then
-			assert mtype1 == t1
+			t1 = t1.to_c_primitive
+			assert mtype1.to_c_primitive == t1
 
 			# Fast case: same C type.
-			if value2.mtype == t1 then
+			if mtype2.is_c_primitive and mtype2.to_c_primitive == t1 then
 				# Same exact C primitive representation.
 				self.add("{res} = {value1} == {value2};")
 				return res
@@ -2053,9 +2054,11 @@ class SeparateCompilerVisitor
 			if t2 == t1 then
 				# Same type but different representation.
 			else if t2.is_c_primitive then
-				# Type of `value2` is a different primitive type, thus incompatible
-				self.add("{res} = 0; /* incompatible types {t1} vs. {t2}*/")
-				return res
+				if t1 != t2.to_c_primitive then
+					# Type of `value2` is a different primitive type, thus incompatible
+					self.add("{res} = 0; /* incompatible types {t1} vs. {t2}*/")
+					return res
+				end
 			else if t1.is_tagged then
 				# To be equal, `value2` should also be correctly tagged
 				tests.add("({extract_tag(value2)} == {t1.tag_value})")
@@ -2094,11 +2097,11 @@ class SeparateCompilerVisitor
 		var incompatible = false
 		var primitive
 		if t1.is_c_primitive then
-			primitive = t1
+			primitive = t1.to_c_primitive
 			if t1 == t2 then
 				# No need to compare class
 			else if t2.is_c_primitive then
-				incompatible = true
+				incompatible = primitive != t2.to_c_primitive
 			else if can_be_primitive(value2) then
 				if t1.is_tagged then
 					self.add("{res} = {value1} == {value2};")
@@ -2112,9 +2115,9 @@ class SeparateCompilerVisitor
 				incompatible = true
 			end
 		else if t2.is_c_primitive then
-			primitive = t2
+			primitive = t2.to_c_primitive
 			if can_be_primitive(value1) then
-				if t2.is_tagged then
+				if primitive.is_tagged then
 					self.add("{res} = {value1} == {value2};")
 					return res
 				end
