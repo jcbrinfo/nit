@@ -2167,7 +2167,7 @@ class MVirtualType
 		if not cleanup_virtual then return self
 		assert can_resolve_for(mtype, anchor, mmodule)
 
-		if mproperty.is_selftype then return mtype
+		if mproperty.is_selftype then return mtype.as_normal
 
 		# self is a virtual type declared (or inherited) in mtype
 		# The point of the function it to get the bound of the virtual type that make sense for mtype
