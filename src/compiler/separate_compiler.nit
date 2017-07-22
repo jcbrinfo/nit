@@ -609,11 +609,11 @@ class SeparateCompiler
 
 	# resolution_tables is used to perform a type resolution at runtime in O(1)
 	private fun compute_resolution_tables(live_types: Set[MClassType]) do
-		# During the visit of the body of classes, live_unresolved_types are collected
-		# and associated to
-		# Collect all live_unresolved_types (visited in the body of classes)
+		# During the visit of the body of classes, live_unresolved_types are
+		# collected and associated to class definitions.
 
-		# Determinate fo each livetype what are its possible requested anchored types
+		# Determinate for each live type what are its possible requested
+		# anchored types.
 		var mtype2unresolved = new HashMap[MClass, Set[MType]]
 		for mtype in live_types do
 			var mclass = mtype.mclass
