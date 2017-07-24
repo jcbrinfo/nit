@@ -1392,6 +1392,8 @@ abstract class AbstractCompilerVisitor
 		# eg `nullable PreciseType` adapted to `Object` gives precisetype.
 		if valmtype isa MNullableType and valmtype.mtype.is_subtype(self.compiler.mainmodule, null, mtype) then
 			mtype = valmtype.mtype
+		else
+			mtype = mtype.intersection(valmtype, compiler.mainmodule)
 		end
 
 		var res = new RuntimeVariable(value.name, value.mtype, mtype)
