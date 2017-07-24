@@ -12,23 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Test of forbidden overriding and duplicate subset definitions.
+# Tests if the RTA considers the dependencies of a cast to an open type.
 #
-# For tests of subset refinements, see `test_subset_redef2`
+# `alt1` and `alt2` ensure that the casts are not skipped when the bound is an
+# enumerated type.
 
 import core::kernel
 
-subset NonZero
-	isa do return not self.is_zero
-	super Numeric
-
-	fun int_inverse: Int do
-		return (1.0 / self.to_f).to_i
-	end
-
-	#alt1# redef fun zero do return super
-	#alt2# redef isa do return true
-	#alt3# redef type OTHER: Int
+subset Foo
+	super Int
+	isa do return self % 42 == 0 #alt1,2# isa do return self % 41 == 0
 end
 
-#alt4# redef class NonZero end
+class Bar[PT: Int]
+	type VT: Int
+	fun baz_pt: PT do return 42
+	fun baz_vt: VT do return 42
+end
+
+class Qux[PT: Int]
+	super Bar[PT]
+
+	redef type VT: Foo
+end
+
+var bar: Bar[Int] = new Qux[Foo]
+assert bar.baz_pt == 42 #alt2#
+assert bar.baz_vt == 42

@@ -12,23 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Test of forbidden overriding and duplicate subset definitions.
-#
-# For tests of subset refinements, see `test_subset_redef2`
+import test_subset_isa
 
-import core::kernel
+# Edge case for calls from a predicate: name conflicts between the subset and its base class.
 
-subset NonZero
-	isa do return not self.is_zero
-	super Numeric
+redef class Numeric
 
-	fun int_inverse: Int do
-		return (1.0 / self.to_f).to_i
-	end
-
-	#alt1# redef fun zero do return super
-	#alt2# redef isa do return true
-	#alt3# redef type OTHER: Int
+	fun my_isa: Bool do return true
 end
 
-#alt4# redef class NonZero end
+redef subset NonZero
+	#alt1# redef isa do return my_isa
+
+	#alt2# redef isa do
+		#alt2# var me = self
+		#alt2# return not me.my_isa
+	#alt2# end
+end

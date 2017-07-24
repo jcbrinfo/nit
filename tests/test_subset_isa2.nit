@@ -12,23 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Test of forbidden overriding and duplicate subset definitions.
-#
-# For tests of subset refinements, see `test_subset_redef2`
-
 import core::kernel
 
-subset NonZero
-	isa do return not self.is_zero
-	super Numeric
+# Test of type tests over subsets.
+#
+# Ensure that both the base class and the predicate are considered.
 
-	fun int_inverse: Int do
-		return (1.0 / self.to_f).to_i
-	end
-
-	#alt1# redef fun zero do return super
-	#alt2# redef isa do return true
-	#alt3# redef type OTHER: Int
+subset Natural
+	super Int
+	isa do return self >= 0 #alt1#
+	#alt1# # Predicate undefined. Must be equivalent to `isa do return true`
 end
 
-#alt4# redef class NonZero end
+assert 42 isa Natural
+assert not -1 isa Natural #alt1# assert -1 isa Natural
+assert not 1.0 isa Natural

@@ -12,23 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Test of forbidden overriding and duplicate subset definitions.
-#
-# For tests of subset refinements, see `test_subset_redef2`
-
 import core::kernel
 
-subset NonZero
-	isa do return not self.is_zero
-	super Numeric
+subset Natural
+	super Int
+	#alt1# super Numeric
+	isa do return self >= 0
 
-	fun int_inverse: Int do
-		return (1.0 / self.to_f).to_i
+	#alt2# type MY_INT: Int
+
+	fun fib: Natural do
+		if self < 2 then return self
+		var a = (self - 1).as(Natural).fib
+		var b = (self - 2).as(Natural).fib
+		return (a + b).as(Natural)
 	end
-
-	#alt1# redef fun zero do return super
-	#alt2# redef isa do return true
-	#alt3# redef type OTHER: Int
 end
 
-#alt4# redef class NonZero end
+assert 42 isa Natural

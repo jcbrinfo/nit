@@ -12,23 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Test of forbidden overriding and duplicate subset definitions.
+# Tests a cast to a subset where the base class of the subset is a superclass
+# of a primitive type.
 #
-# For tests of subset refinements, see `test_subset_redef2`
+# This may trigger a special case of the “autoboxing” mechanism.
 
 import core::kernel
 
-subset NonZero
-	isa do return not self.is_zero
+subset Natural
 	super Numeric
+	isa do return self >= 0
 
-	fun int_inverse: Int do
-		return (1.0 / self.to_f).to_i
-	end
-
-	#alt1# redef fun zero do return super
-	#alt2# redef isa do return true
-	#alt3# redef type OTHER: Int
+	fun foo: Int do return 42
 end
 
-#alt4# redef class NonZero end
+var x = 1
+assert x isa Natural
+assert x.foo == 42
+# TODO: `assert x % 2 == 1` (alt1)

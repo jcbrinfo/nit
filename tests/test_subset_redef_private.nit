@@ -12,23 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Test of forbidden overriding and duplicate subset definitions.
-#
-# For tests of subset refinements, see `test_subset_redef2`
+import test_subset_private #alt1# import test_subset_redef
 
-import core::kernel
-
-subset NonZero
-	isa do return not self.is_zero
-	super Numeric
-
-	fun int_inverse: Int do
-		return (1.0 / self.to_f).to_i
-	end
-
-	#alt1# redef fun zero do return super
-	#alt2# redef isa do return true
-	#alt3# redef type OTHER: Int
+redef private subset NonZero
 end
-
-#alt4# redef class NonZero end

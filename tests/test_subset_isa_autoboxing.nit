@@ -12,23 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Test of forbidden overriding and duplicate subset definitions.
-#
-# For tests of subset refinements, see `test_subset_redef2`
+# Tests of autoboxing for call to predicates of formal types.
 
 import core::kernel
 
-subset NonZero
-	isa do return not self.is_zero
+subset Even
 	super Numeric
-
-	fun int_inverse: Int do
-		return (1.0 / self.to_f).to_i
-	end
-
-	#alt1# redef fun zero do return super
-	#alt2# redef isa do return true
-	#alt3# redef type OTHER: Int
+	isa do return self.to_i % 2 == 0
 end
 
-#alt4# redef class NonZero end
+subset EvenByte
+	super Byte
+	isa do return self.to_i % 2 == 0
+end
+
+class Foo[T: Object]
+	fun object_isa_t(x: Object): Bool do return x isa T
+	fun byte_isa_t(x: Byte): Bool do return x isa T
+end
+
+var foo = new Foo[Even]
+var foo_byte = new Foo[EvenByte]
+
+assert foo.byte_isa_t(42.to_b)
+assert not foo.byte_isa_t(21.to_b)
+assert foo_byte.object_isa_t(42.to_b)
+assert not foo_byte.object_isa_t(21.to_b)
