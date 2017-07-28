@@ -199,20 +199,20 @@ class GlobalCompiler
 		v.add_decl("int classid; /* must be {idname} */")
 
 		if mtype.mclass.name == "NativeArray" then
-			# NativeArrays are just a instance header followed by an array of values
+			# NativeArrays are just an instance header followed by an array of values.
 			v.add_decl("int length;")
 			v.add_decl("{mtype.arguments.first.ctype} values[1];")
 		end
 
 		if mtype.ctype_extern != "val*" then
-			# Is the Nit type is native then the struct is a box with two fields:
-			# * the `classid` to be polymorph
+			# If the Nit type is native then the struct is a box with two fields:
+			# * the `classid` to be polymorphic.
 			# * the `value` that contains the native value.
 			v.add_decl("{mtype.ctype_extern} value;")
 		end
 
 		# Collect all attributes and associate them a field in the structure.
-		# Note: we do not try to optimize the order and helps CC to optimize the client code.
+		# Note: we do not try to optimize the order and help CC to optimize the client code.
 		for cd in mtype.collect_mclassdefs(self.mainmodule) do
 			for p in cd.intro_mproperties do
 				if not p isa MAttribute then continue
