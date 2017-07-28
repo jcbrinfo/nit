@@ -86,7 +86,7 @@ class GlobalCompiler
 		self.header = new CodeWriter(file)
 		self.live_primitive_types = new Array[MClassType]
 		for t in runtime_type_analysis.live_types do
-			if t.is_c_primitive or t.mclass.name == "Pointer" then
+			if (t.is_c_primitive and not t.is_subset) or t.mclass.name == "Pointer" then
 				self.live_primitive_types.add(t)
 			end
 		end
@@ -101,14 +101,21 @@ class GlobalCompiler
 		if mainmodule.model.get_mclasses_by_name("Pointer") != null then
 			runtime_type_analysis.live_types.add(mainmodule.pointer_type)
 		end
-		for t in runtime_type_analysis.live_types do
-			compiler.declare_runtimeclass(t)
+
+		var live_types = runtime_type_analysis.live_types
+		var class_types = new Array[MClassType].with_capacity(live_types.length)
+		for t in live_types do
+			if t.is_subset then continue
+			class_types.add(t)
 		end
 
-		compiler.compile_class_names
+		for t in class_types do
+			compiler.declare_runtimeclass(t)
+		end
+		compiler.compile_class_names(class_types)
 
 		# Init instance code (allocate and init-arguments)
-		for t in runtime_type_analysis.live_types do
+		for t in class_types do
 			if not t.is_c_primitive then
 				compiler.generate_init_instance(t)
 				if t.mclass.kind == extern_kind then
@@ -134,18 +141,22 @@ class GlobalCompiler
 	end
 
 	# Compile class names (for the class_name and output_class_name methods)
-	protected fun compile_class_names do
+	protected fun compile_class_names(class_types: SequenceRead[MClassType]) do
 		var v = new_visitor
 		self.header.add_decl("extern const char *class_names[];")
 		v.add("const char *class_names[] = \{")
-		for t in self.runtime_type_analysis.live_types do
+		for t in class_types do
+			if t.is_subset then continue
 			v.add("\"{t}\", /* {self.classid(t)} */")
 		end
 		v.add("\};")
 	end
 
 	# Return the C symbol associated to a live type runtime
+	#
 	# REQUIRE: self.runtime_type_analysis.live_types.has(mtype)
+	#
+	# REQUIRE: `not mtype.is_subset`
 	fun classid(mtype: MClassType): String
 	do
 		if self.classids.has_key(mtype) then
