@@ -311,14 +311,15 @@ class GlobalCompilerVisitor
 
 	redef fun autobox(value, mtype)
 	do
-		if value.mtype == mtype then
+		mtype = mtype.as_normal
+		if value.mtype.as_normal == mtype then
 			return value
 		else if not value.mtype.is_c_primitive and not mtype.is_c_primitive then
 			return value
 		else if not value.mtype.is_c_primitive then
 			return self.new_expr("((struct {mtype.c_name}*){value})->value; /* autounbox from {value.mtype} to {mtype} */", mtype)
 		else if not mtype.is_c_primitive then
-			var valtype = value.mtype.as(MClassType)
+			var valtype = value.mtype.to_c_primitive
 			var res = self.new_var(mtype)
 			if not compiler.runtime_type_analysis.live_types.has(valtype) then
 				self.add("/*no autobox from {value.mtype} to {mtype}: {value.mtype} is not live! */")
