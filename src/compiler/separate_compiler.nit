@@ -170,8 +170,8 @@ class SeparateCompiler
 		compiler.compile_class_infos
 		for m in mainmodule.in_importation.greaters do
 			for mclass in m.intro_mclasses do
-				# TODO: Check kind
-				#if mclass.kind == abstract_kind or mclass.kind == interface_kind or mclass.kind == subset_kind then continue
+				#if mclass.kind == abstract_kind or mclass.kind == interface_kind
+				if mclass.kind == subset_kind then continue
 				compiler.compile_class_to_c(mclass)
 			end
 		end
@@ -1837,7 +1837,9 @@ class SeparateCompilerVisitor
 
 	redef fun init_instance(mtype)
 	do
-		self.require_declaration("NEW_{mtype.mclass.c_name}")
+		var mclass = mtype.mclass.normal_class
+		var normal_type = mtype.as_normal
+		self.require_declaration("NEW_{mclass.c_name}")
 		var compiler = self.compiler
 		if mtype isa MGenericType and mtype.need_anchor then
 			hardening_live_open_type(mtype)
@@ -1845,11 +1847,11 @@ class SeparateCompilerVisitor
 			var recv = self.frame.arguments.first
 			var recv_type_info = self.type_info(recv)
 			self.require_declaration(mtype.const_color)
-			return self.new_expr("NEW_{mtype.mclass.c_name}({recv_type_info}->resolution_table->types[{mtype.const_color}])", mtype)
+			return self.new_expr("NEW_{mclass.c_name}({recv_type_info}->resolution_table->types[{normal_type.const_color}])", mtype)
 		end
 		compiler.undead_types.add(mtype)
 		self.require_declaration("type_{mtype.c_name}")
-		return self.new_expr("NEW_{mtype.mclass.c_name}(&type_{mtype.c_name})", mtype)
+		return self.new_expr("NEW_{mclass.c_name}(&type_{normal_type.c_name})", mtype)
 	end
 
 	redef fun type_test(value, mtype, tag)
