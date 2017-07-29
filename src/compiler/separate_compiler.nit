@@ -1346,6 +1346,7 @@ class SeparateCompilerVisitor
 
 	redef fun unbox_extern(value, mtype)
 	do
+		mtype = mtype.as_normal
 		if mtype isa MClassType and mtype.mclass.kind == extern_kind and
 		   mtype.mclass.name != "CString" then
 			var pointer_type = compiler.mainmodule.pointer_type
@@ -1359,6 +1360,7 @@ class SeparateCompilerVisitor
 
 	redef fun box_extern(value, mtype)
 	do
+		mtype = mtype.as_normal
 		if mtype isa MClassType and mtype.mclass.kind == extern_kind and
 		   mtype.mclass.name != "CString" then
 			var valtype = compiler.mainmodule.pointer_type
