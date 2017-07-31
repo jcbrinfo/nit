@@ -2165,7 +2165,7 @@ class MVirtualType
 			return props.first
 		end
 		var types = new ArraySet[MType]
-		var res  = props.first
+		var res = props.first
 		for p in props do
 			types.add(p.bound.as(not null))
 			if not res.is_fixed then res = p
