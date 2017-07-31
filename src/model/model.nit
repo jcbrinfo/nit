@@ -2138,6 +2138,18 @@ class MVirtualType
 
 	redef fun lookup_bound(mmodule, resolved_receiver)
 	do
+		if resolved_receiver isa MTypeSet[MType] then
+			var operands = new Set[MType]
+			for operand in resolved_receiver.operands do
+				var bound = lookup_bound(mmodule, operand)
+				# Skip operands that don’t have this parameter.
+				if bound isa MErrorType then continue
+				operands.add(bound)
+			end
+			# If we cannot find `self` in any operand…
+			if operands.is_empty then return new MErrorType(model)
+			return resolved_receiver.apply_to(operands, mmodule)
+		end
 		# There is two possible invalid cases: the vt does not exists in resolved_receiver or the bound is broken
 		if not resolved_receiver.has_mproperty(mmodule, mproperty) then return new MErrorType(model)
 		return lookup_single_definition(mmodule, resolved_receiver).bound or else new MErrorType(model)
