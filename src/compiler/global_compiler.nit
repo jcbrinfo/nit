@@ -341,6 +341,7 @@ class GlobalCompilerVisitor
 
 	redef fun unbox_extern(value, mtype)
 	do
+		mtype = mtype.as_normal
 		if mtype isa MClassType and mtype.mclass.kind == extern_kind and
 		   mtype.mclass.name != "CString" then
 			var res = self.new_var_extern(mtype)
@@ -353,6 +354,7 @@ class GlobalCompilerVisitor
 
 	redef fun box_extern(value, mtype)
 	do
+		mtype = mtype.as_normal
 		if not mtype isa MClassType or mtype.mclass.kind != extern_kind or
 			mtype.mclass.name == "CString" then return value
 
