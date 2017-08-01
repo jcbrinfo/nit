@@ -913,22 +913,26 @@ class GlobalCompilerVisitor
 			value2 = tmp
 		end
 		if value1.mtype.is_c_primitive then
-			if value2.mtype == value1.mtype then
-				self.add("{res} = {value1} == {value2};")
-			else if value2.mtype.is_c_primitive then
-				self.add("{res} = 0; /* incompatible types {value1.mtype} vs. {value2.mtype}*/")
+			var mtype1 = value1.mtype.to_c_primitive
+			if value2.mtype.is_c_primitive then
+				if value2.mtype.to_c_primitive == mtype1 then
+					self.add("{res} = {value1} == {value2};")
+				else
+					self.add("{res} = 0; /* incompatible types {value1.mtype} vs. {value2.mtype}*/")
+				end
 			else
-				var mtype1 = value1.mtype.as(MClassType)
 				self.add("{res} = ({value2} != NULL) && ({value2}->classid == {self.compiler.classid(mtype1)});")
 				self.add("if ({res}) \{")
-				self.add("{res} = ({self.autobox(value2, value1.mtype)} == {value1});")
+				self.add("{res} = ({self.autobox(value2, mtype1)} == {value1});")
 				self.add("\}")
 			end
 		else
 			var s = new Array[String]
+			var casttype1 = value1.mcasttype.as_normal
+			var casttype2 = value2.mcasttype.as_normal
 			for t in self.compiler.live_primitive_types do
-				if not t.is_subtype(self.compiler.mainmodule, null, value1.mcasttype) then continue
-				if not t.is_subtype(self.compiler.mainmodule, null, value2.mcasttype) then continue
+				if not t.is_subtype(self.compiler.mainmodule, null, casttype1) then continue
+				if not t.is_subtype(self.compiler.mainmodule, null, casttype2) then continue
 				s.add "({value1}->classid == {self.compiler.classid(t)} && ((struct {t.c_name}*){value1})->value == ((struct {t.c_name}*){value2})->value)"
 			end
 
