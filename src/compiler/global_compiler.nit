@@ -1023,7 +1023,7 @@ private class CustomizedRuntimeFunction
 	do
 		var recv = self.recv
 		var mmethoddef = self.mmethoddef
-		if not recv.is_subtype(compiler.mainmodule, null, mmethoddef.mclassdef.bound_mtype) then
+		if not recv.is_subtype(compiler.mainmodule, null, mmethoddef.mclassdef.bound_mtype.as_normal) then
 			print("problem: why do we compile {self} for {recv}?")
 			abort
 		end
