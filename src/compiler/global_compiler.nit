@@ -806,6 +806,8 @@ class GlobalCompilerVisitor
 	redef fun type_test(value, mtype, tag)
 	do
 		mtype = self.anchor(mtype)
+		var class_type = mtype.undecorate.as(MClassType)
+		var normal_type = mtype.as_normal
 		if not self.compiler.runtime_type_analysis.live_cast_types.has(mtype) then
 			debug "problem: {mtype} was detected cast-dead"
 			abort
@@ -816,8 +818,9 @@ class GlobalCompilerVisitor
 
 		self.add("/* isa {mtype} on {value.inspect} */")
 		if value.mtype.is_c_primitive then
-			if value.mtype.is_subtype(self.compiler.mainmodule, null, mtype) then
-				self.add("{res} = 1;")
+			var valtype = value.mtype.to_c_primitive
+			if valtype.is_subtype(self.compiler.mainmodule, null, normal_type) then
+				self.add("{res} = {call_predicate(value, class_type, valtype)};")
 			else
 				self.add("{res} = 0;")
 			end
@@ -825,7 +828,7 @@ class GlobalCompilerVisitor
 		end
 		if value.mcasttype isa MNullableType or value.mcasttype isa MNullType then
 			self.add("if ({value} == NULL) \{")
-			if mtype isa MNullableType then
+			if normal_type isa MNullableType then
 				self.add("{res} = 1; /* isa {mtype} */")
 			else
 				self.add("{res} = 0; /* not isa {mtype} */")
@@ -834,17 +837,36 @@ class GlobalCompilerVisitor
 		end
 		self.add("switch({value}->classid) \{")
 		for t in types do
-			if t.is_subtype(self.compiler.mainmodule, null, mtype) then
+			if t.is_subtype(self.compiler.mainmodule, null, normal_type) then
 				self.add("case {self.compiler.classid(t)}: /* {t} */")
+				self.add("{res} = {call_predicate(value, class_type, t)};")
+				self.add("break;")
 			end
 		end
-		self.add("{res} = 1;")
-		self.add("break;")
 		self.add("default:")
 		self.add("{res} = 0;")
 		self.add("\}")
 
 		return res
+	end
+
+	# Call the predicate of `cast_type` on `value`, assuming the latter is of type `recv_type`.
+	#
+	# Return an expression that gives the return value of the predicate.
+	# If `cast_type` does not define any predicate, return `"1"`.
+	private fun call_predicate(
+		value: RuntimeVariable,
+		cast_type: MClassType,
+		recv_type: MClassType
+	): String
+	do
+		var predicate = cast_type.mclass.predicate
+		if predicate != null then
+			var mpropdef = predicate.lookup_first_definition(
+					compiler.mainmodule, recv_type)
+			return call(mpropdef, recv_type, [value]).as(not null).to_s
+		end
+		return "1"
 	end
 
 	redef fun is_same_type_test(value1, value2)
