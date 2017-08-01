@@ -370,15 +370,19 @@ class GlobalCompilerVisitor
 	end
 
 	# The runtime types that are acceptable for a given receiver.
+	#
+	# Class subsets are ignored.
 	fun collect_types(recv: RuntimeVariable): Array[MClassType]
 	do
-		var mtype = recv.mcasttype
 		if recv.is_exact then
+			var mtype = recv.mtype
 			assert mtype isa MClassType
+			assert not mtype.is_subset
 			assert self.compiler.runtime_type_analysis.live_types.has(mtype)
 			var types = [mtype]
 			return types
 		end
+		var mtype = recv.mcasttype.as_normal
 		var cache = self.compiler.collect_types_cache
 		if cache.has_key(mtype) then
 			return cache[mtype]
@@ -386,6 +390,7 @@ class GlobalCompilerVisitor
 		var types = new Array[MClassType]
 		var mainmodule = self.compiler.mainmodule
 		for t in self.compiler.runtime_type_analysis.live_types do
+			if t.is_subset then continue
 			if not t.is_subtype(mainmodule, null, mtype) then continue
 			types.add(t)
 		end
