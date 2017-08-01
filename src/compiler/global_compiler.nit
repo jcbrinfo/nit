@@ -876,11 +876,13 @@ class GlobalCompilerVisitor
 			if not value1.mtype.is_c_primitive then
 				self.add "{res} = {value1}->classid == {value2}->classid;"
 			else
-				self.add "{res} = {self.compiler.classid(value1.mtype.as(MClassType))} == {value2}->classid;"
+				var classid = self.compiler.classid(value1.mtype.to_c_primitive)
+				self.add "{res} = {classid} == {value2}->classid;"
 			end
 		else
 			if not value1.mtype.is_c_primitive then
-				self.add "{res} = {value1}->classid == {self.compiler.classid(value2.mtype.as(MClassType))};"
+				var classid = self.compiler.classid(value2.mtype.to_c_primitive)
+				self.add "{res} = {value1}->classid == {classid};"
 			else if value1.mcasttype == value2.mcasttype then
 				self.add "{res} = 1;"
 			else
