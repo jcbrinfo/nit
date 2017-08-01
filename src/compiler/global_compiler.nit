@@ -899,7 +899,7 @@ class GlobalCompilerVisitor
 		if not value.mtype.is_c_primitive then
 			self.add "{res} = class_names[{value}->classid];"
 		else
-			self.add "{res} = class_names[{self.compiler.classid(value.mtype.as(MClassType))}];"
+			self.add "{res} = class_names[{self.compiler.classid(value.mtype.to_c_primitive)}];"
 		end
 		return res
 	end
