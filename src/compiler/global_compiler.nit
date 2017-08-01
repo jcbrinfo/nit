@@ -794,7 +794,7 @@ class GlobalCompilerVisitor
 
 	redef fun init_instance(mtype)
 	do
-		mtype = self.anchor(mtype).as(MClassType)
+		mtype = self.anchor(mtype).as_normal.as(MClassType)
 		if not self.compiler.runtime_type_analysis.live_types.has(mtype) then
 			debug "problem: {mtype} was detected dead"
 		end
