@@ -465,7 +465,7 @@ class GlobalCompilerVisitor
 				self.add("/* skip, dead class {mclasstype} */")
 				return res
 			end
-			if not mclasstype.has_mproperty(self.compiler.mainmodule, m) then
+			if not mclasstype.may_have_mproperty(self.compiler.mainmodule, m) then
 				self.add("/* skip, no method {m} */")
 				return res
 			end
