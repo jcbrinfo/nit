@@ -798,12 +798,9 @@ end
 redef class MClassType
 
 	redef fun add_predicate_send(analysis: RapidTypeAnalysis) do
-		var mclass = mclass
-		if mclass isa MSubset then
-			var predicate = mclass.predicate
-			if predicate != null then
-				analysis.add_send(self, predicate)
-			end
+		var predicate = mclass.predicate
+		if predicate != null then
+			analysis.add_send(self, predicate)
 		end
 	end
 end
