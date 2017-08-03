@@ -97,9 +97,7 @@ class RapidTypeAnalysis
 		var mtype = callsite.recv
 		var anchor = callsite.anchor
 		if anchor != null then mtype = mtype.anchor_to(callsite.mmodule, anchor)
-		mtype = mtype.as_normal.undecorate
-		# FIXME: Support any set-theoretic operation over types
-		if mtype isa MClassType then mtype = mtype.mclass.intro.bound_mtype
+		mtype = mtype.as_normal
 		var mproperty = callsite.mproperty
 		var res = live_targets_cache[mtype, mproperty]
 		if res != null then return res
@@ -107,7 +105,7 @@ class RapidTypeAnalysis
 		live_targets_cache[mtype, mproperty] = res
 
 		for c in live_classes do
-			var tc = c.intro.bound_mtype
+			var tc = c.bottom_bound_mtype
 			if not tc.is_subtype(mainmodule, null, mtype) then continue
 			# If `mproperty` is defined in a subset, but `tc` is not a subtype
 			# of this subset…
